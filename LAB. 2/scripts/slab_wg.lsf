@@ -1,0 +1,93 @@
+#slab waveguide
+#this script calculates the error for modes of a slab waveguide as a function of grid accuracy
+
+use_matlab=0; # 1 to launch Matlab calculations and 0 to run MODE calculations only.
+conformal_mesh_on=0;  # 1 for "conformal variant 1" and 0 for "staircase"
+
+load("slab_wg.lms");
+cleardcard;
+loaddata("slab_wg.ldf");
+
+#get the analytic answer from MATLAB script
+if(use_matlab) {
+    matlab("
+       [nTE,nTM]=slab_wg;
+    ");
+    matlabget(nTE,nTM);
+    rm("slab_wg_nte.txt");
+    rm("slab_wg_ntm.txt");
+    format long; #save the calculated results in double precision
+    write("slab_wg_nte.txt", num2str(nTE));
+    write("slab_wg_ntm.txt", num2str(nTM));
+    format short;
+}else{
+    nTE=readdata("slab_wg_nte.txt");
+    nTM=readdata("slab_wg_ntm.txt");
+}
+
+mesh_cell = matrix(1,8);
+mesh_cell(1) = 40;
+for(i=2:length(mesh_cell)){
+   mesh_cell(i)=mesh_cell(i-1)*2;
+}
+TE1=matrix(1,length(mesh_cell));
+TM1=matrix(1,length(mesh_cell));
+
+for(ii = 1:length(mesh_cell)){
+    switchtolayout;
+    if(conformal_mesh_on){setnamed("MODE","mesh refinement","conformal variant 1");}
+    setnamed("MODE","mesh cells y",mesh_cell(ii));
+    findmodes;
+    TE1(ii) = real(getdata(bestoverlap("TE1"),"neff"));
+    TM1(ii) = real(getdata(bestoverlap("TM1"),"neff"));
+}
+
+p1 = 100*abs((TE1-nTE(1))/nTE(1));
+p2 = 100*abs((TM1-nTM(1))/nTM(1));
+
+if(p1(5)>1e-4){
+   ?"ERROR: TE1 mode exceeded error tolerance in slab_wg";
+   #break;
+}
+if(p2(5)>2.5e-4){
+   ?"ERROR: TM1 mode exceeded error tolerance in slab_wg";
+   #break;
+}
+
+if(use_matlab){
+    matlabput(mesh_cell,p1,p2,TE1,TM1);
+    matlab("
+       close all;
+       figure(1);
+       semilogx(mesh_cell,TE1,'ro',mesh_cell,TM1,'bo',[10,10000],nTE(1)*[1 1],'-r',[10,10000],nTM(1)*[1 1],'-b','LineWidth',4,'MarkerSize',12);
+       set(gca,'FontSize',20,'LineWidth',2);
+       h=legend('TE_{1}','TM_{1}','Location','SouthEast');
+       set(h,'LineWidth',2);
+       axis([10 10000 1.432 1.434]);
+       h=xlabel('grid points','FontSize',20);
+       h=ylabel('effective index','FontSize',20);
+       grid on;
+       box on;
+       print -djpeg90 slab_wg.jpg;
+       figure(2);
+       loglog(mesh_cell,p1,'-ro',mesh_cell,p2,'-bo','LineWidth',4,'MarkerSize',12);
+       set(gca,'FontSize',20,'LineWidth',2);
+       h=legend('TE_{1}','TM_{1}','Location','SouthWest');
+       set(h,'LineWidth',2);
+       axis([10 10000 1e-6 0.1]);
+       h=xlabel('grid points','FontSize',20);
+       h=ylabel('error amplitude (%)','FontSize',20);
+       grid on;
+       box on;
+       print -djpeg90 slab_wg2.jpg;
+    ");
+}else{
+    TE1t=matrix(1, length(mesh_cell))+nTE(1);
+    TM1t=matrix(1, length(mesh_cell))+nTM(1);
+    plot(mesh_cell,TE1,TE1t,TM1,TM1t,"grid points","effective index","slab_wg","log10x");
+    legend("TE1","TE1t","TM1","TM1t");
+    exportfigure("lum_slab_wg");
+    plot(mesh_cell,p1,p2,"grid points","error amplitude (%)","slab_wg_2","log10x,log10y");
+    legend("TE1","TM1");
+    exportfigure("lum_slab_wg_2");
+}
