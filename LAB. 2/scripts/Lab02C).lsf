@@ -1,0 +1,94 @@
+# Carregar o arquivo do layout e os dados
+load("Lab002.lms");
+cleardcard;
+
+nf = 1.44;
+ns = 1.33;
+
+# Parâmetros iniciais
+lambda0 = 1.565e-6;
+lambda1 = 1.530e-6;
+
+core_thickness_values = linspace(0, 2*4.469054e-06,100);  # Espessura do núcleo variando de 0.1 a 3 microns
+
+# Arrays para armazenar os resultados
+neff_values1 = matrix(1, length(core_thickness_values));
+neff_values2 = matrix(1, length(core_thickness_values));
+neff_values3 = matrix(1, length(core_thickness_values));
+neff_values4 = matrix(1, length(core_thickness_values));
+
+V_values1 = matrix(1, length(core_thickness_values));
+V_values2 = matrix(1, length(core_thickness_values));
+
+# Loop para varrer diferentes espessuras do núcleo
+for (i=1:length(core_thickness_values)){
+##################################################################################### 1565nm    
+    core_thickness = core_thickness_values(i);
+    
+    # Atualizar a espessura do núcleo no layout
+    switchtolayout;  # Garante que está no modo de layout
+    setnamed("FDE", "y", -3e-6);
+    setnamed("FDE", "y span", 20e-6);    
+    setnamed("FDE", "wavelength", lambda0);
+    setnamed("waveguide", "y span", core_thickness);
+    setnamed("nc", "y", (core_thickness/2 + 2e-6));
+    setnamed("ns", "y", (-core_thickness/2-4.75e-6));
+    
+    # Calcular a frequência normalizada (V)
+    V1 = (pi*core_thickness/lambda0) * sqrt(nf^2 - ns^2);
+    V_values1(i) = V1;
+  
+    # Executar a simulação e encontrar o neff
+    findmodes;
+    str1 = "mode"+num2str(1);
+    neff_values1(i)=real(getdata(str1,"neff"));#TE1
+    str2 = "mode"+num2str(3);
+    neff_values2(i)=real(getdata(str2,"neff"));#TE2
+    
+##################################################################################### 1530nm
+
+    # Atualizar a espessura do núcleo no layout
+    switchtolayout;  # Garante que está no modo de layout
+    setnamed("FDE", "y", -3e-6);
+    setnamed("FDE", "y span", 20e-6);   
+    setnamed("FDE", "wavelength", lambda1);
+    setnamed("waveguide", "y span", core_thickness);
+    setnamed("nc", "y", (core_thickness/2 + 2e-6));
+    setnamed("ns", "y", (-core_thickness/2-4.75e-6));
+    
+    # Calcular a frequência normalizada (V)
+    V2 = (pi*core_thickness/lambda1) * sqrt(nf^2 - ns^2);
+    V_values2(i) = V2;
+  
+    findmodes;
+    str1 = "mode"+num2str(1);
+    neff_values3(i)=real(getdata(str1,"neff"));#TE1
+    str2 = "mode"+num2str(3);
+    neff_values4(i)=real(getdata(str2,"neff"));#TE2
+
+}
+
+# Plotar o gráfico de neff versus V
+
+#####################################################################################
+plot(V_values1, neff_values1, "Frequência Normalizada (V)", "Índice Efetivo (neff)", 
+"Índice Efetivo em função da Frequência Normalizada", "linewidth=3");
+holdon;
+
+plot(V_values1, neff_values2, "Frequência Normalizada (V)", "Índice Efetivo (neff)", 
+"Índice Efetivo em função da Frequência Normalizada", "linewidth=3");
+holdon;
+#####################################################################################
+plot(V_values2, neff_values3, "Frequência Normalizada (V)", "Índice Efetivo (neff)", 
+"Índice Efetivo em função da Frequência Normalizada", "pen = --, linewidth=3");
+holdon;
+plot(V_values2, neff_values4, "Frequência Normalizada (V)", "Índice Efetivo (neff)", 
+"Índice Efetivo em função da Frequência Normalizada", "pen = --, linewidth=3");
+holdon;
+
+legend("MODO TE 1 - 1565nm","MODO TE 2 - 1565nm","MODO TE 1 - 1530nm","MODO TE 2 - 1530nm");
+setplot("y min", 1.33);
+setplot("y max", 1.44);
+setplot("x min", 0);
+setplot("x max", 5);
+exportfigure("neff_vs_V");

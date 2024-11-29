@@ -1,0 +1,91 @@
+# Carregar o arquivo do layout e os dados
+load("Lab002.lms");
+cleardcard;
+
+nf = 1.44;
+ns = 1.33;
+k = 1;
+
+# Parâmetros iniciais
+lambda0 = 1.55e-6;  # Comprimento de onda em metros (1550 nm)
+
+core_thickness_values = linspace(0, 2*4.469054e-06, 120);  # Espessura do núcleo variando de 0.1 a 3 microns
+
+# Arrays para armazenar os resultados
+neff_values1 = matrix(1, length(core_thickness_values));
+neff_values2 = matrix(1, length(core_thickness_values));
+neff_values3 = matrix(1, length(core_thickness_values));
+neff_values4 = matrix(1, length(core_thickness_values));
+neff_values5 = matrix(1, length(core_thickness_values));
+neff_values6 = matrix(1, length(core_thickness_values));
+neff_values7 = matrix(1, length(core_thickness_values));
+neff_values8 = matrix(1, length(core_thickness_values));
+neff_values9 = matrix(1, length(core_thickness_values));
+neff_values10 = matrix(1, length(core_thickness_values));
+neff_values11 = matrix(1, length(core_thickness_values));
+neff_values12 = matrix(1, length(core_thickness_values));
+
+V_values = matrix(1, length(core_thickness_values));
+
+# Loop para varrer diferentes espessuras do núcleo
+for (i=1:length(core_thickness_values)){
+    core_thickness = core_thickness_values(i);
+    
+    # Atualizar a espessura do núcleo no layout
+    switchtolayout;  # Garante que está no modo de layout
+    setnamed("FDE", "number of trial modes", 12);
+    setnamed("FDE", "NA", 0.551996376);
+    setnamed("waveguide", "y span", core_thickness);
+    setnamed("nc", "y", (core_thickness/2 + 2e-6));
+    setnamed("ns", "y", (-core_thickness/2-4.75e-6));
+    
+    # Calcular a frequência normalizada (V)
+    V = (pi*core_thickness/lambda0) * sqrt(nf^2 - ns^2);
+    V_values(i) = V;
+    
+    # Executar a simulação e encontrar o neff
+    findmodes;
+    str1 = "mode"+num2str(1);
+    neff_values1(i)=real(getdata(str1,"neff"));
+    str2 = "mode"+num2str(2);
+    neff_values2(i)=real(getdata(str2,"neff"));
+    str3 = "mode"+num2str(3);
+    neff_values3(i)=real(getdata(str3,"neff"));
+    str4 = "mode"+num2str(4);
+    neff_values4(i)=real(getdata(str4,"neff"));
+    str5 = "mode"+num2str(5);
+    neff_values5(i)=real(getdata(str5,"neff"));    
+    str6 = "mode"+num2str(6);
+    neff_values6(i)=real(getdata(str6,"neff"));
+    str7 = "mode"+num2str(7);
+    neff_values7(i)=real(getdata(str7,"neff"));
+    str8 = "mode"+num2str(8);
+    neff_values8(i)=real(getdata(str8,"neff"));
+    str9 = "mode"+num2str(9);
+    neff_values9(i)=real(getdata(str9,"neff"));
+    str10 = "mode"+num2str(10);
+    neff_values10(i)=real(getdata(str10,"neff"));
+    str11 = "mode"+num2str(11);
+    neff_values11(i)=real(getdata(str11,"neff"));    
+    str12 = "mode"+num2str(12);
+    neff_values12(i)=real(getdata(str12,"neff"));
+    
+}
+
+# Plotar o gráfico de neff versus V
+plot(V_values, neff_values1, neff_values2, neff_values3, 
+neff_values4, neff_values5, neff_values6, neff_values7, neff_values8, neff_values9, neff_values10, neff_values11, neff_values12,
+"Frequência Normalizada (V)", "Índice Efetivo (neff)", 
+"Índice Efetivo em função da Frequência Normalizada", "linewidth=3");
+
+legend("MODO TE 1","MODO TM 1","MODO TE 2","MODO TM 2", "MODO TE 3","MODO TM 3",
+"MODO TE 4","MODO TM 4","MODO TE 5","MODO TM 5", "MODO TE 6","MODO TM 6",
+"MODO TE 7","MODO TM 7","MODO TE 8","MODO TM 8", "MODO TE 9","MODO TM 9",
+"MODO TE 10","MODO TM 10","MODO TE 11","MODO TM 11", "MODO TE 12","MODO TM 12");
+
+setplot("y min", 1.33);
+setplot("y max", 1.44);
+setplot("x min", 0);
+setplot("x max", 10);
+exportfigure("neff_vs_V");
+
