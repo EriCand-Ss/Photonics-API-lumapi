@@ -1,0 +1,73 @@
+switchtolayout();
+
+create_y_branch;
+
+solver_x_span = x_span_dvc + 2e-6;
+solver_y_span = 2*y_span_dvc + 4e-6;
+solver_z_span = 2e-6;
+number_of_points = 100;
+
+# add solver
+addvarfdtd();
+set("x", x_span_dvc/2);
+set("y", 0);
+set("z", 0);
+set("x span", solver_x_span);
+set("y span", solver_y_span);
+set("z span", solver_z_span);
+set("x0", -3e-6);
+set("background material", "SiO2 (Glass) - Palik");
+set("global monitor frequency points", number_of_points);
+
+# add source
+addmodesource();
+set("injection axis", "x");
+set("x", -0.5e-6);
+set("y", 0);
+set("y span", y_span_dvc);
+set("wavelength start", 1500e-9);
+set("wavelength stop", 1600e-9);
+
+# add monitors
+addindex();
+set("name", "index");
+set("x", x_span_dvc/2);
+set("y", 0);
+set("x span", solver_x_span);
+set("y span", solver_y_span);
+
+addprofile();
+set("x", x_span_dvc/2);
+set("y", 0);
+set("x span", solver_x_span);
+set("y span", solver_y_span);
+
+addpower();
+set("name", "in");
+set("monitor type", 5);
+set("x", -0.4e-6);
+set("y", 0);
+set("y span", y_span_dvc - 1e-6);
+set("z span", solver_z_span);
+
+addpower();
+set("name", "out_1");
+set("monitor type", 5);
+set("x", x_span_dvc + 0.5e-6);
+set("y", y_span_dvc);
+set("y span", y_span_dvc - 1e-6);
+set("z span", solver_z_span);
+
+addpower();
+set("name", "out_2");
+set("monitor type", 5);
+set("x", x_span_dvc + 0.5e-6);
+set("y", -y_span_dvc);
+set("y span", y_span_dvc - 1e-6);
+set("z span", solver_z_span);
+
+addmovie();
+set("x", x_span_dvc/2);
+set("y", 0);
+set("x span", solver_x_span);
+set("y span", solver_y_span);

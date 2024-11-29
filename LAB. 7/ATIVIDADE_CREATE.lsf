@@ -1,0 +1,81 @@
+deleteall();
+switchtolayout();
+
+wg_width = 450e-9;
+wg_heigth = 220e-9;
+wg_radius = 5e-6;
+
+#criar os bends
+addobject("90_bend_wg");
+set("name", "upper1");
+set("first axis", 'z');
+set("base width", wg_width);
+set("base height", wg_heigth);
+set("radius", wg_radius);
+set("rotation 1",90);
+set("x", 0);
+set("y", 0);
+set("z", 0);
+
+addobject("90_bend_wg");
+set("name", "upper2");
+set("first axis", 'z');
+set("base width", wg_width);
+set("base height", wg_heigth);
+set("radius", wg_radius);
+set("rotation 1",-90);
+set("x", -10e-6);
+set("y", 0);
+set("z", 0);
+
+addobject("90_bend_wg");
+set("name", "upper3");
+set("first axis", 'z');
+set("base width", wg_width);
+set("base height", wg_heigth);
+set("radius", wg_radius);
+set("rotation 1",180);
+set("x", 0);
+set("y", -10e-6);
+set("z", 0);
+
+addobject("90_bend_wg");
+set("name", "upper4");
+set("first axis", 'z');
+set("base width", wg_width);
+set("base height", wg_heigth);
+set("radius", wg_radius);
+set("rotation 1",0);
+set("x", -10e-6);
+set("y", -10e-6);
+set("z", 0);
+
+addrect();
+set("name", "out 1");
+set("x span", 2e-6);
+set("y span", wg_width);
+set("z span", wg_heigth);
+set("material", "Si (Silicon) - Palik");
+set("x", 1e-6);
+set("y", 5e-6);
+set("z", 0);
+
+addrect();
+set("name", "out2");
+set("x span", 2e-6);
+set("y span", wg_width);
+set("z span", wg_heigth);
+set("material", "Si (Silicon) - Palik");
+set("x", 1e-6);
+set("y", -15e-6);
+set("z", 0);
+
+addrect();
+set("name", "in");
+set("x span", 2e-6);
+set("y span", wg_width);
+set("z span", wg_heigth);
+set("material", "Si (Silicon) - Palik");
+set("x", -11e-6);
+set("y", -5e-6);
+set("z", 0);
