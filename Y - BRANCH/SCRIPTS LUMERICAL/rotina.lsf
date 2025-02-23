@@ -1,7 +1,0 @@
-switchtolayout();
-cd(filedirectory(currentscriptname));
-
-ATIVIDADE_SOLVER_FDTD;
-
-save("my_y_branch_FDTD");
-run();
