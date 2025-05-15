@@ -2,13 +2,10 @@ Devices:
   first:
     device_id: first
     device_type: device
-    electricalCoordinates:
-    - G
-    - 368.0
-    - -900.0
+    electricalCoordinates: []
     opticalCoordinates:
-    - 398.0
-    - -774.0
+    - 256.0
+    - -773.0
     polarization: TE
     sequences:
     - test1(wavelength_sweep_ida)
@@ -16,13 +13,10 @@ Devices:
   second:
     device_id: second
     device_type: device
-    electricalCoordinates:
-    - G
-    - 435.0
-    - -1134.0
+    electricalCoordinates: []
     opticalCoordinates:
-    - 460.0
-    - -753.0
+    - 436.0
+    - -755.0
     polarization: TE
     sequences:
     - test1(wavelength_sweep_ida)
@@ -30,10 +24,7 @@ Devices:
   third:
     device_id: third
     device_type: device
-    electricalCoordinates:
-    - G
-    - 488.0
-    - -1134.0
+    electricalCoordinates: []
     opticalCoordinates:
     - 520.0
     - -753.0
@@ -69,7 +60,7 @@ Sequences:
       Power Unit: dBm
       RangeDec: '20'
       Start: '1530'
-      Step: '0.2'
+      Step: '0.1'
       Stop: '1565'
       Sweep Speed: auto
       Upper Limit: '0'
