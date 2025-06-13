@@ -1,0 +1,106 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+#### 2.6 Compare simulated group delay from frequency and time domain.
+delay_type = mode_data{mid}.name + " group delay (s)";
+
+# 2.6.1 Get S parameters from ONAs
+try{
+	S21_delay = getresult(ONA{3},"input 1/mode 1/group delay");
+	group_delay = S21_delay.getattribute(delay_type);
+}
+catch(errMsg);
+if(errMsg != "") {
+	?errMsg;
+	?msg = "Error happened in frequency domain group delay test = for (band,m,i) =" + num2str([band,mid,i]);
+	?"Rerunning simulation";
+	
+	assert(msg, !test_empty_ONA);
+	error_flag = 1;
+	
+	switchtodesign;
+	run;
+	try{
+		S21_delay = getresult(ONA{3},"input 1/mode 1/group delay");
+		group_delay = S21_delay.getattribute(delay_type);
+	}
+	catch(errMsg);
+	if(errMsg != "") {  #this is to avoid ONA not returning results when ng is big	
+		?errMsg;
+		?msg = "Possible high delay detected when reconstructing target values for (band,m,i) = " + num2str([band,mid,i]);
+		?"Rerunning simulation with increased ONA sensitivity";
+		switchtodesign;
+		setnamed(ONA{3},"sensitivity",0);
+		run;
+		S21_delay = getresult(ONA{3},"input 1/mode 1/group delay");
+		group_delay = S21_delay.getattribute(delay_type);
+	}
+}
+
+try{
+	S21_delay_time = getresult(ONA{2},"input 1/mode 1/group delay");
+	group_delay_time = S21_delay_time.getattribute(delay_type);
+}
+catch(errMsg);
+if(errMsg != "") {
+	?errMsg;
+	?msg = "Error happened in time domain group delay test = for (band,m,i) =" + num2str([band,mid,i]);
+	?"Rerunning simulation";
+	
+	assert(msg, !test_empty_ONA);
+	error_flag = 1;
+	
+	switchtodesign;
+	run;
+	try{
+		S21_delay_time = getresult(ONA{2},"input 1/mode 1/group delay");
+		group_delay_time = S21_delay_time.getattribute(delay_type);
+		}
+		catch(errMsg);
+		if(errMsg != "") { #this is to avoid ONA not returning results when ng is big	
+			?errMsg;
+			?msg = "Possible high delay detected when reconstructing target values for (band,m,i) = " + num2str([band,mid,i]);
+			?"Rerunning simulation with increased ONA sensitivity";
+			switchtodesign;
+			setnamed(ONA{2},"sensitivity",0);
+			run;
+			S21_delay_time = getresult(ONA{2},"input 1/mode 1/group delay");
+			group_delay_time = S21_delay_time.getattribute(delay_type);
+		}
+}
+
+# 2.6.2 Compare frequency and time domain results
+compare_time_bandwidth_fraction = 0.1;
+wavelength1 = S21_delay.wavelength;
+f1 = c/max(wavelength1);
+f2 = c/min(wavelength1);
+fc = 0.5*(f1+f2);
+f = c/wavelength1;
+pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+diff = max(abs(group_delay(pos)-group_delay_time(pos))/abs(group_delay(pos)));
+pass = diff <= relative_delay_time_tolerance;
+
+if (!pass){  #Don't interpolate over wavelength if it doesn't pass (only test at center wavelength)
+	?msg = "WARNING: For data interpolated over test wavelength range, group delay comparison frequency and time domain over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max relative diff is: " + num2str(diff) + " and should be less than " + num2str(relative_delay_time_tolerance);
+	?"Running test over center wavelength only...";
+	pos = find(f,fc);
+	diff = max(abs(group_delay(pos)-group_delay_time(pos))/abs(group_delay(pos)));
+	pass = diff <= relative_delay_time_tolerance;
+	?msg = "For center wavelength, group delay comparison frequency and time domain, max relative diff is: " + num2str(diff) + " and should be less than " + num2str(relative_delay_time_tolerance);
+}
+else{
+	?msg = "Passed! Group delay comparison frequency and time domain over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max relative diff is: " + num2str(diff) + " and should be less than " + num2str(relative_delay_time_tolerance);
+}
+
+assert(msg,pass);
+
+if (!pass){
+	error_count = error_count + 1;
+	if(break_at_failure) {
+		break;
+	}   
+}

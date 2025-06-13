@@ -1,0 +1,153 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if (unbalanced_MZM and mzm_thermal){
+    new;
+    fspan=sample_rate_unbalanced;
+    sample_rate=sample_rate_unbalanced;
+
+    select("::Root Element::");
+    set("sample rate",sample_rate);
+
+    # Test circuit 6: Ppi_thermal_tuner
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT4_name = get("name");
+    set("x position", -140+500);
+    set("y position", 785);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT5_name = get("name");
+    set("x position", -140+500);
+    set("y position", 960);
+
+    addelement("Optical Splitter");
+    Split2_name = get("name");
+    set("x position", 185);
+    set("y position", 875);
+
+    addelement("DC Source");
+    DC5_name = get("name");
+    set("x position", -140+500);
+    set("y position", 565);
+    set("amplitude",0);
+
+    addelement("DC Source");
+    DC6_name = get("name");
+    set("x position", 550);
+    set("y position", 565);
+    set("amplitude",Ppi_thermal_voltage1);
+
+    addelement("DC Source");
+    DC7_name = get("name");
+    set("x position", -140+500);
+    set("y position", 1150);
+    set("amplitude",Ppi_thermal_voltage2);
+
+    lambda_c = notch_wavelength;
+    f_c=c/lambda_c;
+
+    addelement("Optical Network Analyzer");
+    ONA3_name = get("name");
+    set("x position", -390+500);
+    set("y position", 635);
+    set("analysis type","scattering data");
+    set("center frequency",f_c);
+    set("frequency range",fspan);
+    set("number of points",round( fspan*1e-9 ) );
+    set("plot kind", "wavelength");
+    set("peak at maximum",false);
+    set("number of input ports", 2);
+
+    connect(ONA3_name,"output",Split2_name,"input");
+    connect(Split2_name,"output 1",DUT4_name,ports{opt_1_RELAY}.name);
+    connect(Split2_name,"output 2",DUT5_name,ports{opt_1_RELAY}.name);
+    connect(ONA3_name,"input 1",DUT4_name,ports{opt_2_RELAY}.name);
+    connect(ONA3_name,"input 2",DUT5_name,ports{opt_2_RELAY}.name);
+    try{connect(DC6_name,"output",DUT4_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    try{connect(DC7_name,"output",DUT5_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT5_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 6: Ppi_thermal_tuner
+    reslambda1 = getresult(ONA3_name,"input 1/mode 1/peak/frequency");
+    pos1 = find(reslambda1,lambda_c);
+    reslambda1 = reslambda1(pos1);
+
+    reslambda2 = getresult(ONA3_name,"input 2/mode 1/peak/frequency");
+    pos2 = find(reslambda2,lambda_c);
+    reslambda2 = reslambda2(pos2);
+
+    if(create_plots){
+        gain1_result = getresult(ONA3_name,"input 1/mode 1/gain");
+        wl = gain1_result.wavelength;
+        gain1 = getresultdata(ONA3_name,"input 1/mode 1/gain");
+        gain2 = getresultdata(ONA3_name,"input 2/mode 1/gain");
+        plot(wl*1e9, gain1, gain2, 'wavelength [nm]', 'gain [dB]', model+' Ppi_thermal test');
+        legend(num2str(Ppi_thermal_power1)+" W", num2str(Ppi_thermal_power2)+" W");
+    }
+
+    FSR_model = FSR;
+    FSR_f_model = abs(c/(lambda_c - FSR_model/2)-c/(lambda_c + FSR_model/2));
+    ng_model = c/(FSR_f_model*imbalance_length.default);
+    fres1 = c/reslambda1;
+    fres2 = c/reslambda2;
+    f0 = c/lambda0;
+    dneff_thermal_test = ( ng_model*(fres2-fres1)/f0 ) * imbalance_length.default/L1_all(2);
+    delta_phase_thermal = dneff_thermal_test/lambda0*2*pi*L1_all(2);
+    Ppi_thermal_test = abs( (Ppi_thermal_power2 - Ppi_thermal_power1) / delta_phase_thermal * pi );
+
+    msg = "Ppi_thermal = " + num2str(Ppi_thermal_test) + "W, and should be " + num2str(Ppi_thermal) + " W";
+    pass = abs(Ppi_thermal_test-Ppi_thermal) < Ppi_thermal_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

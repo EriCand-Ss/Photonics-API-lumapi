@@ -1,0 +1,140 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/electro_absorption_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/electro_absorption_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+# Test circuit 1: IL and ER
+addelement(design_kit_name + model);
+DUT1_name = get("name");
+set("x position", 600);
+set("y position", 680);
+
+addelement(design_kit_name + model);
+DUT2_name = get("name");
+set("x position", 600);
+set("y position", 864);
+
+addelement(design_kit_name + model);
+DUT3_name = get("name");
+set("x position", 600);
+set("y position", 964);
+
+addelement("CW Laser");
+CWL1_name = get("name");
+set("x position", 300);
+set("y position", 650);
+set("power",0.001);
+set("frequency",193.414e12);
+
+addelement("CW Laser");
+CWL2_name = get("name");
+set("x position", 300);
+set("y position", 650+185);
+set("power",0.001);
+set("frequency",193.414e12);
+
+addelement("CW Laser");
+CWL3_name = get("name");
+set("x position", 300);
+set("y position", 1020);
+set("power",0.001);
+set("frequency",193.414e12);
+
+addelement("DC Source");
+DC1_name = get("name");
+set("x position", 794);
+set("y position", 500);
+set("amplitude", abs(ER_voltage1));
+
+addelement("DC Source");
+DC2_name = get("name");
+set("x position", 794);
+set("y position", 975);
+set("amplitude", abs(ER_voltage2));
+
+addelement("DC Source");
+DC0_name = get("name");
+set("x position", 548);
+set("y position", 650-136);
+set("amplitude", 0);
+
+addelement("Optical Power Meter");
+OPWM1_name = get("name");
+set("x position", 772);
+set("y position", 680);
+set("limit time range",true);
+set("start time",1.5e-9);
+set("stop time",5e-9);
+
+addelement("Optical Power Meter");
+OPWM2_name = get("name");
+set("x position", 772);
+set("y position", 680+185);
+set("limit time range",true);
+set("start time",1.5e-9);
+set("stop time",4.5e-9);
+
+addelement("Optical Power Meter");
+OPWM3_name = get("name");
+set("x position", 772);
+set("y position", 1020);
+set("limit time range",true);
+set("start time",1.5e-9);
+set("stop time",4.5e-9);
+
+connect(CWL1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+connect(CWL2_name,"output",DUT2_name,ports{opt_1_RELAY}.name);
+connect(CWL3_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_cat_RELAY}.name);
+connect(DC2_name,"output",DUT2_name,ports{ele_cat_RELAY}.name);
+connect(DC0_name,"output",DUT1_name,ports{ele_an_RELAY}.name);
+connect(DC0_name,"output",DUT2_name,ports{ele_an_RELAY}.name);
+connect(DC0_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+connect(DC0_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+connect(DUT1_name,ports{opt_2_RELAY}.name,OPWM1_name,"input");
+connect(DUT2_name,ports{opt_2_RELAY}.name,OPWM2_name,"input");
+connect(DUT3_name,ports{opt_2_RELAY}.name,OPWM3_name,"input");
+
+run;
+
+# Test 1: IL and ER
+P1 = getresult(OPWM1_name,"sum/power");
+P2 = getresult(OPWM2_name,"sum/power");
+P0 = getresult(OPWM3_name,"sum/power");
+
+msg = "IL deviates by: " + num2str(abs(abs(P0)-IL)) + " dB.";
+pass = abs(abs(P0) - IL)/IL <= IL_rel_tolerance;
+if(!pass) {
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "ER deviates by: " + num2str(abs(abs(P2-P1)-ER)) + " dB.";
+pass = abs(abs(P2-P1) - ER)/ER <= ER_rel_tolerance;
+if(!pass) {
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

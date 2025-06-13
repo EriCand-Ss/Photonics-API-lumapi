@@ -1,0 +1,335 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+discontinuous_data = false; # initialize the flag for discontinuous data
+
+# 2.3.1 Determine expected results
+expected = struct;
+expected.neff = matrix(length(lambda));
+expected.ng = matrix(length(lambda));
+expected.D = matrix(length(lambda));
+expected.loss = matrix(length(lambda));
+wl_closest = matrix(length(lambda));
+if (enable_backscatter == true){
+    expected.backscatter_loss = matrix(length(lambda));
+    backscatter_loss_interp = backscatter_loss;
+}
+
+
+neff_interp = neff;
+ng_interp = ng;
+loss_interp = loss;
+D_interp = D;
+D_normalization = max(abs(D_interp)); # used to calculate relative accuracy of D
+
+for (pid = length(parameters):-1:1){          
+	neff_interp = interpolate_Nmatrix(neff_interp, pid+1, parameters{pid}.value, used_parameters(pid));
+	ng_interp   = interpolate_Nmatrix(ng_interp  , pid+1, parameters{pid}.value, used_parameters(pid));
+	D_interp    = interpolate_Nmatrix(D_interp   , pid+1, parameters{pid}.value, used_parameters(pid));
+	loss_interp = interpolate_Nmatrix(loss_interp, pid+1, parameters{pid}.value, used_parameters(pid));
+	if (enable_backscatter == true){
+	    backscatter_loss_interp = interpolate_Nmatrix(backscatter_loss_interp, pid+1, parameters{pid}.value, used_parameters(pid));
+	}
+}
+
+neff_interp = pinch(neff_interp,2,mid);
+ng_interp = pinch(ng_interp,2,mid);
+loss_interp = pinch(loss_interp,2,mid);
+D_interp = pinch(D_interp,2,mid);
+
+fp = c/lambda;
+fpp = 0.5*(fp(2:end)+fp(1:end-1));
+lambdapp = c/fpp;
+fppp = 0.5*(fpp(2:end)+fpp(1:end-1));
+lambdappp = c/fppp;
+
+# 2.3.1.1 calculate expected by interpolating to simulated wavelength range
+# loss needs to be clamped if wavelength range goes outside data window
+expected.loss = interp(loss_interp,c/wavelength_data,c/lambda);
+ploss = find(lambda > max(wavelength_data));
+if(ploss(1) > 0) {
+    expected.loss(ploss) = loss_interp(find(wavelength_data,max(wavelength_data)));
+}
+ploss = find(lambda < min(wavelength_data));
+if(ploss(1) > 0) {
+    expected.loss(ploss) = loss_interp(find(wavelength_data,min(wavelength_data)));
+}
+
+if (enable_backscatter == true){
+    backscatter_loss_interp = pinch(backscatter_loss_interp,2,mid);
+    expected.backscatter_loss = interp(backscatter_loss_interp,c/wavelength_data,c/lambda);
+    
+    ploss = find(lambda > max(wavelength_data));
+    if(ploss(1) > 0) {
+        expected.backscatter_loss(ploss) = backscatter_loss_interp(find(wavelength_data,max(wavelength_data)));
+    }
+    ploss = find(lambda < min(wavelength_data));
+    if(ploss(1) > 0) {
+        expected.backscatter_loss(ploss) = backscatter_loss_interp(find(wavelength_data,min(wavelength_data)));
+    }
+    
+    expected.backscatter_loss = 1-10^(-expected.backscatter_loss*wg_length/10);
+}
+
+expected.neff = interp(neff_interp,c/wavelength_data,c/lambda);
+expected.ng = interp(ng_interp,c/wavelength_data,c/lambdapp);
+expected.D = interp(D_interp,c/wavelength_data,c/lambdappp);
+
+# determine neff0, ng0 at f0 (center frequency) so we can correctly extract neff and ng from simulated results
+f0 = (min(fp)+max(fp))/2;
+w0 = 2*pi*f0;
+w = 2*pi*fp;
+neff0 = interp(neff_interp,c/wavelength_data,f0);
+ng0 = interp(ng_interp,c/wavelength_data,f0);
+
+# 2.3.2 Get S parameter from ONA
+try{
+	S21 = getresult(ONA{1},"input 1/mode 1/transmission");
+	S21 = S21.getattribute(mode_data{mid}.name + " transmission");
+}
+catch(errMsg);
+if(errMsg != "") {
+	?errMsg;
+	?msg = "Error happened in reconstruct target values for (band,m,i) = " + num2str([band,mid,i]);
+	?"Rerunning simulation";
+	
+	assert(msg, !test_empty_ONA);
+	error_flag = 1;
+	
+	switchtodesign;
+	run;
+	errMsg ="";
+	try{
+		S21 = getresult(ONA{1},"input 1/mode 1/transmission");
+		S21 = S21.getattribute(mode_data{mid}.name + " transmission");
+	}
+	catch(errMsg);
+	if(errMsg != "") {  #this is to avoid ONA not returning results when loss is big
+		?errMsg;
+		?msg = "Possible high loss detected when reconstructing target values for (band,m,i) = " + num2str([band,mid,i]);
+		?"Rerunning simulation with increased ONA sensitivity";
+		switchtodesign;
+		setnamed(ONA{1},"sensitivity",0);
+		run;
+		S21 = getresult(ONA{1},"input 1/mode 1/transmission");
+		S21 = S21.getattribute(mode_data{mid}.name + " transmission");
+	}
+
+}
+
+if (max(abs(expected.loss)) < 1e7 & min(expected.loss) > -10 & !discontinuous_data ){  # if data is not discontinous (discontinous data will be flagged by a high loss in parameter extraction)
+    
+    # 2.3.3 Extract Simulated Data
+    simulated = struct;
+    simulated.neff = matrix(length(lambda));
+    simulated.ng = matrix(length(lambda));
+    simulated.D = matrix(length(lambda));
+    simulated.loss = matrix(length(lambda));
+    
+    p0 = find(w,w0);
+    phi = unwrap(angle(S21)-ng0/c*(w-w0)*wg_length - neff0/c*w0*wg_length);
+    phi0 = mod(phi(p0)+pi,2*pi)-pi; # bring between -pi and pi
+    phi_shift = phi0 - phi(p0);
+    phase = phi + ng0/c*(w-w0)*wg_length + neff0/c*w0*wg_length + phi_shift;
+    
+    simulated.neff = phase /(2*pi*wg_length) * lambda;
+    simulated.loss = -20*log10(abs(S21))/wg_length;
+    
+    tgp = (phase(2:end)-phase(1:end-1))/(2*pi*(fp(2:end)-fp(1:end-1)));
+    vg_sim = wg_length/tgp;
+    simulated.ng = c/vg_sim;
+    
+    kpp = (tgp(2:end)-tgp(1:end-1))/(2*pi*(fpp(2:end)-fpp(1:end-1))) / wg_length;
+    simulated.D = -2*pi*fppp^2*kpp/c;
+    
+    ### 2.3.4 Plot Results
+    length_props_description = "";
+    for (lpid = 1:length(length_props)){
+        if (length_props{lpid}.visible_to_user){
+            length_props_description = length_props_description + length_props{lpid}.name + "=" + num2str(getnamed(DUT{1},length_props{lpid}.name));
+            if (lpid!=length(length_props)){
+                length_props_description = length_props_description + ", ";
+            }
+        }
+    }
+    
+    parameter_description = "";
+    for (pid = 1:length(parameters)){
+        parameter_description = parameter_description + parameters{pid}.name + "=" + num2str(getnamed(DUT{1},parameters{pid}.name));
+        if (pid!=length(parameters)){
+            parameter_description = parameter_description + ", ";
+        }
+    }
+    
+    if(create_plots & (plotcount <  N_plots_per_mode) ) {
+        plotcount = plotcount + 1;
+        plot(lambda*1e9, simulated.neff, expected.neff, "lambda (nm)","neff, " + mode_data{mid}.name, length_props_description + "; " + parameter_description);
+        legend("simulated","expected");
+        plot(lambdapp*1e9, simulated.ng, expected.ng, "lambda (nm)","ng, " + mode_data{mid}.name, length_props_description + "; " + parameter_description);
+        legend("simulated","expected");
+        plot(lambda*1e9, simulated.loss, expected.loss, "lambda (nm)","loss, " + mode_data{mid}.name, length_props_description + "; " + parameter_description);
+        legend("simulated","expected");
+        plot(lambdappp*1e9, simulated.D, expected.D, "lambda (nm)","D, " + mode_data{mid}.name, length_props_description + "; " + parameter_description);
+        legend("simulated","expected");
+    }
+    
+    ### 2.4 Compare simulated mode data with expected mode data
+    
+    # 2.4.1 Print test results to console
+    if (length_props_description != "") {
+        ?"length_props: " + length_props_description;
+    }
+    
+    if (parameter_description != "") {
+        ?"parameters: " + parameter_description;
+    }
+    
+    diff1 = max(abs(simulated.neff-expected.neff))/mean(expected.neff);
+    diff2 = max(abs(simulated.ng-expected.ng))/mean(expected.ng);
+    if (D_normalization==0){
+        diff3 = max(abs(simulated.D-expected.D));
+    }else{
+        diff3 = mean(abs(simulated.D-expected.D))/D_normalization;
+    }
+    diff4 = max(abs(simulated.loss-expected.loss))/mean(expected.loss);
+    
+    pass1 = diff1 < relative_neff_tolerance;
+    pass2 = diff2 < relative_ng_tolerance;
+    pass3 = diff3 < relative_D_tolerance;
+    pass4 = diff4 < relative_loss_tolerance;
+    
+    test_band_index = find(wavelength_data>=wavelength_min_test & wavelength_data<=wavelength_max_test);
+    wavelength_data_test_band = wavelength_data(test_band_index);  # trim wavelength data to include only the test band
+    
+    if (!pass1){  #Don't interpolate over wavelength if it doesn't pass (only test at points where wavelength data is provided)
+        ?msg1 = "WARNING: For data interpolated over test wavelength range, relative max neff diff = " + num2str(diff1) + " and should be less than " + num2str(relative_neff_tolerance);
+        ?"Running test over provided wavelength data points only...";
+        simulated.neff_coarse = matrix(length(wavelength_data_test_band));
+        simulated.neff_coarse = interp(simulated.neff,c/lambda,c/wavelength_data_test_band);
+        neff_interp_band = neff_interp(test_band_index);
+        diff1 = max(abs(simulated.neff_coarse-neff_interp_band))/mean(neff_interp_band);
+        pass1 = diff1 < relative_neff_tolerance;
+        ?msg1 = "For data on provided wavelength points, relative max neff diff = " + num2str(diff1) + " and should be less than " + num2str(relative_neff_tolerance);
+    }
+    else{
+        ?msg1 = "Passed! Relative max neff diff = " + num2str(diff1) + " and should be less than " + num2str(relative_neff_tolerance);
+    }
+    
+    if (!pass2){ #Don't interpolate over wavelength if it doesn't pass (only test at points where wavelength data is provided)
+        ?msg2 = "WARNING: For data interpolated over test wavelength range, relative max ng diff = " + num2str(diff2) + " and should be less than " + num2str(relative_ng_tolerance);
+        ?"Running test over provided wavelength data points only...";
+        simulated.ng_coarse = matrix(length(wavelength_data_test_band));
+        simulated.ng_coarse = interp(simulated.ng,c/lambdapp,c/wavelength_data_test_band);
+        ng_interp_band = ng_interp(test_band_index);
+        diff2 = max(abs(simulated.ng_coarse-ng_interp_band))/mean(ng_interp_band);
+        pass2 = diff2 < relative_ng_tolerance;
+        ?msg2 = "For data on provided wavelength points, relative max ng diff = " + num2str(diff2) + " and should be less than " + num2str(relative_ng_tolerance);
+    }
+    else{
+        ?msg2 = "Passed! Relative max ng diff = " + num2str(diff2) + " and should be less than " + num2str(relative_ng_tolerance);
+    }
+    
+    if (!pass3){ #Don't interpolate over wavelength if it doesn't pass (only test at points where wavelength data is provided)
+        ?msg3 = "WARNING: For data interpolated over test wavelength range, absolute max D diff = " + num2str(diff3) + " and should be less than " + num2str(relative_D_tolerance);
+        ?"Running test over provided wavelength data points only...";
+        simulated.D_coarse = matrix(length(wavelength_data_test_band));
+        simulated.D_coarse = interp(simulated.D,c/lambdappp,c/wavelength_data_test_band);
+        D_interp_band = D_interp(test_band_index);
+        D_normalization = max(abs(D_interp_band));
+        diff3 = max(abs(simulated.D_coarse-D_interp_band));
+        pass3 = diff3 < relative_D_tolerance;
+        ?msg3 = "For data on provided wavelength points, absolute max D diff = " + num2str(diff3) + " and should be less than " + num2str(relative_D_tolerance);
+    }
+    else{
+        ?msg3 = "Passed! Absolute max D diff = " + num2str(diff3) + " and should be less than " + num2str(relative_D_tolerance);
+    }
+    
+    if (!pass4){ #Don't interpolate over wavelength if it doesn't pass (only test at points where wavelength data is provided)
+        ?msg4 = "WARNING: For data interpolated over test wavelength range, relative max loss diff = " + num2str(diff4) + " and should be less than " + num2str(relative_loss_tolerance);
+        ?"Running test over provided wavelength data points only...";
+        simulated.loss_coarse = matrix(length(wavelength_data_test_band));
+        simulated.loss_coarse = interp(simulated.loss,c/lambda,c/wavelength_data_test_band);
+        loss_interp_band = loss_interp(test_band_index);
+        diff4 = max(abs(simulated.loss_coarse-loss_interp_band))/mean(loss_interp_band);
+        pass4 = diff4 < relative_loss_tolerance;
+        ?msg4 = "For data on provided wavelength points, relative max loss diff = " + num2str(diff4) + " and should be less than " + num2str(relative_loss_tolerance);
+    }
+    else{
+        ?msg4 = "Passed! Relative max loss diff = " + num2str(diff4) + " and should be less than " + num2str(relative_loss_tolerance);
+    }
+    if (enable_backscatter == true){
+        try{
+            BS_gain = getresultdata("ONA_1","input 1/mode 1/gain");
+            backward_transmission = getresultdata("ONA_1","input 1/mode 1/transmission");
+            forward_transmission = getresultdata("ONA_1","input 2/mode 1/transmission");
+        }
+
+        total_transmission = max(abs(backward_transmission)^2 + abs(forward_transmission)^2);
+        pass5 = (total_transmission < 1);  
+
+        max_BS_transmission = max(BS_gain);
+        max_expected = 10*log10(expected.backscatter_loss(find(BS_gain,max_BS_transmission)));   
+        pass6 = (abs((max_expected - max_BS_transmission)/max_expected) < relative_backscatter_max_tolerance) | (max_BS_transmission < max_expected);           
+
+        if (!pass5){
+            ?msg5 = "WARNING: For data interpolated over test wavelength range, max transmission = " + num2str(total_transmission) + " and should be less than 1 for enforce passivity setting";
+            ?msg5 = "For data interpolated over test wavelength range, total transmission = " + num2str(total_transmission) + " and should be less than 1 for enforce passivity setting";
+        } else {
+            ?msg5 = "Passed! Maximum transmission = " + num2str(total_transmission) + " and should be less than 1";    
+        }
+
+        if (!pass6){
+            ?msg6 = "WARNING: For data interpolated over test wavelength range, max backscatter transmission = " + num2str(abs((max_expected - max_BS_transmission)/max_expected)) + " and should be less than " + num2str(relative_backscatter_max_tolerance);
+            ?msg6 = "For data interpolated over test wavelength range, max backscatter transmission = " + num2str(abs((max_expected - max_BS_transmission)/max_expected)) + " and should be less than "+ num2str(relative_backscatter_max_tolerance);
+        } else if (max_BS_transmission < max_expected){
+            ?msg6 = "Passed! Max backscatter transmission is below estimated threshold";
+        }else{
+            ?msg6 = "Passed! Max backscatter transmission = " + num2str(abs((max_expected - max_BS_transmission)/max_expected)) + " and should be less than " + num2str(relative_backscatter_max_tolerance);
+        }
+
+        
+        
+        
+    }
+
+}else{     # skip the QA if the data was discontinuous for current parameter combination (indicated by large loss in the data inserted in parameter extraction) 
+	discontinuous_data = true;
+	pass1 = true;
+	pass2 = true;
+	pass3 = true;
+	pass4 = true;
+	?msg1 = "Discontinuous data detected for current combination of parameters. neff QA was skipped!";
+	?msg2 = "Discontinuous data detected for current combination of parameters. ng QA was skipped!";
+	?msg3 = "Discontinuous data detected for current combination of parameters. D QA was skipped!";
+	?msg4 = "Discontinuous data detected for current combination of parameters. loss QA was skipped!";
+	if (enable_backscatter == true){
+        pass5 = true;
+    	pass6 = true;
+	    ?msg5 = "Discontinuous data detected for current combination of parameters. enforce passivity QA was skipped!";
+	    ?msg6 = "Discontinuous data detected for current combination of parameters. max backscatter QA was skipped!";
+	}
+}
+
+assert(msg1,pass1);
+assert(msg2,pass2);
+assert(msg3,pass3);
+assert(msg4,pass4);
+if (enable_backscatter == true){
+    assert(msg5,pass5);
+    assert(msg6,pass6);
+    if (!(pass1 & pass2 & pass3 & pass4 & pass5 & pass6)) {
+	error_count = error_count + 1;
+	if (break_at_failure) {
+		break;
+	}
+    }
+}else if (!(pass1 & pass2 & pass3 & pass4)) {
+	error_count = error_count + 1;
+	if (break_at_failure) {
+		break;
+	}
+}

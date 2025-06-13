@@ -1,0 +1,146 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="voa_stat_te_c";
+library_name="lumfoundry_template::Phase Shifters";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\voa_stat_te_c\voa_stat_te_c.json');
+feval('/aux_scripts/phase_shifter_electrical_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'voa_stat_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 1. Initilizing variables and environment [DO NOT EDIT THIS SECTION]
+time_window = 4e-9;
+sample_rate = 5e12;
+delay = 4e-10;
+fmax = 500e9;
+
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+error_count = 0;
+groupscope("::Root Element"); #return to root
+
+set("time window",time_window);
+set("sample rate",sample_rate);
+
+fspan=sample_rate;
+N_modes = length(mode_data);
+Operating_Wavelength = wavelength_data;
+
+L_active = L_all(3);
+dneff_dT=mult(L_all, transpose(dneff_dT_all))/sum(L_all);
+
+isDoubleModulator = false;
+if(exist('ele_an_2_RELAY')){
+    if(ele_an_2_RELAY != 0){
+        isDoubleModulator = true;
+    }
+}
+
+optical_attenuator = 0;
+if (exist("Attn_eff")){
+    optical_attenuator = 1;
+}
+
+isFB_PINmodulator = false;
+if (exist("IV_data") and !optical_attenuator){
+    isFB_PINmodulator = true;
+    if(!exist("test_temperature")){
+        test_temperature = 300;
+    }
+}
+
+if(!exist('IL_rel_tolerance')){
+    IL_rel_tolerance = 1e-3;
+}
+
+#backwards compatibility
+temp = cell(3);
+temp{1} = "Vpi_Lpi";
+temp{2} = "IL";
+temp{3} = "Attn_eff";
+
+for(i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM_name = " + temp{i} + ";");
+        if(isfield(FOM_name, 'default_value')){
+            if(length(FOM_name.default_value)==1){
+                temp_save = num2str(FOM_name.default_value);
+                eval(temp{i}+"="+temp_save+";");
+            }else{
+                temp_save1 = num2str(FOM_name.default_value(1));
+                temp_save2 = num2str(FOM_name.default_value(2));
+                eval(temp{i}+"=["+temp_save1+ ","+temp_save2+"];");
+            }
+        }
+    }
+}
+
+### 2. QA options and settings
+break_at_failure = false; # stop the QA when an error is encountered if set to true
+create_plots = true; # automatically generate plots if set to true
+V_num = 11; # Number of voltage points for testing
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 100.";
+        N_trials = 100;
+    }
+
+    if(!exist('stat_IL_tolerance')){
+        ?"No user provided value for stat_IL_tolerance. Using default value of stat_IL_tolerance = 0.001 dB.";
+        stat_IL_tolerance = 0.001; 
+    }
+
+    if (optical_attenuator){
+        if(!exist('stat_Attn_eff_tolerance')){
+            ?"No user provided value for stat_Attn_eff_tolerance. Using default value of stat_Attn_eff_tolerance = 1e-5 dB/mA.";
+            stat_Attn_eff_tolerance = 1e-5; 
+        }
+    }else{
+        if(!exist('stat_Vpi_Lpi_tolerance')){
+            ?"No user provided value for stat_Vpi_Lpi_tolerance. Using default value of stat_Vpi_Lpi_tolerance = 1e-5 V-m.";
+            stat_Vpi_Lpi_tolerance = 1e-5; 
+        }
+    }    
+}

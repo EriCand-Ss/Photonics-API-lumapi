@@ -1,0 +1,143 @@
+{
+  "general" : 
+  { 
+    "prefix" : "EPS"
+  },
+  "ports" : 
+  {
+    "port_1":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "port_1",
+      "pos" : "Left",
+      "type" : "Optical Signal", 
+      "order":1
+    },
+    "port_2":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "port_2",
+      "pos" : "Right",
+      "type" : "Optical Signal", 
+      "order":2
+    },
+    "Anode":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "Anode",
+      "pos" : "Top",
+      "type" : "Electrical Signal", 
+      "order":3
+    },
+    "Cathode":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "Cathode",
+      "pos" : "Bottom",
+      "type" : "Electrical Signal", 
+      "order":4
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1":
+    {
+      "name": "temperature",
+      "default": 300,
+      "min": 250.0,
+      "max": 450.0,
+      "unit": "K",
+      "visible_to_user": 1
+    },
+    "parameter_2": 
+    {
+      "name" : "wg_length",
+      "min":0.0001,
+      "max":0.1,
+      "unit" : "um",
+      "default" : 0.0005,
+      "visible_to_user" : 1
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "veriloga_custom_element",
+    "veriloga_script_filename" : "eps_custom_core.va",
+    "debug_mode":0,
+    "mode_number":2, 
+    "ele_eq_ctk":{
+      "subcircuit_name":"eps_custom_electrical_equivalent",
+      "port_connections":{
+        "opt_to_external":{
+          "4":"4"
+        },
+        "ele_to_external":{
+          "1":"3",
+          "2":"4"
+        },
+        "ele_to_opt":{
+          "2":"4",
+          "3":"3"
+        }
+      }
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_height"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.8
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.4, 2.4 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_height",
+        "slope_neff" : 0.006,
+        "slope_ng" : 0.0027
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_width"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.7
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.1, 2.1 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_width",
+        "slope_neff" : 0.007,
+        "slope_ng" : -0.0063
+      }
+    }
+  }
+}
+
+     

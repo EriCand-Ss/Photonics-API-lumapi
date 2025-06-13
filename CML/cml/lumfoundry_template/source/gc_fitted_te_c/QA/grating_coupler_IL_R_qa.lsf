@@ -1,0 +1,177 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.
+
+# Unauthorized use, distribution, or duplication is prohibited.
+# This product is subject to U.S. laws governing export and re-export.
+
+# For full Legal Notice, see documentation.
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");      
+}
+err=error_count;
+
+
+# Insertion loss and reflection tests in frequency domain
+if (designmode){run;}
+
+IL21_dB = IL12_dB = R1test_dB = R2test_dB = cell(mode_no);
+S11 = S21 = S12 = S22 = cell(mode_no);
+
+
+for(ind = 1:mode_no){
+    S21{ind} = getresult(ONA_name1{ind},"input 1/mode 1/gain");
+    S11{ind} = getresult(ONA_name1{ind},"input 2/mode 1/gain");
+    
+    S12{ind} = getresult(ONA_name2{ind},"input 1/mode 1/gain");
+    S22{ind} = getresult(ONA_name2{ind},"input 2/mode 1/gain");
+    
+    peak_wl=getresult(ONA_name1{ind},"input 1/mode 1/peak/frequency");
+    peak_wl_300 = peak_wl;  # save peak_wl at room temp.
+    
+    gain_type = mode_label{ind} + " gain (dB)";
+    
+    IL21_dB{ind} = S21{ind}.getattribute(gain_type);
+    IL12_dB{ind} = S12{ind}.getattribute(gain_type);
+    
+    R1test_dB{ind} = S11{ind}.getattribute(gain_type);
+    R2test_dB{ind} = S22{ind}.getattribute(gain_type);
+    
+    
+    if (ind==mainpol_ID){
+        wavelength = S21{ind}.wavelength;
+     
+        msg = "Insertion loss (from S21) for "+ mode_label{ind} +"has been changed by: " + num2str(abs(IL21_dB{ind}-peak_IL_dB(ind)));
+        pass = abs((max(IL21_dB{ind})-peak_IL_dB(ind))/peak_IL_dB(ind)) <= loss_tolerance;
+        if(!pass) {
+            ? "ERROR - loss (S21) for "+ mode_label{ind} +" problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Insertion loss (from S12) for "+ mode_label{ind} +" has been changed by: " + num2str(abs(IL12_dB{ind}-peak_IL_dB(ind)));
+        pass = abs((max(IL12_dB{ind})-peak_IL_dB(ind))/peak_IL_dB(ind)) <= loss_tolerance;
+        if(!pass) {
+            ? "ERROR - loss (S12) for "+ mode_label{ind} +" problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Reflection at port 1 for "+ mode_label{ind} +" has been changed by: " + num2str(max(R1test_dB{ind}-R1_dB(ind)));
+        pass = abs((max(R1test_dB{ind})-R1_dB(ind))/R1_dB(ind)) <= reflection_tolerance;
+        if(!pass) {
+            ? "ERROR - R1 for "+ mode_label{ind} +" problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Reflection at port 2 for "+ mode_label{ind} +" has been changed by: " + num2str(abs(R2test_dB{ind}-R2_dB(ind)));
+        pass = abs((max(R2test_dB{ind})-R2_dB(ind))/R2_dB(ind)) <= reflection_tolerance;
+        if(!pass) {
+            ? "ERROR - R2 for "+ mode_label{ind} +" problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+}
+#6.Run time domain simulation and get results
+
+switchtolayout;
+for(ind = 1:mode_no){
+    setnamed(ONA_name1{ind},"analysis type","impulse response");
+    setnamed(ONA_name2{ind},"analysis type","impulse response"); }
+    
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+    S11_time = S21_time = S12_time = S22_time = cell(mode_no);
+    IL21_dB_time = IL12_dB_time = R1test_dB_time = R2test_dB_time = cell(mode_no);
+    diff_IL21=diff_IL12=diff_R1=diff_R2=cell(mode_no);
+    
+    for(ind = 1:mode_no){
+        S21_time{ind} = getresult(ONA_name1{ind},"input 1/mode 1/gain");
+        S11_time{ind} = getresult(ONA_name1{ind},"input 2/mode 1/gain");
+        
+        S12_time{ind} = getresult(ONA_name2{ind},"input 1/mode 1/gain");
+        S22_time{ind} = getresult(ONA_name2{ind},"input 2/mode 1/gain");
+        
+        gain_type = mode_label{ind} + " gain (dB)";
+        
+        IL21_dB_time{ind} = S21_time{ind}.getattribute(gain_type);
+        IL12_dB_time{ind} = S12_time{ind}.getattribute(gain_type);
+        
+        R1test_dB_time{ind} = S11_time{ind}.getattribute(gain_type);
+        R2test_dB_time{ind} = S22_time{ind}.getattribute(gain_type);
+        
+        #7.Compare frequency and time domain
+        
+        compare_time_bandwidth_fraction = 0.5; # only compare in middle region
+        f1 = c/max(wavelength);
+        f2 = c/min(wavelength);
+        fc = 0.5*(f1+f2);
+        f = c/wavelength;
+        pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+        diff_S21 = max(abs(IL21_dB_time{ind}(pos)- IL21_dB{ind}(pos)));
+        diff_S12 = max(abs(IL12_dB_time{ind}(pos)-IL12_dB{ind}(pos)));
+        diff_S11 = max(abs(R1test_dB_time{ind}(pos)-R1test_dB{ind}(pos)));
+        diff_S22 = max(abs(R2test_dB_time{ind}(pos)-R2test_dB{ind}(pos)));
+        
+        
+        msg = "Comparison of insertion loss (from S21) in frequency and time domain tests for "+ mode_label{ind} +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S21) + " and should be less than " + num2str(time_tolerance);
+        pass = diff_S21 <= time_tolerance;
+        if(!pass) {
+            ? "ERROR - Insertion loss (from S21) time domain vs frequency domain problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Comparison of insertion loss (from S12) in frequency and time domain tests for "+ mode_label{ind} +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S12) + " and should be less than " + num2str(time_tolerance);
+        pass = diff_S21 <= time_tolerance;
+        if(!pass) {
+            ? "ERROR - Insertion loss (from S12) time domain vs frequency domain problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Comparison of reflection at port 1 in frequency and time domain tests for "+ mode_label{ind} +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S11) + " and should be less than " + num2str(time_tolerance);
+        pass = diff_S11 <= time_tolerance;
+        if(!pass) {
+            ? "ERROR - Reflection at port 1 time domain vs frequency domain problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Comparison of reflection at port 2 in frequency and time domain tests for "+ mode_label{ind} +"over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S22) + " and should be less than " + num2str(time_tolerance);
+        pass = diff_S22 <= time_tolerance;
+        if(!pass) {
+            ? "ERROR - Reflection at port 2 time domain vs frequency domain problem";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+    }
+    
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }

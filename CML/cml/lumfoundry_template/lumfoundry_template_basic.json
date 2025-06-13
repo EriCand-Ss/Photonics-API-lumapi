@@ -1,0 +1,90 @@
+{
+  "foundry_name": "lumfoundry_template_basic",
+  "version_suffix": "4.0",
+  "process_prefix": "lum_",
+  "veriloga": {
+    "NumOfChannel": 2
+  },
+  "element_list": [
+    {
+      "element_name": "container_element_child1"
+    },
+    {
+      "element_name": "container_element_child2"
+    },
+    {
+      "element_name": "container_example",
+      "remove_sub_elements": "True",
+      "sub_element_list": [
+        {
+          "sub_element_name": "container_element_child1",
+          "selection_code": "set('mmi_type','TE');"
+        },
+        {
+          "sub_element_name": "container_element_child2",
+          "selection_code": "set('mmi_type','TM');"
+        }
+      ]
+    },
+    {
+      "element_name": "apd_c"
+    },
+    {
+      "element_name": "eam_te_c"
+    },
+    {
+     "element_name": "custom_veriloga_eps"
+    },
+    {
+      "element_name": "gc_fitted_te_c"
+    },
+    {
+      "element_name": "mmi_1x2_strip_te_c"
+    },
+    {
+      "element_name": "mzi_thermal_unbalanced_te_c"
+    },
+    {
+      "element_name": "mzi_thermal_2x2_te_c"
+    },
+    {
+      "element_name": "pd_c"
+    },
+    {
+      "element_name": "pd_pcell_c"
+    },
+    {
+      "element_name": "pdc_strip_c"
+    },
+    {
+      "element_name": "ps_pn_te_c"
+    },
+    {
+      "element_name": "ps_thermal_te_c"
+    },
+    {
+      "element_name": "ptaper_strip_c"
+    },
+    {
+      "element_name": "rm_db_pcell_strip_te_c"
+    },
+    {
+      "element_name": "rr_strip_te_c"
+    },
+    {
+      "element_name": "rs_strip_te_c"
+    },
+    {
+      "element_name": "scripted_wg"
+    },
+    {
+      "element_name": "wg_back_annotation"
+    },
+    {
+      "element_name": "wg_strip_straight_c"
+    },
+    {
+      "element_name": "wg_strip_straight_parameterized"
+    }
+  ]
+}

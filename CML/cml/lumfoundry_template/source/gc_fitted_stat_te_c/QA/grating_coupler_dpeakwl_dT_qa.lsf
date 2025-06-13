@@ -1,0 +1,51 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");     
+}
+err=error_count;
+
+
+# Thermal shift in Peak wavelength in frequency domain
+if (designmode){run;}
+
+if (!exist("peak_wl_300")){
+    peak_wl_300 = getresult(ONA_name1{mainpol_ID},"input 1/mode 1/peak/frequency");
+}
+peak_wl_330=getresult(ONA_name1_330,"input 1/mode 1/peak/frequency");    
+dpeakwavelength_dT_mainpol_test = (peak_wl_330 - peak_wl_300) / 30;
+
+msg = "Change in peak wavelength with change in temperature for "+ mode_label{mainpol_ID} +" has been changed by: " + num2str(abs(dpeakwavelength_dT_mainpol_test-dpeakwavelength_dT_mainpol));
+if (dpeakwavelength_dT_mainpol !=0){
+    pass = abs((dpeakwavelength_dT_mainpol_test-dpeakwavelength_dT_mainpol)/dpeakwavelength_dT_mainpol) <= dpeakwavelength_dT_mainpol_rel_tolerance;
+}
+else {
+    pass = abs(dpeakwavelength_dT_mainpol_test-dpeakwavelength_dT_mainpol) <= dpeakwavelength_dT_mainpol_rel_tolerance; # Absolute error is checked instead of relative error for this case.
+}
+
+if(!pass) {
+    ? "ERROR - Change in peak wavelength with change in temperature for "+ mode_label{mainpol_ID} + " mode is " + num2str(dpeakwavelength_dT_mainpol_test) + " m/K, and should be " + num2str(dpeakwavelength_dT_mainpol) + " m/K.";
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }   
+  
+ if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

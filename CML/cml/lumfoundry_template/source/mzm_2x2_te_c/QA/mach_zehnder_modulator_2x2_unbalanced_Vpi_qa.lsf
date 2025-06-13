@@ -1,0 +1,174 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_2x2_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_2x2_init_qa.lsf");      
+}
+err=error_count;
+
+if (unbalanced_MZM and mzm_electrical){
+    new;
+    fspan=sample_rate_unbalanced;
+    sample_rate=sample_rate_unbalanced;
+
+    select("::Root Element::");
+    set("sample rate",sample_rate);
+
+    ## Test circuit 5: Vpi
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT2_name = get("name");
+    set("x position", -140+500);
+    set("y position", 35);
+    #!#set("internal electrical equivalent",false);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT3_name = get("name");
+    set("x position", -140+500);
+    set("y position", 210);
+    #!#set("internal electrical equivalent",false);
+
+    addelement("Optical Splitter");
+    Split1_name = get("name");
+    set("x position", 185);
+    set("y position", 125);
+
+    addelement("DC Source");
+    DC2_name = get("name");
+    set("x position", -140+500);
+    set("y position", -185);
+    set("amplitude",0);
+
+    addelement("DC Source");
+    DC3_name = get("name");
+    set("x position", 550);
+    set("y position", -185);
+        if(bias_node=="anode"){set("amplitude",Vpi_electrical_voltage1);}
+        if(bias_node=="cathode"){set("amplitude",-Vpi_electrical_voltage1);}
+
+    addelement("DC Source");
+    DC4_name = get("name");
+    set("x position", -140+500);
+    set("y position", 400);
+        if(bias_node=="anode"){set("amplitude", Vpi_electrical_voltage2);}
+        if(bias_node=="cathode"){set("amplitude", -Vpi_electrical_voltage2);}
+        
+    lambda_c = notch_wavelength;
+    f_c=c/lambda_c;
+
+    addelement("Optical Network Analyzer");
+    ONA2_name = get("name");
+    set("x position", -390+500);
+    set("y position", -115);
+    set("analysis type","scattering data");
+    set("center frequency",f_c);
+    set("frequency range",fspan);
+    set("number of points",round( fspan*1e-9 ) );
+    set("plot kind", "wavelength");
+    set("peak at maximum",false);
+    set("number of input ports", 2);
+
+    if(use_travelling_wave_electrode){
+        setnamed(ONA2_name, "analysis type", "impulse response");
+        setnamed(ONA2_name, "delay", delay);
+    }
+
+    connect(ONA2_name,"output",Split1_name,"input");
+    connect(Split1_name,"output 1",DUT2_name,ports{opt_1_RELAY}.name);
+    connect(Split1_name,"output 2",DUT3_name,ports{opt_1_RELAY}.name);
+    connect(ONA2_name,"input 1",DUT2_name,ports{opt_3_RELAY}.name);
+    connect(ONA2_name,"input 2",DUT3_name,ports{opt_3_RELAY}.name);
+
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+
+    try{connect(DC2_name,"output",DUT2_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+
+    try{connect(DC2_name,"output",DUT3_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+
+    if(bias_node=="anode"){
+            try{connect(DC3_name,"output",DUT2_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+            try{connect(DC4_name,"output",DUT3_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+            try{connect(DC2_name,"output",DUT2_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+            try{connect(DC2_name,"output",DUT3_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+        }
+    if(bias_node=="cathode"){
+            try{connect(DC3_name,"output",DUT2_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+            try{connect(DC4_name,"output",DUT3_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+            try{connect(DC2_name,"output",DUT2_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+            try{connect(DC2_name,"output",DUT3_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+        }
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 5: Vpi
+    if(create_plots){
+        gain1_result = getresult(ONA2_name,"input 1/mode 1/gain");
+        wl = gain1_result.wavelength;
+        gain1 = getresultdata(ONA2_name,"input 1/mode 1/gain");
+        gain2 = getresultdata(ONA2_name,"input 2/mode 1/gain");
+        plot(wl*1e9, gain1, gain2, 'wavelength [nm]', 'gain [dB]', model+' Vpi test');
+        legend(num2str(Vpi_electrical_voltage1)+" V", num2str(Vpi_electrical_voltage2)+" V");
+    }
+
+    peaks1 = wl(findpeaks(-gain1, 10));
+    reslambda1 = peaks1(find(peaks1, lambda_c));
+
+    peaks2 = wl(findpeaks(-gain2, 10));
+    reslambda2 = peaks2(find(peaks2, reslambda1));
+    FSR_model = FSR;
+    FSR_f_model = abs(c/(lambda_c - FSR_model/2)-c/(lambda_c + FSR_model/2));
+    ng_model = c/(FSR_f_model*imbalance_length.default);
+    fres1 = c/reslambda1;
+    fres2 = c/reslambda2;
+    f0 = c/wavelength_data;
+    dneff_test = ( ng_model*(fres2-fres1)/f0 ) * imbalance_length.default/L1_all(4);
+    delta_phase = dneff_test/wavelength_data*2*pi*L1_all(4);
+    Vpi_test = longer_arm * (Vpi_electrical_voltage2 - Vpi_electrical_voltage1) / delta_phase * pi;  # the first term defines the sign (+/-)
+
+    msg = "Vpi_is "+num2str(Vpi_test)+" V and it should be "+num2str(Vpi_electrical)+" V";
+    change = abs(abs(Vpi_test)-abs(Vpi_electrical))/abs(Vpi_electrical);
+    pass = change < Vpi_electrical_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

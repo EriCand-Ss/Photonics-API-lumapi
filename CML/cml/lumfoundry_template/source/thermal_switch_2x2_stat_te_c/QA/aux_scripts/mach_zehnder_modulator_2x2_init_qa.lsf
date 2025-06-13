@@ -1,0 +1,242 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="thermal_switch_2x2_stat_te_c";
+library_name="lumfoundry_template::Modulators";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\thermal_switch_2x2_stat_te_c\thermal_switch_2x2_stat_te_c.json');
+feval('/aux_scripts/mach_zehnder_modulator_2x2_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'thermal_switch_2x2_stat_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# Initialise global variables
+closeall;
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+unbalanced_MZM = false;
+fspan = sample_rate = 100e9; # a lower sample rate for balanced MZM
+
+### Initialise QA environment
+if(exist("ele_cat_1_RELAY")){
+    mzm_electrical = 1;
+} else {
+    mzm_electrical = 0;
+}
+if(exist("ele_th_1_RELAY")) {
+    mzm_thermal = 1;
+}else{
+    mzm_thermal = 0;
+}
+
+if(exist('thermal_tuner')){
+    if(!thermal_tuner){
+        mzm_thermal = 0;
+    }
+}
+
+if(!exist('Operating_Wavelength')){
+    Operating_Wavelength=wavelength_data;
+}
+
+if(imbalance_length.default!=0){
+    fspan = sample_rate_unbalanced = 8e12; # a higher sample rate for unbalanced MZM
+    unbalanced_MZM = true;
+}
+if(!exist('wavelength_data')){
+    wavelength_data=wavelength_data;
+}
+if(!exist('use_travelling_wave_electrode')){
+    use_travelling_wave_electrode = false;
+}
+
+groupscope("::Root Element"); #return to root
+set("sample rate", sample_rate);
+
+# backward compatibility
+temp = cell(10);
+temp{1} = "notch_wavelength"; temp{2} = "FSR"; temp{3} = "IL"; temp{4} = "ER_V1"; 
+temp{5} = "ER_V2"; temp{6} = "S13"; temp{7} = "S14"; temp{8} = "Vpi_electrical"; temp{9} = "Ppi_thermal"; temp{10} = "dneff_dT";
+
+## Backward compatibility
+for (i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM_name = " + temp{i} + ";");
+        if(isfield(FOM_name, 'default_value')){
+            temp_save = num2str(FOM_name.default_value);
+            eval("clear("+temp{i}+");");
+            eval(temp{i}+"="+temp_save+";");
+        }
+    }
+}
+
+if(mzm_thermal){
+    if(!exist("IV") and !exist("R_thermal_tuner")){
+        R_thermal_tuner = 100;
+    }
+    if(!exist("Vpi_thermal")){
+        if(exist("IV")){
+            Vpi_thermal = interp(IV(:,1), IV(:,1)*IV(:,2), Ppi_thermal);
+        }
+        else{
+            Vpi_thermal = sqrt(Ppi_thermal * R_thermal_tuner);
+        }
+    }    
+    if(!exist("Ppi_thermal")){
+        lock_Ppi_thermal = lock_Vpi_thermal;
+        if(exist("IV")){
+            Ipi_thermal = interp(IV(:,2),IV(:,1),Vpi_thermal);
+            Ppi_thermal = Vpi_thermal*Ipi_thermal;
+            
+            Ipi_thermal1 = interp(IV(:,2),IV(:,1),Vpi_thermal_voltage1);
+            Ipi_thermal2 = interp(IV(:,2),IV(:,1),Vpi_thermal_voltage2);
+            
+            Ppi_thermal_power1 = Vpi_thermal_voltage1*Ipi_thermal1;
+            Ppi_thermal_power2 = Vpi_thermal_voltage2*Ipi_thermal2;
+        }else{
+            if(exist("R_thermal_tuner")){
+                Ppi_thermal = Vpi_thermal^2 / R_thermal_tuner;
+                Ppi_thermal_power1 = Vpi_thermal_voltage1^2 / R_thermal_tuner;
+                Ppi_thermal_power2 = Vpi_thermal_voltage2^2 / R_thermal_tuner;
+            }
+        }
+    }
+    
+    if(!exist("Ppi_thermal_tolerance")){
+        Ppi_thermal_tolerance = Vpi_thermal_tolerance;
+    }
+}
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user-provided value for N_trials. Using default value of N_trials = 100.";
+        N_trials = 100;
+    }
+    if(!exist(temp{6})){
+        if(!exist('stat_FSR_tolerance')){
+            ?"No user-provided value for stat_FSR_tolerance. Using default value of stat_FSR_tolerance = 1e-12.";
+            stat_FSR_tolerance = 1e-12; 
+        }
+
+        if(!exist('stat_IL_tolerance')){
+            ?"No user-provided value for stat_IL_tolerance. Using default value of stat_IL_tolerance = 0.01.";
+            stat_IL_tolerance = 0.01; 
+        }
+
+        if(!exist('stat_notch_tolerance')){
+            ?"No user-provided value for stat_notch_tolerance. Using default value of stat_notch_tolerance = 1e-11.";
+            stat_notch_tolerance = 1e-11; 
+        }
+
+        if(!exist('stat_ER_tolerance')){
+            ?"No user-provided value for stat_ER_tolerance. Using default value of stat_ER_tolerance = 0.1.";
+            stat_ER_tolerance = 0.1; 
+        }
+
+        if(!exist('stat_Vpi_tolerance')){
+            ?"No user-provided value for stat_Vpi_tolerance. Using default value of stat_Vpi_tolerance = 0.01.";
+            stat_Vpi_tolerance = 0.01; 
+        }
+        if(!exist('stat_f3dB_tolerance')){
+            ?"No user-provided value for stat_f3dB_tolerance. Using default value of stat_f3dB_tolerance = 1e3.";
+            stat_f3dB_tolerance = 1e3; 
+        }    
+    }
+    if(mzm_thermal){
+        if(!exist('stat_Ppi_tolerance')){
+            ?"No user-provided value for stat_Ppi_tolerance. Using default value of stat_Ppi_tolerance = 0.01.";
+            stat_Ppi_tolerance = 0.01; 
+        } 
+    }        
+}
+
+if(!exist("BW_qa_type")){
+    BW_qa_type = 1;
+}
+
+if(!exist("BW_bias")){
+    BW_bias = -1;
+}
+
+# calculate necessary test parameters
+if(mzm_thermal){
+    if(exist("IV")){
+        P = IV(:,1)*IV(:,2);
+        Ppi_thermal_voltage1 = interp(IV(:,1),P,Ppi_thermal_power1);
+        Ppi_thermal_voltage2 = interp(IV(:,1),P,Ppi_thermal_power2);
+    }else{
+        if(exist("R_thermal_tuner")){
+            Ppi_thermal_voltage1 = sqrt(Ppi_thermal_power1 * R_thermal_tuner);
+            Ppi_thermal_voltage2 = sqrt(Ppi_thermal_power2 * R_thermal_tuner);
+        }
+    }
+    if(!exist('thermal_BW_tolerance')){
+        thermal_BW_tolerance = 1e-2;
+    }  
+    if(!exist('thermal_BW_bias')){
+    thermal_BW_bias = 1.5;  
+    }    
+}
+# QA options
+create_plots = true;
+break_at_failure = false;
+if(!exist('V_num')){
+V_num = 20; # Number of bias voltage points
+}
+delay = 8e-10; # For ONA impulse response setting
+
+
+if(unbalanced_MZM) {
+    lambda_c = notch_wavelength;
+    f_c=c/lambda_c;
+}
+
+
+if(mzm_electrical){
+    if(!exist('bias_node')){
+        bias_node = "anode";
+    }
+    if(!exist('Vpi_electrical_tolerance')){
+        Vpi_electrical_tolerance = 1e-2;
+    }
+}
+error_count = 0;

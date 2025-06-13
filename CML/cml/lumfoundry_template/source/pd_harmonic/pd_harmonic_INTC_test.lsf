@@ -1,0 +1,39 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'photodetector_simple' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+# QA description:  This script performs the following tests
+?QA_description = "
+This QA performs the following time domain tests:
+1. dark current test.
+2. photocurrent test.
+3. bandwidth test.
+";
+
+# Test dark and photocurrent
+feval("photodetector_simple_Idark_Iphoto_qa.lsf");
+
+# Test bandwidth
+feval("photodetector_simple_BW_qa.lsf");    
+
+# Statistical QA
+feval("photodetector_simple_statistical_qa.lsf");
+
+# Print final message in Script Prompt
+if (error_count>0) {?"error_count = " + num2str(error_count);}
+else {?"All tests completed";}pause(2);

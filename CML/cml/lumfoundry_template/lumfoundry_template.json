@@ -1,0 +1,302 @@
+{
+  "foundry_name": "lumfoundry_template",
+  "version_suffix": "4.0",
+  "process_prefix": "lum_",
+  "veriloga": {
+    "NumOfChannel": 2
+  },
+  "element_list": [
+    {
+      "subfolder_name": "Waveguides",
+      "elements": [
+        {
+          "element_name": "wg_strip_straight_c"
+        },
+        {
+          "element_name": "wg_strip_straight_parameterized"
+        },
+        {
+          "element_name": "wg_strip_arc_parameterized"
+        },
+        {
+          "element_name": "wg_strip_sbend_parameterized"
+        },
+        {
+          "element_name": "wg_bend_90"
+        },
+        {
+          "element_name": "wg_back_annotation"
+        },
+        {
+          "element_name": "wg_backscatter"
+        },
+        {
+          "element_name": "wg_stat_strip_straight_c"
+        },
+        {
+          "element_name": "wg_stat_strip_straight_parameterized"
+        },
+        {
+          "element_name": "wg_connector"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Modulators",
+      "elements": [
+        {
+          "element_name": "eam_te_c"
+        },
+        {
+          "element_name": "rm_strip_te_c"
+        },
+        {
+          "element_name": "rm_db_strip_te_c"
+        },
+        {
+          "element_name": "rm_db_pcell_strip_te_c"
+        },
+        {
+          "element_name": "rs_strip_te_c"
+        },
+        {
+          "element_name": "mzm_unbalanced_te_c"
+        },
+        {
+          "element_name": "mzm_balanced_te_c"
+        },
+        {
+          "element_name": "mzm_unbalanced_tw_te_c"
+        },
+        {
+          "element_name": "mzm_2x2_te_c"
+        },
+        {
+          "element_name": "thermal_switch_te_c"
+        },
+        {
+          "element_name": "thermal_switch_2x2_te_c"
+        },
+        {
+          "element_name": "rm_stat_strip_te_c"
+        },
+        {
+          "element_name": "rm_db_stat_fom_strip_te_c"
+        },
+        {
+          "element_name": "rm_stat_fom_strip_te_c"
+        },
+        {
+          "element_name": "mzm_stat_unbalanced_te_c"
+        },
+        {
+          "element_name": "mzm_stat_fom_unbalanced_te_c"
+        },
+        {
+          "element_name": "mzm_2x2_stat_fom_te_c"
+        },
+        {
+          "element_name": "thermal_switch_stat_te_c"
+        },
+        {
+          "element_name": "thermal_switch_2x2_stat_te_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Resonators",
+      "elements": [
+        {
+          "element_name": "rr_strip_te_c"
+        },
+        {
+          "element_name": "rr_stat_strip_te_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Interferometers",
+      "elements": [
+        {
+          "element_name": "mzi_thermal_unbalanced_te_c"
+        },
+        {
+          "element_name": "mzi_thermal_2x2_te_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Phase Shifters",
+      "elements": [
+        {
+          "element_name": "ps_pn_te_c"
+        },
+        {
+          "element_name": "voa_stat_te_c"
+        },
+        {
+          "element_name": "ps_pin_te_c"
+        },
+        {
+          "element_name": "ps_pn_tw_te_c"
+        },
+        {
+          "element_name": "ps_thermal_te_c"
+        },
+        {
+          "element_name": "ps_pn_stat_te_c"
+        },
+        {
+          "element_name": "ps_thermal_stat_te_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Couplers",
+      "elements": [
+        {
+          "element_name": "dc_strip_te_c"
+        },
+        {
+          "element_name": "mmi_1x2_strip_te_c"
+        },
+        {
+          "element_name": "mmi_1x2_strip_te_c_thermal"
+        },
+        {
+          "element_name": "pdc_strip_c"
+        },
+        {
+          "element_name": "ptaper_strip_c"
+        },
+        {
+          "element_name": "ptaper_pr_c"
+        },
+        {
+          "element_name": "mmi_1x2_stat_strip_te_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Optical IO",
+      "elements": [
+        {
+          "element_name": "gc_strip_te_c"
+        },
+        {
+          "element_name": "gc_fitted_te_c"
+        },
+        {
+          "element_name": "gc_raw_spar_stat_te_c"
+        },
+        {
+          "element_name": "gc_fitted_stat_te_c"
+        },
+        {
+          "element_name": "fiber_array_8x8_stat_c"
+        }
+      ]
+    },
+    {
+      "subfolder_name": "Photodetectors",
+      "elements": [
+        {
+          "element_name": "apd_c"
+        },
+        {
+          "element_name": "pd_c"
+        },
+        {
+          "element_name": "pd_pcell_c"
+        },
+        {
+          "element_name": "pd_pcell_stat_c"
+        },
+        {
+          "element_name": "apd_stat_c"
+        },
+        {
+          "element_name": "pd_stat_c"
+        },
+        {
+          "element_name": "pd_harmonic"
+        }
+      ]
+    },
+    {
+      "element_name": "compound_rm_stat"
+    },
+    {
+      "element_name": "container_element_child1"
+    },
+    {
+      "element_name": "container_element_child2"
+    },
+    {
+      "element_name": "container_example",
+      "remove_sub_elements": "True",
+      "sub_element_list": [
+        {
+          "sub_element_name": "container_element_child1",
+          "selection_code": "set('mmi_type','TE');"
+        },
+        {
+          "sub_element_name": "container_element_child2",
+          "selection_code": "set('mmi_type','TM');"
+        }
+      ]
+    },
+    {
+      "element_name": "scripted_grating_stat"
+    },
+    {
+      "element_name": "scripted_wg"
+    }, 
+    {
+     "element_name": "custom_veriloga_eps"
+    }
+  ],
+  "statistical_data": {
+    "statistical_parameter_status": "open",
+    "nominal_value_type": "mode",
+    "GLOBALGROUP_list": [
+      {
+        "GLOBALGROUP_name": "global_delta_width",
+        "distribution": "normal",
+        "sigma": 1.0
+      },
+      {
+        "GLOBALGROUP_name": "global_delta_height",
+        "distribution": "normal",
+        "sigma": 1.0
+      },
+      {
+        "GLOBALGROUP_name": "global_delta_ridge_height",
+        "distribution": "normal",
+        "sigma": 1.0
+      }
+    ],
+    "CORRGROUP_list": [
+      {
+        "CORRGROUP_name": "corr_delta_width",
+        "correlation_length": 0.003
+      },
+      {
+        "CORRGROUP_name": "corr_delta_height",
+        "correlation_length": 0.01
+      },
+      {
+        "CORRGROUP_name": "corr_delta_ridge_height",
+        "correlation_length": 0.003
+      }
+    ],
+    "corner_list": [
+      {
+        "corner_name": "corner_1"
+      },
+      {
+        "corner_name": "corner_2"
+      }
+    ]
+  }
+}

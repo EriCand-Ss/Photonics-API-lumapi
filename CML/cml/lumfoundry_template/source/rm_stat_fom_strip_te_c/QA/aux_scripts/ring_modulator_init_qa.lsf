@@ -1,0 +1,225 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="rm_stat_fom_strip_te_c";
+library_name="lumfoundry_template::Modulators";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\rm_stat_fom_strip_te_c\rm_stat_fom_strip_te_c.json');
+feval('/aux_scripts/ring_modulator_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'rm_stat_fom_strip_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+closeall;
+## Initialise variables
+create_plots = true;
+error_count = 0;
+break_at_failure = false;
+test_thermal_BW = false;
+
+
+fspan = sample_rate;  # input from the source file
+
+
+new;
+set("monitor data","save to memory");
+set("sample rate",fspan);
+design_kit_name = '::design kits::' + library_name + "::";
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+#backwards compatibility
+temp = cell(9);
+temp{1} = "FSR"; temp{2} = "IL"; temp{3} = "Q"; temp{4} = "mod_eff"; temp{5} = "mod_eff_thermal"; temp{6} = "dneff_dT";temp{7} = "resonant_wavelength";temp{8} = "IL_drop";temp{9} = "ER";
+
+for (i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM_name = " + temp{i} + ";");
+        if(isfield(FOM_name,"data") & temp{i}=='mod_eff'){
+            eval( temp{i} + "= FOM_name.data;");
+        }
+        else if(isfield(FOM_name, 'default_value')){
+            temp_save = num2str(FOM_name.default_value);
+            eval("clear("+temp{i}+");");
+            eval(temp{i}+"="+temp_save+";");
+        }
+    }
+}
+
+if(exist("ele_cat_RELAY")){
+    ring_resonator = 0;
+} else {
+    ring_resonator = 1;
+}
+if(exist("ele_th_1_RELAY")) {
+    ring_passive = 0;
+}else{
+    ring_passive = 1;
+}
+
+# Calculate reference values for tested results
+resonant_wavelength_ref = resonant_wavelength;
+lambda_c= resonant_wavelength_ref;
+f_c = c/lambda_c;
+ng_passive = ng_all(1);
+FSR_ref = FSR;
+Q_ref = Q;
+if (exist("IL")){
+    IL_ref = IL;}
+if (exist("ER")) {
+    ER_ref=ER;}
+
+if(!ring_passive){
+    if(length(thermal_bandwidth_data)>1){
+        thermal_bandwidth = thermal_bandwidth_data(round(length(thermal_bandwidth_data)/2),2);
+    }
+    else{ thermal_bandwidth = thermal_bandwidth_data; }
+    #backward compatibility
+    if(!exist("IV")){
+        if(!exist("R_thermal_tuner")){
+            R_thermal_tuner = 100;
+            mod_eff_thermal_power1 = mod_eff_thermal_voltage1^2 / R_thermal_tuner;
+            mod_eff_thermal_power2 = mod_eff_thermal_voltage2^2 / R_thermal_tuner;
+            mod_eff_thermal_ref = mod_eff_thermal/(mod_eff_thermal_voltage2-mod_eff_thermal_voltage1) * R_thermal_tuner;
+        }else{
+            mod_eff_thermal_ref = mod_eff_thermal;
+        }
+    }
+    else{
+        mod_eff_thermal_ref = mod_eff_thermal;
+    }
+}
+if(!ring_resonator){   
+    f3dB_electrical_ref = interp(electrical_bandwidth_data(:,2),electrical_bandwidth_data(:,1),BW_bias);
+    if(length(mod_eff) > 1){
+        mod_eff_voltage1 = mod_eff(1,1);
+        mod_eff_1 = interp(mod_eff(:,2), mod_eff(:,1),mod_eff_voltage1);
+        mod_eff_2 = interp(mod_eff(:,2), mod_eff(:,1),mod_eff_voltage2);
+        mod_eff_ref = abs((mod_eff_2 * mod_eff_voltage2) - (mod_eff_1 * mod_eff_voltage1)) / abs((mod_eff_voltage2 - mod_eff_voltage1));
+    }
+    else{
+        mod_eff_ref = mod_eff;
+    }
+}
+
+dneff_dT_ref = dneff_dT;
+
+## Flag for the number of anodes
+NOA = 1;
+NOP = 2;
+if (exist("ele_an_2_RELAY")) {
+	NOA = 2;
+}
+if(exist("opt_3_RELAY") & exist("opt_4_RELAY")) {
+    NOP = 4;
+    if (exist("IL_drop")){
+        IL_drop_ref=IL_drop;
+    }
+    ER_ref=ER;
+}
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+## QA tolerances
+if(!exist('resonant_wavelength_rel_tolerance')){
+    resonant_wavelength_rel_tolerance = 1e-5;
+}
+if(!exist('FSR_rel_tolerance')){
+    FSR_rel_tolerance = 1.25e-2;
+}
+if(!exist('Q_rel_tolerance')){
+    Q_rel_tolerance = 0.015; # relative tolerance for tests with large Q
+}
+if(!exist('IL_rel_tolerance')){
+    IL_rel_tolerance = 1e-3;
+}
+if(!exist('mod_eff_rel_tolerance')){
+    mod_eff_rel_tolerance = 2e-2;
+}
+if(!exist('mod_eff_thermal_rel_tolerance')){
+    mod_eff_thermal_rel_tolerance = 2e-2;
+}
+if(!exist('dneff_dT_rel_tolerance')){
+    dneff_dT_rel_tolerance = 2e-2;
+}
+if(!exist('thermal_bandwidth_rel_tolerance')){
+    thermal_bandwidth_rel_tolerance = 0.3; 
+}
+if(!exist('electrical_bandwidth_rel_tolerance')){
+    electrical_bandwidth_rel_tolerance = 0.1; 
+}
+if((NOP==4)&(!exist('IL_drop_rel_tolerance'))){
+    IL_drop_rel_tolerance = 1e-3;
+}
+if((NOP==4)&(!exist('ER_rel_tolerance'))){
+    ER_rel_tolerance = 1e-3;
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 100.";
+        N_trials = 100;
+    }
+
+    if(!exist('stat_FSR_tolerance')){
+        ?"No user provided value for stat_FSR_tolerance. Using default value of stat_FSR_tolerance = 1e-12 m.";
+        stat_FSR_tolerance = 1e-12; 
+    }
+    
+    if(!exist('stat_IL_tolerance')){
+        ?"No user provided value for stat_IL_tolerance. Using default value of stat_IL_tolerance = 0.01 dB.";
+        stat_IL_tolerance = 0.01; 
+    }
+
+    if(!exist('stat_ER_tolerance')){
+        ?"No user provided value for stat_ER_tolerance. Using default value of stat_ER_tolerance = 0.01 dB.";
+        stat_ER_tolerance = 0.01; 
+    }    
+
+    if(!exist('stat_IL_drop_tolerance')){
+        ?"No user provided value for stat_IL_drop_tolerance. Using default value of stat_IL_drop_tolerance = 0.01 dB.";
+        stat_IL_drop_tolerance = 0.01; 
+    }
+
+    if(!exist('stat_notch_tolerance')){
+        ?"No user provided value for stat_notch_tolerance. Using default value of stat_notch_tolerance = 1e-11 m.";
+        stat_notch_tolerance = 1e-11; 
+    }
+    
+    if(!exist('stat_Q_tolerance')){
+        "No user provided value for stat_Q_tolerance. Using default value of stat_Q_tolerance = 10.";
+        stat_Q_tolerance = 10; 
+    }
+}

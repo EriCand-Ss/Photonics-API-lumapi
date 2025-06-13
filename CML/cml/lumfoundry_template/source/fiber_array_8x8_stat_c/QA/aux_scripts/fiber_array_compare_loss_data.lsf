@@ -1,0 +1,69 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+
+# 2.3.1 Determine expected results
+
+expected_loss = matrix(1);
+loss_interp = model_data.alignment_loss;
+for (pid = length(parameters):-1:1){          
+	
+	loss_interp = interpolate_Nmatrix(loss_interp, parameters{pid}.value, used_parameters(pid));
+}
+
+expected_loss=loss_interp;
+
+## 2.3.2 Get S parameter from ONA
+try{
+	S21 = getresult(ONA_name,"input 1/mode 1/transmission");
+	S21 = S21.getattribute("TE transmission");
+}
+catch(errMsg);
+if(errMsg != "") {
+	?errMsg;
+	
+	assert(msg, !test_empty_ONA);
+	
+}
+    ## 2.3.3 Extract Simulated Data    
+    simulated_loss = -20*log10(abs(S21));
+    parameter_description = "";
+    for (pid = 1:length(parameters)){
+        parameter_description = parameter_description + parameters{pid}.name + "=" + num2str(getnamed(DUT_name,parameters{pid}.name));
+        if (pid!=length(parameters)){
+            parameter_description = parameter_description + ", ";
+        }
+    }
+   
+    
+    #### 2.4 Compare simulated loss data with expected loss data
+    
+    ## 2.4.1 Print test results to console
+
+	if (parameter_description != "") {
+        ?"parameters: " + parameter_description;
+    }
+  
+    diff = max(abs(simulated_loss-expected_loss))/mean(expected_loss);
+    pass = diff < QA.relative_tolerances.loss;
+        
+    if (!pass){ 
+       
+        ?msg = "For data provided, maximum relative error in fiber array coupling loss = " + num2str(diff) + " and should be less than " + num2str(QA.relative_tolerances.loss);
+    }
+    else{
+        ?msg = "Passed! Maximum relative error in fiber array coupling loss = " + num2str(diff) + " and should be less than " + num2str(QA.relative_tolerances.loss);
+    }
+    
+assert(msg,pass);
+
+if (!(pass)) {
+	error_count = error_count + 1;
+	if (break_at_failure) {
+		break;
+	}
+}

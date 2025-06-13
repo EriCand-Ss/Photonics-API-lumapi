@@ -1,0 +1,96 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+ONA_name1 = ONA_name2 = cell(mode_no);
+freq_range= floor(3*bandwidth_1dB_mainpol*c/(peak_wavelength_mainpol^2)*1e-12);
+for (ind = 1:mode_no){  
+    xpos = (ind-1)*400;
+
+    #1. Configuration to test S11 and S21:
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT_name = get("name");
+    set("x position", xpos);
+    set("y position", 200);
+        
+    addelement("Optical Network Analyzer");
+    ONA_name1{ind} = get("name");
+    set("x position", xpos);
+    set("y position", 50);
+    set("input parameter", "center and range");
+    set("number of points",10000);
+    set("plot kind", "wavelength");
+    set("center frequency", c/peak_wavelength_mainpol);
+    set("frequency range", freq_range*1e12);
+    set("orthogonal identifier", mode_ID{ind});
+    set("number of input ports", 2);
+    set("peak analysis","single");
+    
+
+    connect(ONA_name1{ind}, "output", DUT_name, ports{opt_1_RELAY}.name);
+    connect(ONA_name1{ind}, "input 1", DUT_name, ports{opt_2_RELAY}.name);
+    connect(ONA_name1{ind}, "input 2", DUT_name, ports{opt_1_RELAY}.name);
+
+
+    #2 Configuration to test S22 and S12:
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT_name = get("name");
+    set("x position", xpos);
+    set("y position", 600);
+    
+    addelement("Optical Network Analyzer");
+    ONA_name2{ind} = get("name");
+    set("x position", xpos);
+    set("y position", 450);
+    set("input parameter", "center and range");
+    set("number of points",10000);
+    set("plot kind", "wavelength");
+    set("center frequency", c/peak_wavelength_mainpol);
+    set("frequency range", freq_range*1e12);
+    set("orthogonal identifier", mode_ID{ind});
+    set("number of input ports", 2);
+    set("peak analysis","single");
+
+    connect(ONA_name2{ind},"output", DUT_name,ports{opt_2_RELAY}.name);
+    connect(ONA_name2{ind},"input 1", DUT_name,ports{opt_1_RELAY}.name);
+    connect(ONA_name2{ind},"input 2", DUT_name,ports{opt_2_RELAY}.name);
+}
+
+# additional circuit for temp dependency QA
+    ind = mode_no+1;
+    xpos = 800;
+
+    #Configuration to test S11 and S21:
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT_name = get("name");
+    set("x position", xpos);
+    set("y position", 200);
+    setexpression(DUT_name,"temperature","");
+    set("temperature",330);
+        
+    addelement("Optical Network Analyzer");
+    ONA_name1_330 = get("name");
+    set("x position", xpos);
+    set("y position", 50);
+    set("input parameter", "center and range");
+    set("number of points",10000);
+    set("plot kind", "wavelength");
+    set("center frequency", c/peak_wavelength_mainpol);
+    set("frequency range", freq_range*1e12);
+    set("orthogonal identifier",mode_ID{mainpol_ID});
+    set("number of input ports", 2);
+    set("peak analysis","single");
+    
+
+    connect(ONA_name1_330, "output", DUT_name, ports{opt_1_RELAY}.name);
+    connect(ONA_name1_330, "input 1", DUT_name, ports{opt_2_RELAY}.name);
+    connect(ONA_name1_330, "input 2", DUT_name, ports{opt_1_RELAY}.name);

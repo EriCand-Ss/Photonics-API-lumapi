@@ -1,0 +1,22 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+
+? "The following set-up script is implemented:";
+?"===============================";
+if (length(splitstring(setup_script,endl))<481){
+    ?setup_script; # Display set-up script when it doesn't exceed Script Prompt line limit
+} else{
+    txtfilename = model + "_setupscript.txt";
+    write(txtfilename,setup_script,"overwrite");
+}
+?"===============================";
+

@@ -1,0 +1,50 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="pdc_strip_c";
+library_name="lumfoundry_template::Couplers";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\pdc_strip_c\pdc_strip_c.json');
+feval('/aux_scripts/directional_coupler_parameterized_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'pdc_strip_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### Initiailize variables [DO NOT EDIT THIS SECTION]
+new;
+set("monitor data","save to memory");
+
+design_kit_name = '::design kits::' + library_name + "::";
+#!!#design_kit_name = '::custom::' + library_name + "::"; #!!# DO NOT USE THIS IN COMMITTED VERSION!!!
+randreset(12345);
+arm_curvature_included = 0;
+if(exist("radius_data_couplercoeff") and exist("couplercoeff_0")){ arm_curvature_included = 1; }
+if(!exist('addloss')){
+    addloss= zeros(1, length(mode_data));
+    wavelength_data_addloss = wavelength_data;
+}
+
+error_count=0;
+
+feval("/aux_scripts/dc_parameterized_calculate_ref_data");
+
+### QA settings
+break_at_failure = false;
+write_log = false;
+create_plots = true;
+closeall;
+
+if(write_log){write (log_filename,QA_description);}

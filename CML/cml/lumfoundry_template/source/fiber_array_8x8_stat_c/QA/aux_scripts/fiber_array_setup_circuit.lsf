@@ -1,0 +1,46 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 2.1 Setup Test Circuit
+
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+addelement(design_kit_name + model);
+local_path=get("local path");
+DUT_name = get("name");
+select(DUT_name);    
+set("x position", 0);
+set("y position", 200);    
+numport=plen/2;
+ONA_name = "ONA_"+num2str(1);
+addelement("Optical Network Analyzer");
+set("name", ONA_name);
+set("x position", 150);
+set("y position", 100);
+set("plot kind", "wavelength");
+set("sensitivity",0);
+setnamed(ONA_name,"analysis type", "scattering data");
+set("input parameter", "center and range");
+set("frequency range", 100e9);
+set("number of points", 3);
+set("number of input ports", numport);
+set("peak analysis","center");
+set("orthogonal identifier", 1);
+FORK_name="FORK_"+num2str(1);
+addelement("FORK 1XN");
+set("number of ports", numport);
+connect(ONA_name,'output',FORK_name,'input');
+
+for (i=1:numport){
+
+
+    connect(FORK_name,"output "+ num2str(i), DUT_name,"opt_"+num2str(i));
+    connect(DUT_name,"opt_"+num2str(numport+i), ONA_name,"input "+ num2str(i));
+    
+}
+

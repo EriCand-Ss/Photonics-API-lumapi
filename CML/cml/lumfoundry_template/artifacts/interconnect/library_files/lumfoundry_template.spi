@@ -1,0 +1,188 @@
+.subckt lum_apd_c opt_1 ele_an ele_cat thermal_noise=0 enable_shot_noise=1 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_apd_stat_c opt_1 ele_an ele_cat thermal_noise=0 enable_shot_noise=1 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_dc_strip_te_c opt_1 opt_2 opt_3 opt_4 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_eam_te_c opt_1 opt_2 ele_an ele_cat library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_fiber_array_8x8_stat_c opt_1 opt_2 opt_3 opt_4 opt_5 opt_6 opt_7 opt_8 opt_9 opt_10 opt_11 opt_12 opt_13 opt_14 opt_15 opt_16,model_data.parameter_1,model_data.parameter_2,model_data.parameter_3,model_data.parameter_4 library="Design kits/lumfoundry_template::Optical IO"
+.ends
+
+.subckt lum_gc_fitted_stat_te_c opt_1 opt_2 library="Design kits/lumfoundry_template::Optical IO"
+.ends
+
+.subckt lum_gc_fitted_te_c opt_1 opt_2 library="Design kits/lumfoundry_template::Optical IO"
+.ends
+
+.subckt lum_gc_raw_spar_stat_te_c opt_1 opt_2 library="Design kits/lumfoundry_template::Optical IO"
+.ends
+
+.subckt lum_gc_strip_te_c opt_1 opt_2 library="Design kits/lumfoundry_template::Optical IO"
+.ends
+
+.subckt lum_mmi_1x2_stat_strip_te_c opt_1 opt_2 opt_3 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_mmi_1x2_strip_te_c opt_1 opt_2 opt_3 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_mmi_1x2_strip_te_c_thermal opt_1 opt_2 opt_3 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_mzi_thermal_2x2_te_c opt_1 opt_2 opt_3 opt_4 ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Interferometers"
+.ends
+
+.subckt lum_mzi_thermal_unbalanced_te_c opt_1 opt_2 ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Interferometers"
+.ends
+
+.subckt lum_mzm_2x2_stat_fom_te_c opt_1 opt_2 opt_3 opt_4 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ ele_cat_top_term ele_an_term ele_cat_bottom_term library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_2x2_te_c opt_1 opt_2 opt_3 opt_4 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ ele_cat_top_term ele_an_term ele_cat_bottom_term library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_balanced_te_c opt_1 opt_2 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_stat_fom_unbalanced_te_c opt_1 opt_2 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_stat_unbalanced_te_c opt_1 opt_2 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_unbalanced_te_c opt_1 opt_2 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_mzm_unbalanced_tw_te_c opt_1 opt_2 ele_an_top ele_an_bottom ele_cat_top ele_cat_bottom ele_h1- ele_h2- ele_h1+ ele_h2+ ele_cat_top_term ele_an_term ele_cat_bottom_term library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_pd_c opt_1 ele_an ele_cat thermal_noise=0 enable_shot_noise=1 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_pd_harmonic opt_1 ele_an ele_cat thermal_noise=0 enable_shot_noise=1 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_pd_pcell_c opt_1 ele_an ele_cat pd_width=7e-06 pd_length=5e-05 thermal_noise=0 enable_shot_noise=0 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_pd_pcell_stat_c opt_1 ele_an ele_cat pd_width=7e-06 pd_length=5e-05 thermal_noise=0 enable_shot_noise=0 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_pd_stat_c opt_1 ele_an ele_cat thermal_noise=0 enable_shot_noise=1 library="Design kits/lumfoundry_template::Photodetectors"
+.ends
+
+.subckt lum_pdc_strip_c opt_1 opt_2 opt_3 opt_4 coupling_gap=2e-07 coupling_length=1e-06 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_ps_pin_te_c opt_1 opt_2 ele_an ele_cat wg_length=0.0007 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ps_pn_stat_te_c opt_1 opt_2 ele_an ele_cat wg_length=0.0005 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ps_pn_te_c opt_1 opt_2 ele_an ele_cat wg_length=0.0005 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ps_pn_tw_te_c opt_1 opt_2 ele_an ele_cat ele_term wg_length=0.0005 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ps_thermal_stat_te_c opt_1 opt_2 ele_h1 ele_g1 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ps_thermal_te_c opt_1 opt_2 ele_h1 ele_g1 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_ptaper_pr_c opt_1 opt_2 width_opt_2=2.25e-06 wg_length=1.6e-05 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_ptaper_strip_c opt_1 opt_2 width_opt_2=2.25e-06 wg_length=1.6e-05 library="Design kits/lumfoundry_template::Couplers"
+.ends
+
+.subckt lum_rm_db_pcell_strip_te_c opt_1 opt_2 opt_3 opt_4 ele_an ele_cat ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rm_db_stat_fom_strip_te_c opt_1 opt_2 opt_3 opt_4 ele_an_top ele_cat_top ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rm_db_strip_te_c opt_1 opt_2 opt_3 opt_4 ele_an_top ele_cat_top ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rm_stat_fom_strip_te_c opt_1 opt_2 ele_an_top ele_cat_top ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rm_stat_strip_te_c opt_1 opt_2 ele_an_top ele_cat_top ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rm_strip_te_c opt_1 opt_2 ele_an_top ele_cat_top ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_rr_stat_strip_te_c opt_1 opt_2 ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Resonators"
+.ends
+
+.subckt lum_rr_strip_te_c opt_1 opt_2 ele_th_2 ele_th_1 library="Design kits/lumfoundry_template::Resonators"
+.ends
+
+.subckt lum_rs_strip_te_c opt_1 opt_2 opt_3 opt_4 ele_an_top ele_cat_top ele_th1_1 ele_th2_1 ele_th1_2 ele_th2_2 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_scripted_grating_stat opt_1 opt_2 incident_angle=0.139626 library="Design kits/lumfoundry_template"
+.ends
+
+.subckt lum_scripted_wg opt_1 opt_2 wg_length=1e-05 library="Design kits/lumfoundry_template"
+.ends
+
+.subckt lum_thermal_switch_2x2_stat_te_c in_0 in_1 bar cross ele_g1 ele_g2 ele_th1 ele_th2 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_thermal_switch_2x2_te_c in_0 in_1 bar cross ele_g1 ele_g2 ele_th1 ele_th2 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_thermal_switch_stat_te_c opt_1 opt_2 ele_g1 ele_g2 ele_th1 ele_th2 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_thermal_switch_te_c opt_1 opt_2 ele_g1 ele_g2 ele_th1 ele_th2 library="Design kits/lumfoundry_template::Modulators"
+.ends
+
+.subckt lum_voa_stat_te_c opt_1 opt_2 ele_an ele_cat wg_length=0.0001 library="Design kits/lumfoundry_template::Phase Shifters"
+.ends
+
+.subckt lum_wg_back_annotation opt_1 opt_2 wg_length=1e-05 temperatureC=25 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_backscatter opt_1 opt_2 width=4e-07 wg_length=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_bend_90 opt_1 opt_2 radius=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_connector opt_1 opt_2 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_stat_strip_straight_c opt_1 opt_2 wg_length=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_stat_strip_straight_parameterized opt_1 opt_2 width=5e-07 wg_length=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_strip_arc_parameterized opt_1 opt_2 width=4e-07 radius=1e-05 theta=1.5708 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_strip_sbend_parameterized opt_1 opt_2 width=4e-07 x_length=5e-05 jog=5e-06 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_strip_straight_c opt_1 opt_2 wg_length=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_wg_strip_straight_parameterized opt_1 opt_2 width=4e-07 wg_length=1e-05 library="Design kits/lumfoundry_template::Waveguides"
+.ends
+
+.subckt lum_container_example opt_1 opt_2 opt_3 mmi_type="TE" library="Design kits/lumfoundry_template"
+.ends
+
+.subckt lum_compound_rm_stat ele_cat ele_an opt_1 opt_2 radius=0.0001 library="Design kits/lumfoundry_template"
+.ends

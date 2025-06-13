@@ -1,0 +1,211 @@
+<head>
+<style>
+table, th, tr, td{
+border: 1px solid black;
+border-collapse: collapse;
+}
+tr, td{
+padding: .5%;
+}
+</style>
+}
+<body style="font-family:Tahoma;">
+<title>lum_ptaper_strip_c</title>
+<H1>lum_ptaper_strip_c (T)</H1>
+<div class="overview-image"><img src="symbol_lum_ptaper_strip_c.png" border="1"></div>
+<P>Foundry parameterized taper for strip waveguide- C band</P>
+<H2>Keywords</H2>
+<P></P>
+<H2>Ports</H2>
+<table class="int-ports">
+<tr>
+<th width="40%">Name</th>
+<th width="60%">Type</th>
+</tr>
+<tr>
+<td>opt_1</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_2</td>
+<td>Optical Signal</td>
+</tr>
+</table>
+<H2>Properties</H2>
+<H3>General Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>name</b></p>
+<p>Defines the name of the element.</p></td>
+<td>lum_ptaper_strip_c</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>enabled</b></p>
+<p>Defines whether or not the element is enabled.</p></td>
+<td>true</td>
+<td> - </td>
+<td>[true, false]</td>
+</tr>
+<tr>
+<td><p><b>description</b></p>
+<p>A brief description of the elements functionality.</p></td>
+<td>Foundry parameterized taper for strip waveguide- C band</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>prefix</b></p>
+<p>Defines the element name prefix.</p></td>
+<td>T</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>model</b></p>
+<p>Defines the element model name.</p></td>
+<td>lum_ptaper_strip_c</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>library</b></p>
+<p>Defines the element location or source in the library (custom or design kit).</p></td>
+<td>::Custom::lumfoundry_template::Couplers</td>
+<td> - </td>
+<td> - </td>
+</tr>
+</table>
+<H3>Design Kit Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>version</b></p>
+<p></p></td>
+<td>4.0</td>
+<td> - </td>
+<td> - </td>
+</tr>
+</table>
+<H3>CML Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>width_opt_2</b></p>
+<p></p></td>
+<td>2.25</td>
+<td><p>um*</p>
+<p>*std. unit is m</p></td>
+<td>[0.5, 4]</td>
+</tr>
+<tr>
+<td><p><b>wg_length</b></p>
+<p></p></td>
+<td>16</td>
+<td><p>um*</p>
+<p>*std. unit is m</p></td>
+<td>[10, 20]</td>
+</tr>
+<tr>
+<td><p><b>delay compensation</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>[0, 100]</td>
+</tr>
+</table>
+<H3>CML/Notes Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>Pcell</b></p>
+<p></p></td>
+<td>This is a parameterized model based on S-parameters.</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>polarizations</b></p>
+<p></p></td>
+<td>TE & TM supported</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>temperature_range</b></p>
+<p></p></td>
+<td>Best accuracy around 300 K</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>wavelength_range</b></p>
+<p></p></td>
+<td>C-band (1530 - 1565 nm)</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>width_opt_1</b></p>
+<p></p></td>
+<td>The taper width at the position of port opt_1 is fixed to 0.5 um.</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>width_opt_2_range</b></p>
+<p></p></td>
+<td>Best accuracy between 0.5 and 4 um</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>wg_length_range</b></p>
+<p></p></td>
+<td>Best accuracy between 10 and 20 um</td>
+<td> - </td>
+<td> - </td>
+</tr>
+</table>
+<H2>Results</H2>
+<table class="int-results">
+<tr>
+<th width="40%">Name</th>
+<th width="60%">Description</th>
+</tr>
+<tr>
+<td>diagnostic/response #/transmission</td>
+<td>The complex transmission vs. frequency corresponding to the ideal and designed filter.</td>
+</tr>
+<tr>
+<td>diagnostic/response #/gain</td>
+<td>The gain vs. frequency corresponding to the ideal and designed filter.</td>
+</tr>
+<tr>
+<td>diagnostic/response #/error</td>
+<td>Mean square error comparing the frequency response of the designed filter implementation with the ideal frequency response.</td>
+</tr>
+</table>
+</body>

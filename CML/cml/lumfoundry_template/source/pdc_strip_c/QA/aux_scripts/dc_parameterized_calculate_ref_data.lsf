@@ -1,0 +1,69 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# Calculate reference data for testing:
+
+lambda_ref = wavelength_data;
+L_c_ref = coupling_length;
+gap_reference = coupling_gap;
+
+if(length_formula != "") {
+    eval(length_formula);
+}
+
+loss_TE_dB_wg_ref = -loss(1)*(bend_length*2.+L_c_ref);
+if(length(mode_data)==2){
+loss_TM_dB_wg_ref = -loss(2)*(bend_length*2.+L_c_ref);
+}
+
+# TE:
+if (!arm_curvature_included){
+    p11 = interp(couplercoeff(1,:,1,1),coupling_gap_data_couplercoeff, gap_reference); # rad
+    p12 = interp(couplercoeff(1,:,1,2),coupling_gap_data_couplercoeff, gap_reference); # rad/m
+}else{
+    p11 = interp(pinch(couplercoeff_0(1,:,:,1)), coupling_gap_data_couplercoeff, radius_data_couplercoeff, gap_reference, arm_radius_reference); # rad
+    p12 = interp(pinch(couplercoeff_0(1,:,:,2)), coupling_gap_data_couplercoeff, radius_data_couplercoeff, gap_reference, arm_radius_reference); # rad/m
+}
+p21 = interp(couplercoeff(1,:,2,1),coupling_gap_data_couplercoeff, gap_reference); # rad/m
+p22 = interp(couplercoeff(1,:,2,2),coupling_gap_data_couplercoeff, gap_reference); # rad/m^2
+
+k_0_TE = p11 + p12*lambda_ref;
+k_L_TE = p21 + p22*lambda_ref;
+
+IL_TE = 10^(0.1*addloss(:,1));
+IL_TE_interp = interp(IL_TE,wavelength_data_addloss,lambda_ref); # Do interpolation in linear scale
+
+S31_coupler_TE_dB_ref = 20*log10(abs(sqrt(IL_TE_interp)*cos(k_L_TE*L_c_ref + k_0_TE)));
+S41_coupler_TE_dB_ref = 20*log10(abs(sqrt(IL_TE_interp)*sin(k_L_TE*L_c_ref + k_0_TE)*exp(1i*pi/2)));
+
+S31_TE_dB_ref = S31_coupler_TE_dB_ref + loss_TE_dB_wg_ref;
+S41_TE_dB_ref = S41_coupler_TE_dB_ref + loss_TE_dB_wg_ref;
+
+# TM:
+if(length(mode_data)==2){
+if (!arm_curvature_included){
+    p11 = interp(couplercoeff(2,:,1,1),coupling_gap_data_couplercoeff, gap_reference); # rad
+    p12 = interp(couplercoeff(2,:,1,2),coupling_gap_data_couplercoeff, gap_reference); # rad/m
+}else{
+    p11 = interp(pinch(couplercoeff_0(2,:,:,1)), coupling_gap_data_couplercoeff, radius_data_couplercoeff, gap_reference, arm_radius_reference); # rad
+    p12 = interp(pinch(couplercoeff_0(2,:,:,2)), coupling_gap_data_couplercoeff, radius_data_couplercoeff, gap_reference, arm_radius_reference); # rad/m
+}
+p21 = interp(couplercoeff(2,:,2,1),coupling_gap_data_couplercoeff, gap_reference); # rad/m
+p22 = interp(couplercoeff(2,:,2,2),coupling_gap_data_couplercoeff, gap_reference); # rad/m^2
+
+k_0_TM = p11 + p12*lambda_ref;
+k_L_TM = p21 + p22*lambda_ref;
+
+IL_TM = 10^(0.1*addloss(:,2));
+IL_TM_interp = interp(IL_TM,wavelength_data_addloss,lambda_ref); # Do interpolation in linear scale
+
+S31_coupler_TM_dB_ref = 20*log10(abs(sqrt(IL_TM_interp)*cos(k_L_TM*L_c_ref + k_0_TM)));
+S41_coupler_TM_dB_ref = 20*log10(abs(sqrt(IL_TM_interp)*sin(k_L_TM*L_c_ref + k_0_TM)*exp(1i*pi/2)));
+
+S31_TM_dB_ref = S31_coupler_TM_dB_ref + loss_TM_dB_wg_ref;
+S41_TM_dB_ref = S41_coupler_TM_dB_ref + loss_TM_dB_wg_ref;
+}

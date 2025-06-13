@@ -1,0 +1,56 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'grating_model' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Testing:
+1. Insertion loss
+2. Reflection
+Conditions:
+1. Frequency simulations
+2. All supported polarizations
+3. Against tolerance values specified"
+;
+
+
+### Run tests
+    
+
+#1. Peak wavelength, BW and skew tests in frequency domain 
+feval("grating_coupler_peak_wl_BW_skew_qa");
+
+#2.  Thermal shift in Peak wavelength in frequency domain
+feval("grating_coupler_dpeakwl_dT_qa");
+
+#3. Insertion loss and reflection tests in frequency domain
+feval("grating_coupler_IL_R_qa.lsf");
+  
+### Run statistical QA (if applicable)
+feval("grating_coupler_statistical_qa.lsf");
+
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+
+pause(2);

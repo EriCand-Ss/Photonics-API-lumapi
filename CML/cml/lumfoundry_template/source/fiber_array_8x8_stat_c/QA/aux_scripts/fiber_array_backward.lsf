@@ -1,0 +1,63 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+warning_elements = "";
+backward_warning="";
+backward_error="";
+
+photonic_model = model_data.photonic_model;
+
+if(exist("parameters")){
+    if (isstruct(parameters)){
+        new_format_parameters=parameters;
+        noparam=length(splitstring(getfield(new_format_parameters),endl));
+        if (noparam!=0){
+            parameters=cell(noparam);
+            for (p=1:noparam){
+                eval("parameters{"+num2str(p)+"}=new_format_parameters.parameter_"+num2str(p)+";");
+                try{eval("parameters{"+num2str(p)+"}.default_value=new_format_parameters.parameter_"+num2str(p)+".default;");}
+                try{eval("parameters{"+num2str(p)+"}.value=model_data.parameter_"+num2str(p)+";");}
+            }
+        }
+    }
+}
+
+## Generate stat_parameters for fiber_array model
+port_labels = splitstring(getfield(ports),endl);
+plen=length(port_labels);   
+if(exist("statistical")){
+    sparam_labels = splitstring(getfield(statistical.parameters),endl);
+    sparamlen=length(sparam_labels);
+    stat_parameters = cell(sparamlen * plen/2);
+    counter = 0;
+    for(i=1:sparamlen){
+        for(j=1:plen/2){
+            counter = counter + 1;
+            stat_parameters{counter} = struct;
+            eval('user_stat_param = statistical.parameters.parameter_'+num2str(i)+';');
+            eval('stat_parameters{'+num2str(counter)+'}.name = user_stat_param.name+"_"+num2str(j);');
+            stat_parameters{counter}.mean = user_stat_param.mean;
+            stat_parameters{counter}.normalization_factor = user_stat_param.normalization_factor;
+            if(isfield(user_stat_param,"LOCAL")){
+                stat_parameters{counter}.LOCAL = user_stat_param.LOCAL;
+            }
+            if(isfield(user_stat_param,"GLOBAL")){
+                stat_parameters{counter}.GLOBAL = user_stat_param.GLOBAL;
+            }
+            if(isfield(user_stat_param,"corners")){
+                stat_parameters{counter}.corners = user_stat_param.corners;
+            }
+        }
+    }
+    
+    enable_stat_qa=statistical.QA.enable_qa;
+    stat_reference_data_available=statistical.QA.reference_data_available;
+}
+          

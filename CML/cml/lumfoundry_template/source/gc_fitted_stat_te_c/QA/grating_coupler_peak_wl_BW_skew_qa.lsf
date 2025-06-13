@@ -1,0 +1,85 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");      
+}
+err=error_count;
+
+# Peak wavelength, BW and skew tests in frequency domain
+if (designmode){run;}
+
+for(ind = 1:mode_no){
+    if (ind==mainpol_ID){
+        if (!exist("S21")){
+            S11 = S21 = S12 = S22 = cell(mode_no);
+            IL21_dB = IL12_dB =cell(mode_no);
+            S21{ind} = getresult(ONA_name1{ind},"input 1/mode 1/gain");
+            S11{ind} = getresult(ONA_name1{ind},"input 2/mode 1/gain");
+            S12{ind} = getresult(ONA_name2{ind},"input 1/mode 1/gain");
+            S22{ind} = getresult(ONA_name2{ind},"input 2/mode 1/gain");
+            peak_wl=getresult(ONA_name1{ind},"input 1/mode 1/peak/frequency");
+            gain_type = mode_label{ind} + " gain (dB)";   
+    gain_type = mode_label{ind} + " gain (dB)";
+            gain_type = mode_label{ind} + " gain (dB)";   
+            IL21_dB{ind} = S21{ind}.getattribute(gain_type);
+            IL12_dB{ind} = S12{ind}.getattribute(gain_type);
+            wavelength = S21{ind}.wavelength;
+        }
+        BW_dB=1;
+        P_1dB=max(IL21_dB{ind})-BW_dB;
+        out=find(IL21_dB{ind}> P_1dB);
+        W1=min(out); W2=max(out);
+        WL1=wavelength(W1);
+        WL2=wavelength(W2);
+        BW=abs(WL2-WL1);
+        skew=(WL2+WL1)/2 - peak_wl;
+    
+        msg = "Peak wavelength for "+ mode_label{ind} +" has been changed by: " + num2str(abs(peak_wl-peak_wavelength_mainpol));
+        pass = abs(peak_wl-peak_wavelength_mainpol) <= wavelength_tolerance;
+        if(!pass) {
+            ? "ERROR - Peak wavelength for "+ mode_label{ind} + " mode is " + num2str(peak_wl*1e9) + " nm, and should be " + num2str(peak_wavelength_mainpol*1e9) + " nm.";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+                
+        msg = "Bandwidth for "+ mode_label{ind} +" has been changed by: " + num2str(abs(BW-bandwidth_1dB_mainpol));
+        pass = abs(BW-bandwidth_1dB_mainpol) <= wavelength_tolerance;
+        if(!pass) {
+            ? "ERROR - Bandwidth for "+ mode_label{ind} +" mode is " + num2str(BW*1e9) + " nm, and should be " + num2str(bandwidth_1dB_mainpol*1e9) + " nm.";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        msg = "Skew for "+ mode_label{ind} +" has been changed by: " + num2str(abs(skew-skew_mainpol));
+        pass = abs(skew-skew_mainpol) <= wavelength_tolerance;
+        if(!pass) {
+            ? "ERROR - Skew for "+ mode_label{ind} +" mode is " + num2str(skew*1e9) + " nm, and should be " + num2str(skew_mainpol*1e9) + " nm.";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+ }
+
+ if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

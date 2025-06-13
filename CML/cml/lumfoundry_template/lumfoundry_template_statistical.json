@@ -1,0 +1,119 @@
+{
+  "foundry_name": "lumfoundry_template_statistical",
+  "version_suffix": "4.0",
+  "process_prefix": "lum_",
+  "veriloga": {
+    "NumOfChannel": 2
+  },
+  "element_list": [
+    {
+      "element_name": "apd_stat_c"
+    },
+    {
+      "element_name": "gc_fitted_stat_te_c"
+    },
+    {
+      "element_name": "gc_raw_spar_stat_te_c"
+    },
+    {
+      "element_name": "mmi_1x2_stat_strip_te_c"
+    },
+    {
+      "element_name": "mzm_stat_fom_unbalanced_te_c"
+    },
+    {
+      "element_name": "mzm_2x2_stat_fom_te_c"
+    },
+    {
+      "element_name": "mzm_stat_unbalanced_te_c"
+    },
+    {
+      "element_name": "pd_pcell_stat_c"
+    },
+    {
+      "element_name": "pd_stat_c"
+    },
+    {
+      "element_name": "ps_pn_stat_te_c"
+    },
+    {
+      "element_name": "ps_thermal_stat_te_c"
+    },
+    {
+      "element_name": "voa_stat_te_c"
+    },
+    {
+      "element_name": "scripted_grating_stat"
+    },
+    {
+      "element_name": "rm_db_stat_fom_strip_te_c"
+    },
+    {
+      "element_name": "rm_stat_fom_strip_te_c"
+    },
+    {
+      "element_name": "rm_stat_strip_te_c"
+    },
+    {
+      "element_name": "rr_stat_strip_te_c"
+    },
+    {
+      "element_name": "wg_stat_strip_straight_c"
+    },
+    {
+      "element_name": "wg_stat_strip_straight_parameterized"
+    },
+    {
+      "element_name": "fiber_array_8x8_stat_c"
+    },
+    {
+      "element_name": "thermal_switch_stat_te_c"
+    },
+    {
+      "element_name": "thermal_switch_2x2_stat_te_c"
+    }
+  ],
+  "statistical_data": {
+    "statistical_parameter_status": "open",
+    "nominal_value_type": "mode",
+    "GLOBALGROUP_list": [
+      {
+        "GLOBALGROUP_name": "global_delta_width",
+        "distribution": "normal",
+        "sigma": 1.0
+      },
+      {
+        "GLOBALGROUP_name": "global_delta_height",
+        "distribution": "normal",
+        "sigma": 1.0
+      },
+      {
+        "GLOBALGROUP_name": "global_delta_ridge_height",
+        "distribution": "normal",
+        "sigma": 1.0
+      }
+    ],
+    "CORRGROUP_list": [
+      {
+        "CORRGROUP_name": "corr_delta_width",
+        "correlation_length": 0.003
+      },
+      {
+        "CORRGROUP_name": "corr_delta_height",
+        "correlation_length": 0.01
+      },
+      {
+        "CORRGROUP_name": "corr_delta_ridge_height",
+        "correlation_length": 0.003
+      }
+    ],
+    "corner_list": [
+      {
+        "corner_name": "corner_1"
+      },
+      {
+        "corner_name": "corner_2"
+      }
+    ]
+  }
+}

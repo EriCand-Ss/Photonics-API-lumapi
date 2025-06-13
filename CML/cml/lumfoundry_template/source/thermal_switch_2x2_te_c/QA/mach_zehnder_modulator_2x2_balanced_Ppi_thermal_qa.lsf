@@ -1,0 +1,169 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+# Vpi_thermal QA for balanced MZMs
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_2x2_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_2x2_init_qa.lsf");      
+}
+err=error_count;
+
+# Test circuit 2: Ppi_thermal
+if (!unbalanced_MZM and mzm_thermal){
+    V_test = linspace(Ppi_thermal_voltage1, Ppi_thermal_voltage2, V_num);
+    V_num_original = V_num;
+    
+    # Add extra points near Vpi_thermal to increase accuracy of finding the minima
+    V_fine_range = min([abs(V_test(V_num)-V_test(V_num-1)), 0.04*abs(Ppi_thermal_voltage2-Ppi_thermal_voltage1)]);
+    V_near_Vpi = find(V_test<=Vpi_thermal+V_fine_range/2 & V_test>=Vpi_thermal-V_fine_range/2);
+    if(V_near_Vpi == 0){
+        Vtemp1 = find(V_test<Vpi_thermal);
+        Vtemp2 = find(V_test>Vpi_thermal);
+        V_test = [V_test(1:Vtemp1(end)) ; linspace(Vpi_thermal-V_fine_range/2,Vpi_thermal+V_fine_range/2,5) ; V_test(Vtemp2(1):end)];
+        V_num = V_num+5;
+    }
+    else{
+        V_test = [V_test(1:V_near_Vpi-1) ; linspace(Vpi_thermal-V_fine_range/2,Vpi_thermal+V_fine_range/2,5) ; V_test(V_near_Vpi+1:end)];
+        V_num = V_num+4;
+    }  
+       
+    new;
+
+    sample_rate = 100e9; #sample rate of root
+    groupscope("::Root Element"); #return to root
+    set("sample rate", sample_rate);
+
+    fspan=sample_rate;
+
+    addelement("Optical Network Analyzer");
+    ONA1_name = get("name");
+    set("x position", -390);
+    set("y position", -115);
+    set("input parameter", "center and range");
+    set("plot kind", "wavelength");
+    set("center frequency", c/wavelength_data);
+    set("frequency range", fspan);
+    set("number of points", 3);
+    set("orthogonal identifier", mode_data{1}.ID);
+    set("number of input ports", 2*V_num);
+    set("peak analysis","center");
+
+    addelement("Optical Splitter");
+    Split1_name = get("name");
+    set("x position", -200);
+    set("y position", 100);
+    set("number of ports", V_num); ##
+    set("split ratio","none"); ##
+
+    addelement("DC Source");
+    DC1_name = get("name");
+    set("x position", -140);
+    set("y position", -185);
+    set("amplitude",0);
+
+    connect(ONA1_name,"output",Split1_name,"input");
+
+    DUT1_name_cell = cell(V_num);
+    DC2_name_cell = cell(V_num);
+
+    for (DUT1_num = 1:V_num){
+        addelement(design_kit_name + model);
+        if(exist("container_selection_code")) { eval(container_selection_code); }
+        DUT1_name_cell{DUT1_num} = get("name");
+        set("x position", 0);
+        set("y position", 200*(DUT1_num-1));
+
+        addelement("DC Source");
+        DC2_name_cell{DUT1_num} = get("name");
+        set("x position", 200);
+        set("y position", 200*(DUT1_num-1));
+        set("amplitude",V_test(DUT1_num));
+
+        connect(Split1_name,"output "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_1_RELAY}.name);
+
+        connect(ONA1_name,"input "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_3_RELAY}.name);
+        connect(ONA1_name,"input "+num2str(V_num+DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_4_RELAY}.name);
+
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_th_2_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_th_3_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_th_4_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_an_1_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_an_2_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_cat_1_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_cat_2_RELAY}.name);}catch(blank);
+
+        try{connect(DC2_name_cell{DUT1_num},"output",DUT1_name_cell{DUT1_num},ports{ele_th_1_RELAY}.name);}catch(blank);
+
+    }
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 2: Ppi_thermal
+
+    S13 = matrix(V_num);
+    S14 = matrix(V_num);
+
+    for (DUT1_num = 1:V_num){
+        T_result = getresult("ONA_1","input "+num2str(DUT1_num)+"/mode 1/transmission");
+        T_result = T_result.getattribute("TE transmission");
+        S13(DUT1_num) = T_result(2);
+        T_result = getresult("ONA_1","input "+num2str(V_num+DUT1_num)+"/mode 1/transmission");
+        T_result = T_result.getattribute("TE transmission");
+        S14(DUT1_num) = T_result(2);
+    }
+
+    # find the peaks in S13 to calculate Vpi
+
+    temp = findpeaks(abs(S13)^2,10);
+    Vpi_th = V_test(temp(1));
+    if(exist("IV")){
+        Ipi_th = interp(IV(:,2),IV(:,1),Vpi_th);
+        Ppi_th = Vpi_th*Ipi_th;
+        I_test = interp(IV(:,2),IV(:,1),V_test);
+        heater_power = V_test*I_test;
+    }else{
+        if(exist("R_thermal_tuner")){
+            Ppi_th = Vpi_th^2/R_thermal_tuner;
+            heater_power = V_test^2/R_thermal_tuner;
+        }
+    }
+
+    if(create_plots){
+        plot(heater_power*100, 20*log10(abs(S13)),20*log10(abs(S14)), "Heater Power (mW)", "gain [dB]", model+" Ppi_thermal test");
+        legend("|S13|^2","|S14|^2");
+        setplot("y min", min(20*log10(abs(S14)))-2);
+        setplot("y max", 0);
+    }
+
+    msg = "Ppi_thermal is "+num2str(Ppi_th)+" W and it should be "+num2str(Ppi_thermal)+" W";
+    change = abs(abs(Ppi_th)-abs(Ppi_thermal))/abs(Ppi_thermal);
+    pass = change < Ppi_thermal_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    
+    V_num = V_num_original;  # reset V_num
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

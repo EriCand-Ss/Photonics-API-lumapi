@@ -1,0 +1,364 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+    stat_IL = matrix(2,N_trials);
+    stat_Vpi_Lpi = matrix(2,N_trials);
+    stat_Attn_eff = matrix(2,N_trials);
+        
+    # sweep for modes
+    for (m=1:length(mode_data)) {
+        
+        ? endl + "Testing statistical behavior for mode " + num2str(m) + ": " + mode_data{m}.name;
+        
+        # IL statistical qa
+        new;
+        
+        # 0. set up the simulation parameters in Root Element
+        groupscope("::Root Element"); #return to root
+        set("monitor data", "save to memory");
+        set("sample rate", sample_rate);
+        if(isFB_PINmodulator){
+            set("temperature", test_temperature);
+        }     
+    
+        # 1. Build circuits for IL test
+        addelement(design_kit_name + model);
+        if(exist("container_selection_code")) { eval(container_selection_code); }
+        DUT3_name = get("name");
+        local_path=get("local path");
+        set("x position", 290);
+        set("y position", -400);
+  
+        addelement("DC Source");
+        DC4_name = get("name");
+        set("x position", 290);
+        set("y position", -580);
+        set("amplitude",0);
+    
+        addelement("Optical Network Analyzer");
+        ONA2_name = get("name");
+        set("x position", 15);
+        set("y position", -580);
+        set("input parameter", "center and range");
+        set("plot kind", "wavelength");
+        set("center frequency", c/Operating_Wavelength);
+        set("frequency range", fspan);
+        set("number of input ports", 1);
+        set("peak analysis","center");
+        set("orthogonal identifier",mode_data{m}.ID);
+        set("label", mode_data{m}.name);
+    
+        connect(ONA2_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+        connect(ONA2_name,"input 1",DUT3_name,ports{opt_2_RELAY}.name);
+        connect(DC4_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+    
+        if(isDoubleModulator){
+            connect(DC4_name,"output",DUT3_name,ports{ele_an_2_RELAY}.name);
+        }
+        if(ele_cat_RELAY!=ele_an_RELAY){
+            connect(DC4_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+        }
+        
+        
+        # get .lib filename
+        dotlib_filename = importlib;     
+        if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+            libname=splitstring(library_name,"::");
+            if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+            }else{
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+            }
+        }
+            
+        # create MC sweep
+        addsweep(2);
+        MC_name = "mc_sweep";
+        setsweep("Monte Carlo analysis", "name", MC_name);
+        setsweep(MC_name, "number of trials", N_trials);
+        setsweep(MC_name, "batch size", 10);
+        setsweep(MC_name, "enable seed", 1);
+        setsweep(MC_name, "seed", 1);
+        setsweep(MC_name, "enable spatial correlations", 0);
+        
+        # define the parameter mc_lib
+        mc_lib = struct;
+        mc_lib.Name = "mc_lib";
+        mc_lib.library = dotlib_filename;
+        mc_lib.Variant = "statistical";
+        addsweepparameter(MC_name,mc_lib);
+            
+        mc_result_loss = struct;
+        mc_result_loss.Name = "IL";
+        mc_result_loss.Result = "::Root Element::IL";
+        mc_result_loss.Estimation = false;
+        
+        addsweepresult(MC_name,mc_result_loss);
+        
+        # add results to the Root Element
+        groupscope("::Root Element");
+        analysis_script = '
+        T_3 = getresult("' + ONA2_name + '","input 1/mode 1/transmission");
+        IL_test = -10*log10(mean(abs(T_3.getattribute("' + mode_data{m}.name + ' transmission")))^2);  # dB/m
+
+        setresult("IL",IL_test);
+        ';
+        
+        set("analysis script",analysis_script);
+        run;
+        runanalysis;
+        switchtodesign;
+        save("statistical_temp");
+        #switchtolayout;
+        #save("statistical_temp");
+        
+        
+        runsweep(MC_name);
+        stat_IL(m,:) = getsweepdata(MC_name,"IL");
+        
+        
+        # VpiLpi statistical QA
+
+        # Manually run a MC sweep for Ntrial
+        ?mode_data{m}.name + " mode: VpiLpi MC sweep trials: ";
+        for (i= 1:N_trials){
+            if(!mod(i,10)){?num2str(i);}
+            new;
+        
+            # 0. set up the simulation parameters in Root Element
+            groupscope("::Root Element"); #return to root
+            set("monitor data", "save to memory");
+            set("sample rate", sample_rate);
+        
+            # 1. Build test circuit
+            fspan=sample_rate;
+        
+            addelement("Optical Network Analyzer");
+            ONA1_name = get("name");
+            set("x position", -390);
+            set("y position", -115);
+            set("input parameter", "center and range");
+            set("plot kind", "wavelength");
+            set("center frequency", c/Operating_Wavelength);
+            set("frequency range", fspan);
+            set("number of points", 3);
+            set("orthogonal identifier", mode_data{m}.ID);
+            set("number of input ports", V_num);
+            set("peak analysis","center");
+            set('maximum number of iterations',10000);
+        
+            addelement("Optical Splitter");
+            Split1_name = get("name");
+            set("x position", -200);
+            set("y position", 100);
+            set("number of ports", V_num); ##
+            set("split ratio","none"); ##
+        
+            addelement("DC Source");
+            DC1_name = get("name");
+            set("x position", -140);
+            set("y position", -185);
+            set("amplitude",0);
+        
+            connect(ONA1_name,"output",Split1_name,"input");
+        
+            if(optical_attenuator){
+                V_test = linspace(Attn_eff_voltage1(m), Attn_eff_voltage2(m), V_num);
+            }else{
+                V_test = linspace(Vpi_Lpi_voltage1(m), Vpi_Lpi_voltage2(m), V_num);
+            }
+            DUT1_name_cell = cell(V_num);
+            DC2_name_cell = cell(V_num);
+            
+            for (DUT1_num = 1:V_num){
+                if (DUT1_num == 1) {
+                    addelement(design_kit_name + model);    # add first element
+                    importlib(dotlib_filename,"statistical",{"seed":i});    # set up statistical parameter in first element
+                }
+                else{
+                    select(DUT1_name_cell{1});
+                    copy;    # copy the first element to use the same values for the statistical parameters
+                }
+                if(exist("container_selection_code")) { eval(container_selection_code); }
+                DUT1_name_cell{DUT1_num} = get("name");
+                set("x position", 0);
+                set("y position", 200*(DUT1_num-1));
+        
+                addelement("DC Source");
+                DC2_name_cell{DUT1_num} = get("name");
+                set("x position", 200);
+                set("y position", 200*(DUT1_num-1));
+                set("amplitude",V_test(DUT1_num));
+        
+                connect(Split1_name,"output "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_1_RELAY}.name);
+                connect(ONA1_name,"input "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_2_RELAY}.name);
+                if(ele_cat_RELAY!=ele_an_RELAY){
+                    connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_cat_RELAY}.name);
+                }
+                connect(DC2_name_cell{DUT1_num},"output",DUT1_name_cell{DUT1_num},ports{ele_an_RELAY}.name);
+        
+                # Connect DC source to the second anode if exists
+                if(isDoubleModulator){
+                    connect(DC2_name_cell{DUT1_num},"output",DUT1_name_cell{DUT1_num},ports{ele_an_2_RELAY}.name);
+                }
+            }            
+            
+            # 2. Run the simulation
+            run;
+
+            # 3. Get the result
+            # Optical Attenuator results:
+            if(optical_attenuator){
+                power_Attn_eff = matrix(V_num);
+        
+                for (DUT1_num = 1:V_num){
+                    power_result = getresult(ONA1_name,"input "+num2str(DUT1_num)+"/mode 1/peak/gain");
+                    power_Attn_eff(DUT1_num) = power_result.getattribute(mode_data{m}.name + " gain (dB)");
+                }
+
+                delta_loss = (power_Attn_eff(V_num) - power_Attn_eff(1));
+                Attn_eff_test = abs(1e-3*delta_loss / (interp(IV_data(:,2), IV_data(:,1),V_test(V_num)) - interp(IV_data(:,2), IV_data(:,1),V_test(1))));
+                stat_Attn_eff(m,i) = Attn_eff_test;
+
+            }else{ #Phase shifter results
+            
+                angle_Vpi_Lpi = matrix(V_num);
+        
+                for (DUT1_num = 1:V_num){
+                    angle_result = getresult(ONA1_name,"input "+num2str(DUT1_num)+"/mode 1/peak/angle");
+                    angle_Vpi_Lpi(DUT1_num) = angle_result.getattribute(mode_data{m}.name + " angle (rad)");
+                }
+        
+                angle_Vpi_Lpi = unwrap(angle_Vpi_Lpi);
+        
+                dV_dphase = -(V_test(V_num) - V_test(1))/(angle_Vpi_Lpi(V_num)-angle_Vpi_Lpi(1));
+                stat_Vpi_Lpi(m,i) = abs( dV_dphase*pi*L_active );
+            }
+        }
+        
+        # Plot the results
+        if(create_plots){
+            histc(stat_IL(m,:));
+            setplot("x label","IL (dB)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(mode_data{m}.name + " mode");    
+            if(optical_attenuator){
+                histc(stat_Attn_eff(m,:));
+                setplot("x label","Attn_eff (dB/mA)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+                legend(mode_data{m}.name + " mode");
+            }else{        
+                histc(stat_Vpi_Lpi(m,:));
+                setplot("x label","VpiLpi (V-m)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+                legend(mode_data{m}.name + " mode");
+            }
+        }
+        
+        # delete temporary project file
+        try{
+            del("statistical_temp.icp");
+        }catch(ErrMsg);
+
+        if(length(ErrMsg)!=0){
+            ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+        }
+    }
+    
+    ### Reference data comparison
+    
+    # Check reference data for testing:
+    if(!stat_reference_data_available){
+        msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+        assert(msg,false);
+        error_count = error_count+1;
+        
+        current_directory = pwd;
+        cd(foldername_ref);
+        stat_IL_ref = stat_IL;
+        if(optical_attenuator){
+            stat_Attn_eff_ref = stat_Attn_eff;
+            matlabsave(filename_ref_stat, stat_IL_ref, stat_Attn_eff_ref);
+        }else{
+            stat_Vpi_Lpi_ref = stat_Vpi_Lpi;
+            matlabsave(filename_ref_stat, stat_IL_ref, stat_Vpi_Lpi_ref);
+        }
+        cd(current_directory);
+        
+        ?"******* Saved statistical reference data";
+    }else{
+        # Compare with reference data
+        ?"Testing Monte-Carlo sweep results against reference data";
+    
+    current_directory = pwd;
+    cd(foldername_ref);
+    try{
+        matlabload(filename_ref_stat);
+    }  catch(errMsg);
+    cd(current_directory);
+    if (errMsg !=''){
+        msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+        assert(msg,0);
+        error_count = error_count+1;
+        
+    }else{
+        change_IL = max(abs(stat_IL_ref-stat_IL));
+        msg = "IL (dB) from MC analysis has a maximum variation of " + num2str(change_IL) + " compared to reference. Variation should be less than " + num2str(stat_IL_tolerance);
+        pass = change_IL <= stat_IL_tolerance;
+        if(!pass) {
+            ? "ERROR - insertion loss (IL) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+
+    if(optical_attenuator){
+        change_Attn_eff = max(abs(stat_Attn_eff_ref-stat_Attn_eff));
+        msg = "Attn_eff (dB/mA) from MC analysis has a maximum variation of " + num2str(change_Attn_eff) + " compared to reference. Variation should be less than " + num2str(stat_Attn_eff_tolerance);
+        pass = change_Attn_eff <= stat_Attn_eff_tolerance;
+        if(!pass) {
+            ? "ERROR - Attn_eff (dB/mA) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; } 
+    }else{
+        change_Vpi_Lpi = max(abs(stat_Vpi_Lpi_ref-stat_Vpi_Lpi));
+        msg = "VpiLpi (V-m) from MC analysis has a maximum variation of " + num2str(change_Vpi_Lpi) + " compared to reference. Variation should be less than " + num2str(stat_Vpi_Lpi_tolerance);
+        pass = change_Vpi_Lpi <= stat_Vpi_Lpi_tolerance;
+        if(!pass) {
+            ? "ERROR - VpiLpi (V-m) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }    
+    }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}
+}
+
+}else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

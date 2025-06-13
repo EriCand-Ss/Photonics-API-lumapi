@@ -1,0 +1,111 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/wg_parameterized_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/wg_parameterized_init_qa.lsf");     
+}
+err=error_count;
+
+central_frequency = c/wavelength_data;
+central_wavelength = wavelength_data;
+
+### 1. Run Singular Parameter Test
+if (exist("test_single")) {
+	if (test_single) {
+		? "Running Singular Test:";
+        ?"-------------------------------------";
+        
+        plotcount = 0;
+        mid=m_test;
+		### 1.1 Setup test circuits
+		feval("/aux_scripts/wg_parameterized_setup_circuit.lsf");
+		f_start = getnamed(ONA{1},"start frequency");
+		f_stop = getnamed(ONA{1},"stop frequency");
+		npts = getnamed(ONA{1},"number of points");
+		f_interval = (f_stop - f_start)/npts;
+		f_grid = matrix(npts);
+		for(i=1:npts){
+			f_grid(i) = f_start + (i-1)*f_interval;
+		}
+
+		lambda = c/f_grid;
+		### 1.1.2 Set Length Properties
+		used_length_properties = matrix(length(length_props), 1);
+
+		for (pid = 1:length(length_props)) {
+			if (length_props{pid}.visible_to_user) {
+				for (did = 1:length(DUT)) {
+					setnamed(DUT{did}, length_props{pid}.name, length_props_test_val{pid});
+				}
+				
+				#We need to store the rounded value into the variable name itself so the length formula works.
+				eval("%" + length_props{pid}.name + "% = getnamed(DUT{1}, length_props{pid}.name);");
+			}
+		}
+
+		### 1.1.3 Set Parameters
+		used_parameters = matrix(length(parameters), 1);
+
+		for (pid = 1:length(parameters)) {
+			for (did = 1:length(DUT)) {
+				setexpression(DUT{did}, parameters{pid}.name, "");
+				setnamed(DUT{did}, parameters{pid}.name, parameters_test_val{pid});
+			}                 
+			
+			eval("%" + parameters{pid}.name + "% = getnamed(DUT{1}, parameters{pid}.name);");
+			
+			expression = true;
+			if (isfield(parameters{pid}, "expression")) {
+				if (parameters{pid}.expression != "") {
+					eval("used_parameters(pid) = " + parameters{pid}.expression + ";");
+				} else{ expression = false; }
+			} else{ expression = false; }
+			
+			if (!expression) {
+				eval("used_parameters(pid) = %" + parameters{pid}.name + "%;");
+			}
+		}
+
+		if (length_formula != "") {
+			eval(length_formula);
+		}
+		
+		### 1.2 Simulate the circuits
+		run;            
+		
+		### 1.3 Compare/Evaluate Test Results
+		
+		# 1.3.1 Compare mode data (neff, ng, D, loss) with provided mode data
+		feval("/aux_scripts/wg_parameterized_compare_mode_data.lsf");
+		
+		# 1.3.2 Compare group delay for frequency and time domain
+		if(!discontinuous_data){
+			feval("/aux_scripts/wg_parameterized_compare_group_delay.lsf");
+		}
+		else{
+			?"Discontinuous data detected for current combination of parameters. Group delay QA was skipped!";
+		}
+		
+		?"-------------------------------------";
+		if (err==error_count){
+			?filebasename(currentscriptname)+" test passed.";
+		}
+    }
+}
+cd(filedirectory(which(currentscriptname)));
+

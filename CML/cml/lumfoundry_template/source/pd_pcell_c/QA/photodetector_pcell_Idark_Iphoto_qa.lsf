@@ -1,0 +1,234 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/photodetector_pcell_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/photodetector_pcell_init_qa.lsf");      
+}
+err=error_count;
+
+# Start loop to run QA over single or multiple bias voltages (set by the source .lsf file)
+?"Running dark and photocurrent tests for min, default and max length and width values...";
+for(wdh=1:length(test_pd_width)){
+    for(lnh=1:length(test_pd_length)){
+        for(bias=1:length(bias_voltage_test)){
+            for(temp=1:length(temperature_test)){        
+                test_bias = bias_voltage_test(bias);
+                test_temp = temperature_test(temp);   
+                ###### Test setup  ######
+                
+                new; # new simulation
+                
+                # set up the simulation parameters in Root Element
+                set("monitor data","save to memory");
+                set("time window",4e-9);
+                set("sample rate",sample_rate_test);
+                
+                ### Test circuit 1: Dark current
+                
+                # In this test we connect a CW laser with zero optical power to the photodetector under test.
+                # The bias voltage of the photodetector is set using DC sources.
+                # The dark current at the electrical cathode is measured using an oscilloscope.
+                
+                ## Add elements
+                addelement(design_kit_name + model);
+                DUT1_name = get("name");
+                if(exist("container_selection_code")) { eval(container_selection_code); }
+                set("x position", 600);
+                set("y position", 30);
+                set("enable_shot_noise", false);
+                set("thermal_noise",0);
+                setexpression(DUT1_name,"temperature",'');
+                set("temperature",test_temp);
+                set(pd_width.name, test_pd_width(wdh));
+                set(pd_length.name, test_pd_length(lnh));
+                
+                addelement("CW Laser");
+                CWL1_name = get("name");
+                set("x position", 300);
+                set("y position", 0);
+                set("power",0);
+                set("frequency", c/wavelength_test);
+                
+                addelement("DC Source"); #to be connected to cathode
+                DC1_name = get("name");
+                set("x position", 794);
+                set("y position", -150);
+                set("amplitude",0);
+                
+                addelement("DC Source"); #to be connected to anode
+                DC2_name = get("name");
+                set("x position", 548);
+                set("y position", -136);
+                set("amplitude", test_bias);
+                
+                addelement("Oscilloscope");
+                OSC1_name = get("name");
+                set("x position", 772);
+                set("y position", 154);
+                
+                
+                ## Connect elements
+                connect(CWL1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+                if(ele_cat_RELAY!=ele_an_RELAY){
+                    connect(DC1_name,"output",DUT1_name,ports{ele_cat_RELAY}.name);
+                }
+                connect(DC2_name,"output",DUT1_name,ports{ele_an_RELAY}.name);
+                if(exist("ele_an_2_RELAY")) {
+                    connect(DC2_name,"output",DUT1_name,ports{ele_an_2_RELAY}.name);
+                }
+                # If the photodetector has two ports then add a dummy CW laser to that port
+                if(opt_2_RELAY!=0) {
+                    addelement("CW Laser");
+                    CWL_dummy1_name = get("name");
+                    set("x position", 300);
+                    set("y position", -100);
+                    set("enabled",false);
+                    set("frequency", c/wavelength_test);
+                    connect(CWL_dummy1_name,"output",DUT1_name,ports{opt_2_RELAY}.name);
+                }
+
+                connect(DUT1_name,ports{ele_cat_RELAY}.name,OSC1_name,"input");
+                
+                ### Test circuit 2: Photo current
+                
+                # In this test we connect a CW laser with 1 mW optical power to the photodetector under test.
+                # The bias voltage of the photodetector is set using DC sources.
+                # The photo current at the electrical cathode is measured using an oscilloscope
+                
+                ## Add elements
+                addelement(design_kit_name + model);
+                DUT2_name = get("name");
+                if(exist("container_selection_code")) { eval(container_selection_code); }
+                set("x position", 600);
+                set("y position", 680);
+                set("enable_shot_noise", false);
+                set("thermal_noise",0);
+                setexpression(DUT2_name,"temperature",'');
+                set("temperature",test_temp);
+                set(pd_width.name, test_pd_width(wdh));
+                set(pd_length.name, test_pd_length(lnh));
+
+                addelement("CW Laser");
+                CWL2_name = get("name");
+                set("x position", 300);
+                set("y position", 650);
+                set("power",0.001);
+                set("frequency", c/wavelength_test);
+                
+                addelement("DC Source"); #to be connected to cathode
+                DC3_name = get("name");
+                set("x position", 794);
+                set("y position", 500);
+                set("amplitude",0);
+                
+                addelement("DC Source"); #to be connected to anode
+                DC4_name = get("name");
+                set("x position", 548);
+                set("y position", 650-136);
+                set("amplitude", test_bias);
+                
+                addelement("Oscilloscope");
+                OSC2_name = get("name");
+                set("x position", 772);
+                set("y position", 650+154);
+                
+                
+                ## Connect elements
+                connect(CWL2_name,"output",DUT2_name,ports{opt_1_RELAY}.name);
+                if(ele_cat_RELAY!=ele_an_RELAY){
+                    connect(DC3_name,"output",DUT2_name,ports{ele_cat_RELAY}.name);
+                }
+                connect(DC4_name,"output",DUT2_name,ports{ele_an_RELAY}.name);
+                if(exist("ele_an_2_RELAY")) {
+                    connect(DC4_name,"output",DUT2_name,ports{ele_an_2_RELAY}.name);
+                }
+                # If the photodetector has two ports then add a dummy CW laser to that port
+                if(opt_2_RELAY!=0) {
+                    addelement("CW Laser");
+                    CWL_dummy2_name = get("name");
+                    set("x position", 300);
+                    set("y position", 550);
+                    set("enabled",false);
+                    set("frequency", c/wavelength_test);
+                    connect(CWL_dummy2_name,"output",DUT2_name,ports{opt_2_RELAY}.name);
+                }
+                connect(DUT2_name,ports{ele_cat_RELAY}.name,OSC2_name,"input");
+                
+                #### Run simulation  ####
+                run;          
+                ###### Analysis ######
+                
+                ### Test result 1: Dark current
+                
+                # The cathode current from test circuit 1 is the dark current of the photodetector
+                # The simulated dark current is compared against the dark current in the source data file
+                
+                I_dark = getresult(OSC1_name,"signal");
+                I_dark = I_dark.getattribute("amplitude (a.u.)");
+                I_dark = I_dark(length(I_dark));	# Idark from simulation
+                
+                Idark = pinch( interp(Idark_data,voltage_data,pd_width.data,pd_length.data,temperature_data,voltage_data,test_pd_width(wdh),test_pd_length(lnh),test_temp) );
+                Idark_model = spline(Idark,voltage_data,getnamed("DC_2","amplitude")-getnamed("DC_1","amplitude"));
+                
+                # compare dark currents
+                ?msg = "At bias " + num2str(test_bias) + "V, width " + num2str(test_pd_width(wdh)*1e6) + "um, length " + num2str(test_pd_length(lnh)*1e6) + "um, temperature " + num2str(test_temp) + "K, dark current is " + num2str(abs(I_dark)*1e9) + " nA.  Expected value is " + num2str(abs(Idark_model)*1e9) + " nA.";
+                if(Idark_model == 0){
+                    pass = abs(I_dark) <= 1e-15;
+                } else{
+                    pass = abs((I_dark-Idark_model)/Idark_model) < Idark_rel_tolerance;
+                }
+                if(!pass) {
+                    error_count = error_count+1;
+                }
+                assert(msg,pass);
+                if(break_at_failure & !pass) { break; }
+                
+                ### Test result 2: Photo current
+                
+                # The cathode current from test circuit 2 minus the dark current from test circuit 1 is the photocurrent of the photodetector
+                # The simulated photocurrent is compared against the photocurrent in the source data file
+                
+                I_ph = getresult(OSC2_name,"signal");
+                I_ph = I_ph.getattribute("amplitude (a.u.)");
+                I_ph = I_ph(length(I_ph)) - I_dark;  	# Iphoto (simulation) = Inet - Idark
+                
+                Resp_3D = matrix(length(freq_data),length(voltage_data),length(temperature_data));
+                for(i=1:length(temperature_data)){
+                    Resp_temp = pinch( interp(pinch(Resp_data(:,:,:,:,i)),freq_data,voltage_data,pd_width.data,pd_length.data,freq_data,voltage_data,test_pd_width(wdh),test_pd_length(lnh)) );
+                    Resp_3D(:,:,i) = Resp_temp;
+                }
+                Resp = pinch( interp(Resp_3D,freq_data,voltage_data,temperature_data,freq_data,voltage_data,test_temp) );
+                
+                Iph_model = interp(Resp,freq_data,voltage_data,getnamed(CWL2_name,"frequency"),getnamed("DC_4","amplitude")-getnamed("DC_3","amplitude"))*getnamed(CWL2_name,"power");
+                
+                # compare photocurrents
+                ?msg = "Photo current is " + num2str(abs(I_ph)*1e3) + " mA.  Expected value is " + num2str(abs(Iph_model)*1e3) + " mA.";
+                pass = abs((I_ph-Iph_model)/Iph_model) < Iph_rel_tolerance;
+                if(!pass) {
+                    error_count = error_count+1;
+                }
+                assert(msg,pass);
+                if(break_at_failure & !pass) { break; }
+            }
+        }
+    }
+            
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

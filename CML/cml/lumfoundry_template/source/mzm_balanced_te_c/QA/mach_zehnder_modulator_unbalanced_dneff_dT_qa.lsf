@@ -1,0 +1,100 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if (unbalanced_MZM){
+    new;
+    fspan = sample_rate_unbalanced;
+    sample_rate = sample_rate_unbalanced;
+
+    select("::Root Element::");
+    set("sample rate",sample_rate);
+
+    # Test circuit 7: dneff_dT
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT6_name = get("name");
+    set("x position", -140);
+    set("y position", 110+650);
+    #!#set("internal electrical equivalent",false);
+    setexpression(DUT6_name,"temperature","310");
+
+    addelement("DC Source");
+    DC8_name = get("name");
+    set("x position", -140);
+    set("y position", -185+650);
+    set("amplitude",0);
+
+    lambda_c = notch_wavelength;
+    f_c=c/lambda_c;
+
+    addelement("Optical Network Analyzer");
+    ONA4_name = get("name");
+    set("x position", -390);
+    set("y position", -115+650);
+    set("analysis type","scattering data");
+    set("center frequency",f_c);
+    set("frequency range",fspan);
+    set("number of points",round( fspan*1e-9 ) );
+    set("plot kind", "wavelength");
+    set("peak at maximum",false);
+
+    connect(ONA4_name,"output",DUT6_name,ports{opt_1_RELAY}.name);
+    connect(ONA4_name,"input 1",DUT6_name,ports{opt_2_RELAY}.name);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    try{connect(DC8_name,"output",DUT6_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 7: dneff_dT
+    reslambda = getresult(ONA4_name,"input 1/mode 1/peak/frequency");
+    pos = find(reslambda,lambda_c);
+    reslambda = reslambda(pos);
+
+    fresnew = c/reslambda;
+
+    dneff_dT_test = ( ng_model*(f_c-fresnew)/f0 ) / (getnamed(DUT6_name,"temperature")-300);   # the first term defines the sign (+/-)
+
+    msg = "dneff_dT = " + num2str(dneff_dT_test) + " 1/K, and should be " + num2str(dneff_dT) + " 1/K";
+    pass = abs(dneff_dT_test-dneff_dT) / dneff_dT < dneff_dT_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

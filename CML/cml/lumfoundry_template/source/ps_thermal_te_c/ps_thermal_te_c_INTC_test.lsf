@@ -1,0 +1,50 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'phase_shifter_thermal' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Frequency domain tests:
+1. Ppi (TE and/or TM)
+2. IL (TE and/or TM)
+3. dneffdT
+Time domain tests:
+1. thermal BW
+Statistical tests:
+1. Ppi (TE and/or TM)
+2. IL (TE and/or TM)
+3. Neff and ng (TE and/or TM)";
+
+
+### Run individual subtests
+# 1. Vpi_Lpi test
+feval("phase_shifter_thermal_Ppi_qa.lsf");
+
+# 2. dneff_dT and insertion loss test
+feval("phase_shifter_thermal_dneff_dT_IL_qa.lsf");
+
+# 3. Thermal bandwidth test
+feval("phase_shifter_thermal_BW_qa.lsf");
+
+# 4. statistical QA
+feval("phase_shifter_thermal_statistical_qa.lsf");
+
+
+### Display QA result
+if (error_count>0) { 
+    ?"error_count = " + num2str(error_count);
+}pause(2);

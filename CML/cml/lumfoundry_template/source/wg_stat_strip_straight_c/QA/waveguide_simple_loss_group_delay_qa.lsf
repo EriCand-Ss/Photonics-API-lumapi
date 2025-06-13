@@ -1,0 +1,158 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# loss and group delay(frequency and time domain) test
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+
+# 1. Build test circuit 1a: loss + frequency domain group delay
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT1a_name = get("name");
+set("x position", 0);
+set("y position", 200);
+if(wg_length_visible_to_user){
+    set(wg_length_name, wg_length); # set to default value specified in data file
+}
+
+addelement("Optical Network Analyzer");
+ONA1a_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("center frequency", central_frequency);
+set("frequency range", 6e12);
+if (wg_length > 5e-03){
+    set("number of points", round(2.5*(wg_length*max(ng)*getnamed("ONA_1","frequency range"))/c));
+}# No. of points,N=2.5*(L*ng/c)*(ONA_freq_range)so that the time window for ONA Impulse response simulation is greater than the waveguide group delay for long waveguides (L>5 mm).
+set("orthogonal identifier", mode_data{1}.ID);
+set("number of input ports", 1);
+set("peak analysis","center");
+
+connect(ONA1a_name,"output",DUT1a_name,ports{1}.name);
+connect(ONA1a_name,"input 1",DUT1a_name,ports{2}.name);
+
+# 2. Build test circuit 1b: time domain group delay
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT1b_name = get("name");
+set("x position", 400);
+set("y position", 200);
+if(wg_length_visible_to_user){
+    set(wg_length_name, wg_length); # set to default value specified in data file
+}
+
+addelement("Optical Network Analyzer");
+set("x position", 400);
+set("y position", 0);
+ONA1b_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("center frequency", central_frequency);
+set("frequency range", 6e12);
+if (wg_length > 5e-03){
+    set("number of points", round(2.5*(wg_length*max(ng)*getnamed("ONA_2","frequency range"))/c));
+}
+set("orthogonal identifier", mode_data{1}.ID);
+set("number of input ports", 1);
+set("peak analysis","center");
+set("analysis type","impulse response");
+connect(ONA1b_name,"output",DUT1b_name,ports{1}.name);
+connect(ONA1b_name,"input 1",DUT1b_name,ports{2}.name);
+
+
+# 3. Run the loop to test all modes
+for (m=1:length(mode_data)) {
+    ? endl + "Testing mode " + num2str(m) + ": " + mode_data{m}.name;
+    switchtodesign;
+    setnamed(ONA1a_name,"orthogonal identifier",mode_data{m}.ID);
+    setnamed(ONA1a_name,"label", mode_data{m}.name);
+    setnamed(ONA1b_name,"orthogonal identifier",mode_data{m}.ID);
+    setnamed(ONA1b_name,"label", mode_data{m}.name);
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # 3.1. Get test result 1a: loss
+    ?"* loss";
+    S21 = getresult(ONA1a_name,"input 1/mode " + num2str(1) + "/peak/gain");
+    gain_type = mode_data{m}.name + " gain (dB)";
+    loss_dB_m = S21.getattribute(gain_type) / wg_length;
+
+    if (!exist("loss_freq")){
+        loss_ref = loss(m);
+    }else{
+        f = c/S21.wavelength;
+        ind_f = find(loss_freq{m}(:,1),f);
+        loss_ref = loss_freq{m}(ind_f,2);
+    }
+    ?"Loss is "+ num2str(-loss_dB_m)+" dB/m. Expected value is "+ num2str(loss_ref)+" dB/m.";
+    msg = "Loss has been changed by: " + num2str(max(abs(-loss_dB_m-loss_ref)));
+    pass = max(abs(-loss_dB_m-loss_ref)) <= loss_tolerance;
+    if(!pass) {
+        ? "ERROR - loss problem";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    # 3.2. Get test result 1b: group delay
+    ?"* group delay";
+    delay_type = mode_data{m}.name + " group delay (s)";
+
+    S21_delay = getresult(ONA1a_name,"input 1/mode " + num2str(1) + "/group delay");
+    group_delay = S21_delay.getattribute(delay_type);
+    S21_delay_time = getresult(ONA1b_name,"input 1/mode " + num2str(1) + "/group delay");
+    group_delay_time = S21_delay_time.getattribute(delay_type);
+
+    # 3.3. Compare frequency and time domain
+    compare_time_bandwidth_fraction = 0.5; # only compare in middle region
+    wavelength = S21_delay.wavelength;
+    f1 = c/max(wavelength);
+    f2 = c/min(wavelength);
+    fc = 0.5*(f1+f2);
+    f = c/wavelength;
+    pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+    diff = max(abs(group_delay(pos)-group_delay_time(pos)));
+    msg = "group delay comparison frequency and time domain over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff) + " and should be less than " + num2str(delay_time_tolerance);
+    pass = diff <= delay_time_tolerance;
+    if(!pass) {
+        ? "ERROR - group delay problem";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    # 3.4. Plot the results
+    if(create_plots){
+        plot(wavelength(pos)*1e9, group_delay(pos)*1e15/wg_length/1e6, "wavelength [nm]", "group delay [fs/um]", "Group Delay "+ mode_data{m}.name);
+        holdon;
+        plot(wavelength(pos)*1e9, group_delay_time(pos)*1e15/wg_length/1e6);
+        holdoff;
+        legend("Frequency domain", "Time domain");
+    }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+} 

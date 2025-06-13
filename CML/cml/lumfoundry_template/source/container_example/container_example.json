@@ -1,0 +1,92 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry MMI",
+    "prefix" : "MMI",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "port_1" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_1",
+      "pos" : "Left",
+      "type" : "Optical Signal",
+      "order":1
+    },
+    "port_2" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.25,
+      "name" : "opt_2",
+      "pos" : "Right",
+      "type" : "Optical Signal",
+      "order":2
+    },
+    "port_3" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.75,
+      "name" : "opt_3",
+      "pos" : "Right",
+      "type" : "Optical Signal",
+      "order":3
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1" :
+    {
+      "annotate" : 0.0,
+      "category" : "CML",
+      "choices" : "TE;TM",
+      "default" : "TE",
+      "kind" : "NonQuantity",
+      "max" : 5.5e-07,
+      "min" : 4.5e-07,
+      "name" : "mmi_type",
+      "type" : "ComboChoice", 
+      "visible_to_user":1
+      }
+  },
+  "model_data":
+  {
+    "photonic_model" : "container_element",
+    "selection_code" : "if(mmi_type=='TE') {\n    selected_name = 'container_element_child1';\n} else {\n    selected_name = 'container_element_child2';\n}\n",
+    "sub_element_parameters" : 
+    {
+      "parameter_1" :
+      {
+        "annotate" : 0,
+        "category" : "Thermal",
+        "default" : "%temperature%",
+        "kind" : "Temperature",
+        "max" : 10000,
+        "min" : 0,
+        "name" : "temperature",
+        "type" : "Number",
+        "unit" : "C",
+        "visible_to_user": 1
+      }
+    },
+    "sub_elements" : 
+    {
+      "_data" : [ "container_element_child1", "container_element_child2" ],
+      "_type" : "cell"
+    },
+    "delay_comp_parent" : 1,
+    "int_delay_comp_parent" : 0
+  } 
+}

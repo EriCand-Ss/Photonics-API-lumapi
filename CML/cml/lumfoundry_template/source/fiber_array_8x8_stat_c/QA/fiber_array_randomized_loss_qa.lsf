@@ -1,0 +1,88 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");      
+}
+err=error_count;
+Nr=QA.random_test.Nr;
+if (isfield(QA.random_test, "rand_seed")) {
+    rand_seed=QA.random_test.rand_seed;
+}
+else{
+    rand_seed=123456;
+}
+
+if (noparam!=0){
+    for (p=1:noparam){ 
+        eval("parameters{"+num2str(p)+"}.test_min=QA.random_test.parameters.parameter_"+num2str(p)+".min;");
+        eval("parameters{"+num2str(p)+"}.test_max=QA.random_test.parameters.parameter_"+num2str(p)+".max;");
+    }
+}
+
+central_frequency = c/QA.wavelength;
+central_wavelength = QA.wavelength;   
+
+### 1. Run all tests for randomized parameter sets
+?endl + "Running randomized parameter tests with seed: " + num2str(randreset(rand_seed));
+?"-------------------------------------";
+
+?"Test wavelength =" +num2str(QA.wavelength) + "m"; 
+?endl+ "Beginning " + num2str(Nr) + " random parameter tests";
+	
+for (tid = 1:Nr) {
+	### 1.1 Setup test circuits
+						feval("/aux_scripts/fiber_array_setup_circuit.lsf");
+	
+	### 1.1.3 Randomize parameters
+	used_parameters = matrix(length(parameters), 1);
+
+	for (pid = length(parameters):-1:1) {
+		if (isfield(parameters{pid}, "test_min") & isfield(parameters{pid}, "test_max")) {
+			minval = parameters{pid}.test_min;
+			maxval = parameters{pid}.test_max;
+		} else {
+			minval = parameters{pid}.min;
+			maxval = parameters{pid}.max;
+		}
+		
+		val = rand(minval, maxval);
+		
+		setexpression(DUT_name, parameters{pid}.name, "");
+		setnamed(DUT_name, parameters{pid}.name, val);
+	               
+		
+		eval("%" + parameters{pid}.name + "% = getnamed(DUT_name, parameters{pid}.name);");
+		eval("used_parameters(pid) = %" + parameters{pid}.name + "%;");
+	}
+	
+	### 1.2 Simulate the circuits
+	run;            
+	
+	### 1.3 Compare/Evaluate loss test results
+	
+
+	feval("/aux_scripts/fiber_array_compare_loss_data.lsf");
+				
+	?"-------------------------------------";
+}
+
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}
+cd(filedirectory(which(currentscriptname)));

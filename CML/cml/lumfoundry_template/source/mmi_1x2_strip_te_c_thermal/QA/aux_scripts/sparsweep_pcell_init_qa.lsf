@@ -1,0 +1,279 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="mmi_1x2_strip_te_c_thermal";
+library_name="lumfoundry_template::Couplers";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\mmi_1x2_strip_te_c_thermal\mmi_1x2_strip_te_c_thermal.json');
+feval('/aux_scripts/sparsweep_pcell_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'mmi_1x2_strip_te_c_thermal';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# if test_all_combo is true, then N_test is the number of random tests over "Number" type parameters for each choice combination
+
+create_plots = true; # if true, automatically generate plots
+error_count = 0;
+
+parameters_exist = exist("parameters");
+temperature_exists = exist("temperature");
+lut_exists = exist("lut_filename");
+
+temperature_code = '
+parstruct.name = "temperature";
+parstruct.type = "Number";
+parstruct.choices = ""; # only required for ComboChoices, leave blank for sweep parameters!
+parstruct.test_min = temperature_test_range.start;
+parstruct.test_max = temperature_test_range.stop;
+';
+
+choice_code = '
+parstruct.name = "dummy_type";
+parstruct.type = "ComboChoice";
+parstruct.choices = "dummy_type1";
+';
+
+if(parameters_exist){
+    if(lut_exists){
+        if(temperature_exists){
+            parameters_test = cell(length(parameters)+1);
+            for(p_ind=1:length(parameters)){ parameters_test{p_ind} = parameters{p_ind}; }
+
+            parstruct = struct;
+            eval(temperature_code);
+            parameters_test{length(parameters)+1} = parstruct;
+        }else{
+            parameters_test = parameters; #copy of parameters cell array for testing
+        } #END: if(temperature_exists)
+    }else{
+        if(temperature_exists){
+            parameters_test = cell(length(parameters)+2);
+            for(p_ind=1:length(parameters)){ parameters_test{p_ind} = parameters{p_ind}; }
+
+            parstruct = struct;
+            eval(choice_code);
+            parameters_test{length(parameters)+1} = parstruct;
+
+            parstruct = struct;
+            eval(temperature_code);
+            parameters_test{length(parameters)+2} = parstruct;
+        }else{
+            parameters_test = cell(length(parameters)+1);
+            for(p_ind=1:length(parameters)){ parameters_test{p_ind} = parameters{p_ind}; }
+
+            parstruct = struct;
+            eval(choice_code);
+            parameters_test{length(parameters)+1} = parstruct;
+        }#END: if(temperature_exists)
+    }#END: if(lut_exists)
+}else{
+    if(!lut_exists){
+        if(temperature_exists){
+            parameters_test = cell(2);
+
+            parstruct = struct;
+            eval(choice_code);
+            parameters_test{1} = parstruct;
+
+            parstruct = struct;
+            eval(temperature_code);
+            parameters_test{2} = parstruct;
+        }else{
+            parameters_test = cell(1);
+
+            parstruct = struct;
+            eval(choice_code);
+            parameters_test{1} = parstruct;
+        }
+    }
+}#END: if(parameters_exist)
+
+
+## Reference data for testing:
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters") or exist("stat_measurement_data")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+break_at_failure = false;
+freq_tolerance = 1e9;
+
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+
+
+randreset(12345);
+
+# Finding total number of frequency points
+N_freq_points_tot = 0;
+for (ii=1:length(test_ranges)){
+    N_freq_points_tot = N_freq_points_tot+test_ranges{ii}.number_of_points;
+}
+
+##################
+
+#Adding element to find number of ports, then deleting
+addelement(design_kit_name + model);
+DUT_name_temp = get("name");
+port_names = splitstring(getports(DUT_name_temp),endl);
+N_ports = length(port_names);
+select(DUT_name_temp);
+delete;
+
+# When test_all_combo  = true, tests are run over all combinations of choices for the ComboChoice and Logical parameters_test
+# Below a list is generated of all possible combinations of parameter choices ("indices" matrix)
+if (test_all_combo){
+    combo_params = matrix(length(parameters_test),2); # ComboChoice and Logical type parameters_test
+    noncombo_params = matrix(length(parameters_test));# Number type parameters_test
+    logical_choice_vals = cell(2);
+    logical_choice_vals{1} = "true";
+    logical_choice_vals{2} = "false";
+    kk = 1;
+    qq = 1;
+
+    # Identifying ComboChoice and Logical parameters_test
+    for(j=1:length(parameters_test)) {
+        if(parameters_test{j}.type=="ComboChoice"){
+            choice_vals = splitstring(parameters_test{j}.choices,";");
+            combo_params(kk,1) = j;
+            combo_params(kk,2) = length(choice_vals);
+            kk = kk+1;
+        }else if(parameters_test{j}.type=="Logical"){
+            combo_params(kk,1) = j;
+            combo_params(kk,2) = 2;
+            kk = kk+1;
+        }else{
+            noncombo_params(qq) = j;
+            qq = qq+1;
+        }
+    }
+    combo_params = combo_params(1:kk-1,:);
+    noncombo_params = noncombo_params(1:qq-1);
+    size_combo_params = size(combo_params);
+
+    #Find the total number of combinations:  N_prod
+
+    matrix_string = "matrix_size = [";
+    N_prod = 1;
+    for (ll = 1:size_combo_params(1)){
+        N_prod = N_prod*combo_params(ll,2);
+        matrix_string = matrix_string+num2str(combo_params(ll,2));
+        if (ll!=size_combo_params(1)){matrix_string = matrix_string+",";}
+    }
+    if (size_combo_params(1) != length(parameters_test)){Nr = N_test*N_prod;}else{Nr = N_prod;}
+
+    matrix_string = matrix_string + "];";
+    eval(matrix_string);
+    indices = matrix(N_prod,length(matrix_size));
+    # For each combination, find the index for each parameter.
+    for (ll = 1:N_prod){
+
+        index = ll;
+        # Find parameter indices (this is effectively ind2sub in Matlab)
+        for (i = 1:length(matrix_size)) {
+            mod_dividend = index;
+            mod_divisor = matrix_size(i);
+            mod_remainder = mod(mod_dividend,mod_divisor);
+            if (mod_remainder == 0) { mod_remainder = matrix_size(i); }
+            indices(ll,i) = mod_remainder;
+            # remove this dimension from further calculations
+            index = (index+(matrix_size(i)-mod_remainder))/matrix_size(i);
+        }
+    }
+}
+else{
+    Nr = N_test;
+}
+
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 50.";
+        N_trials = 50;
+    }
+
+    if(!exist("stat_transmission_tolerance")){
+        ?"No user provided value for stat_transmission_tolerance. Using default value of stat_transmission_tolerance = 0.001.";
+        stat_transmission_tolerance = 0.001;
+    }
+
+    if(!exist("stat_qa_mode_ID")){
+        ?"No user provided value for stat_qa_mode_ID. Using default value of stat_qa_mode_ID = 1.";
+        stat_qa_mode_ID = 1;
+    }
+
+    if(!exist("stat_qa_wavelength") and !exist("stat_qa_wavelength_start") and !exist("stat_qa_wavelength_stop")){
+        stat_qa_wavelength = (test_params.wavelength_start + test_params.wavelength_stop)/2;
+        ?"No user provided value for stat_qa_wavelength. Using default value of stat_qa_wavelength = " + num2str(stat_qa_wavelength) + ".";
+    }
+    
+    if(!exist("stat_qa_wavelength") and !exist("stat_qa_number_of_points")){
+        stat_qa_number_of_points = 50;
+        ?"No user provided value for stat_qa_number_of_points. Using default value of stat_qa_number_of_points = " + num2str(stat_qa_number_of_points) + ".";
+    }
+    
+    if(exist("stat_measurement_data")){ # create the stat_parameters
+        stat_parameters = cell(2);
+        par = struct;
+        par.name = stat_measurement_data.GLOBAL.param_name;
+        par.mean = stat_measurement_data.GLOBAL.nominal_sample;
+        par.LOCAL = struct;
+        par.LOCAL.distribution = "random";
+        par.LOCAL.min = 0;
+        par.LOCAL.max = 0;
+        par.LOCAL.option = 2;
+        par.GLOBAL = struct;
+        par.GLOBAL.distribution = "random";
+        par.GLOBAL.min = 1 - stat_measurement_data.GLOBAL.nominal_sample;
+        par.GLOBAL.max = stat_measurement_data.GLOBAL.N_sample - stat_measurement_data.GLOBAL.nominal_sample;
+        par.GLOBAL.option = 2;
+        if(isfield(stat_measurement_data.GLOBAL,"GLOBALGROUP")){
+            par.GLOBAL.GLOBALGROUP = stat_measurement_data.GLOBAL.GLOBALGROUP;
+        }
+        stat_parameters{1} = par;
+        
+        par = struct;
+        par.name = stat_measurement_data.LOCAL.param_name;
+        par.mean = stat_measurement_data.LOCAL.nominal_sample;
+        par.LOCAL = struct;
+        par.LOCAL.distribution = "random";
+        par.LOCAL.min = 1 - stat_measurement_data.LOCAL.nominal_sample;
+        par.LOCAL.max = stat_measurement_data.LOCAL.N_sample - stat_measurement_data.LOCAL.nominal_sample;
+        par.LOCAL.option = 2;
+        stat_parameters{2} = par;
+    }
+}

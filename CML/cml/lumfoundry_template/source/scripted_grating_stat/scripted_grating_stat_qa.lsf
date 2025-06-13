@@ -1,0 +1,327 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+
+new;
+
+# QA settings:
+loss_tolerance = 1e-6;
+reflection_tolerance = 1e-6;
+wavelength_tolerance=1e-10;
+bandwidth_tolerance=0.01;
+dpeakwavelength_dT_rel_tolerance=1e-2;
+time_tolerance = 0.05; #comparison of insertion loss and reflection between time and frequency domain tests
+freq_range= 10; #THz
+mode_label = "TE";
+xpos = 0;
+
+#1. Configuration to test S11 and S21:
+
+addelement("lum_scripted_grating_stat");
+DUT_name = get("name");
+set("x position", xpos);
+set("y position", 200);
+
+addelement("Optical Network Analyzer");
+ONA_name1 = get("name");
+set("x position", xpos);
+set("y position", 50);
+set("input parameter", "center and range");
+set("number of points",10000);
+set("plot kind", "wavelength");
+set("center frequency", c/peak_wavelength);
+set("frequency range", freq_range*1e12);
+set("orthogonal identifier", 1);
+set("number of input ports", 2);
+set("peak analysis","single");
+
+
+connect(ONA_name1, "output", DUT_name, ports{1}.name);
+connect(ONA_name1, "input 1", DUT_name, ports{2}.name);
+connect(ONA_name1, "input 2", DUT_name, ports{1}.name);
+
+
+#2 Configuration to test S22 and S12:
+
+addelement("lum_scripted_grating_stat");
+DUT_name = get("name");
+set("x position", xpos);
+set("y position", 600);
+
+addelement("Optical Network Analyzer");
+ONA_name2 = get("name");
+set("x position", xpos);
+set("y position", 450);
+set("input parameter", "center and range");
+set("number of points",10000);
+set("plot kind", "wavelength");
+set("center frequency", c/peak_wavelength);
+set("frequency range", freq_range*1e12);
+set("orthogonal identifier", 1);
+set("number of input ports", 2);
+set("peak analysis","single");
+
+connect(ONA_name2,"output", DUT_name,ports{2}.name);
+connect(ONA_name2,"input 1", DUT_name,ports{1}.name);
+connect(ONA_name2,"input 2", DUT_name,ports{2}.name);
+
+
+# additional circuit for temp dependency QA
+
+xpos = 800;
+
+#Configuration to test S11 and S21:
+
+addelement("lum_scripted_grating_stat");
+DUT_name = get("name");
+set("x position", xpos);
+set("y position", 200);
+setexpression(DUT_name,"temperature","");
+set("temperature",330);
+
+addelement("Optical Network Analyzer");
+ONA_name1_330 = get("name");
+set("x position", xpos);
+set("y position", 50);
+set("input parameter", "center and range");
+set("number of points",10000);
+set("plot kind", "wavelength");
+set("center frequency", c/peak_wavelength);
+set("frequency range", freq_range*1e12);
+set("orthogonal identifier",1);
+set("number of input ports", 2);
+set("peak analysis","single");
+
+
+connect(ONA_name1_330, "output", DUT_name, ports{1}.name);
+connect(ONA_name1_330, "input 1", DUT_name, ports{2}.name);
+connect(ONA_name1_330, "input 2", DUT_name, ports{1}.name);
+
+run;
+
+S21 = getresult(ONA_name1,"input 1/mode 1/gain");
+S11 = getresult(ONA_name1,"input 2/mode 1/gain");
+
+S12 = getresult(ONA_name2,"input 1/mode 1/gain");
+S22 = getresult(ONA_name2,"input 2/mode 1/gain");
+
+gain_type = mode_label + " gain (dB)";
+
+IL21_dB = S21.getattribute(gain_type);
+IL12_dB = S12.getattribute(gain_type);
+
+R1test_dB = S11.getattribute(gain_type);
+R2test_dB = S22.getattribute(gain_type);
+
+
+
+BW_dB=1;
+wavelength = S21.wavelength;
+P_1dB=max(IL21_dB)-BW_dB;
+peak_wl=getresult(ONA_name1,"input 1/mode 1/peak/frequency");
+out=find(IL21_dB> P_1dB);
+W1=min(out); W2=max(out);
+WL1=wavelength(W1);
+WL2=wavelength(W2);
+BW=abs(WL2-WL1);
+skew=(WL2+WL1)/2 - peak_wl;
+peak_wl_300 = peak_wl;  # save peak_wl at room temp.
+
+#3. Peak wavelength, BW and skew tests in frequency domain
+msg = "Peak wavelength for "+ mode_label +" has been changed by: " + num2str(abs(peak_wl-peak_wavelength));
+pass = abs(peak_wl-peak_wavelength) <= wavelength_tolerance;
+msg_result = "Peak wavelength for "+ mode_label + " mode is " + num2str(peak_wl*1e9) + " nm, and should be " + num2str(peak_wavelength*1e9) + " nm.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Bandwidth for "+ mode_label +" has been changed by: " + num2str(abs(BW-bandwidth_1dB));
+pass = abs(BW-bandwidth_1dB) <= bandwidth_tolerance;
+msg_result = "Bandwidth for "+ mode_label +" mode is " + num2str(BW*1e9) + " nm, and should be " + num2str(bandwidth_1dB*1e9) + " nm.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+
+
+#4. Insertion loss and reflection tests in frequency domain
+msg = "Insertion loss (from S21) for "+ mode_label +"has been changed by: " + num2str(abs(IL21_dB-peak_IL_dB));
+pass = abs((max(IL21_dB)-peak_IL_dB)/peak_IL_dB) <= loss_tolerance;
+msg_result = "Insertion loss (from S21) for "+ mode_label +" mode is " + num2str(max(IL21_dB)) + " dB, and should be " + num2str(peak_IL_dB) + " dB.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Insertion loss (from S12) for "+ mode_label +" has been changed by: " + num2str(abs(IL12_dB-peak_IL_dB));
+pass = abs((max(IL12_dB)-peak_IL_dB)/peak_IL_dB) <= loss_tolerance;
+msg_result = "Insertion loss (from S12) for "+ mode_label +" mode is " + num2str(max(IL12_dB)) + " dB, and should be " + num2str(peak_IL_dB) + " dB.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Reflection at port 1 for "+ mode_label +" has been changed by: " + num2str(max(R1test_dB-R1_dB(1)));
+pass = abs((max(R1test_dB)-R1_dB(1))/R1_dB(1)) <= reflection_tolerance;
+msg_result = "Reflection at port 1 for "+ mode_label +" mode is " + num2str(max(R1test_dB)) + " dB, and should be " + num2str(R1_dB(1)) + " dB.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Reflection at port 2 for "+ mode_label +" has been changed by: " + num2str(abs(R2test_dB-R2_dB(1)));
+pass = abs((max(R2test_dB)-R2_dB(1))/R2_dB(1)) <= reflection_tolerance;
+msg_result = "Reflection at port 2 for "+ mode_label +" mode is " + num2str(max(R2test_dB)) + " dB, and should be " + num2str(R2_dB(1)) + " dB.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+#5.  Thermal shift in Peak wavelength in frequency domain
+peak_wl_330=getresult(ONA_name1_330,"input 1/mode 1/peak/frequency");
+dpeakwavelength_dT_test = (peak_wl_330 - peak_wl_300) / 30;
+
+msg = "Change in peak wavelength with change in temperature for "+ mode_label +" has been changed by: " + num2str(abs(dpeakwavelength_dT_test-dpeakwavelength_dT));
+pass = abs((dpeakwavelength_dT_test-dpeakwavelength_dT)/dpeakwavelength_dT) <= dpeakwavelength_dT_rel_tolerance;
+msg_result = "Change in peak wavelength with change in temperature for "+ mode_label + " mode is " + num2str(dpeakwavelength_dT_test) + " m/K, and should be " + num2str(dpeakwavelength_dT) + " m/K.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+#6.Run time domain simulation and get results
+
+switchtolayout;
+
+setnamed(ONA_name1,"analysis type","impulse response");
+setnamed(ONA_name2,"analysis type","impulse response");
+
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+}
+run;
+
+
+
+S21_time = getresult(ONA_name1,"input 1/mode 1/gain");
+S11_time = getresult(ONA_name1,"input 2/mode 1/gain");
+
+S12_time = getresult(ONA_name2,"input 1/mode 1/gain");
+S22_time = getresult(ONA_name2,"input 2/mode 1/gain");
+
+gain_type = mode_label + " gain (dB)";
+
+IL21_dB_time = S21_time.getattribute(gain_type);
+IL12_dB_time = S12_time.getattribute(gain_type);
+
+R1test_dB_time = S11_time.getattribute(gain_type);
+R2test_dB_time = S22_time.getattribute(gain_type);
+
+#7.Compare frequency and time domain
+
+compare_time_bandwidth_fraction = 0.5; # only compare in middle region
+f1 = c/max(wavelength);
+f2 = c/min(wavelength);
+fc = 0.5*(f1+f2);
+f = c/wavelength;
+pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+diff_S21 = max(abs(IL21_dB_time(pos)- IL21_dB(pos)));
+diff_S12 = max(abs(IL12_dB_time(pos)-IL12_dB(pos)));
+diff_S11 = max(abs(R1test_dB_time(pos)-R1test_dB(pos)));
+diff_S22 = max(abs(R2test_dB_time(pos)-R2test_dB(pos)));
+
+
+msg = "Comparison of insertion loss (from S21) in frequency and time domain tests for "+ mode_label +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S21) + " and should be less than " + num2str(time_tolerance);
+pass = diff_S21 <= time_tolerance;
+if(!pass) {
+    ? "ERROR - Insertion loss (from S21) time domain vs frequency domain problem";
+    error_count = error_count+1;
+}else{
+    ? "Passed! - "+ msg;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Comparison of insertion loss (from S12) in frequency and time domain tests for "+ mode_label +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S12) + " and should be less than " + num2str(time_tolerance);
+pass = diff_S21 <= time_tolerance;
+if(!pass) {
+    ? "ERROR - Insertion loss (from S12) time domain vs frequency domain problem";
+    error_count = error_count+1;
+}else{
+    ? "Passed! - "+ msg;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Comparison of reflection at port 1 in frequency and time domain tests for "+ mode_label +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S11) + " and should be less than " + num2str(time_tolerance);
+pass = diff_S11 <= time_tolerance;
+if(!pass) {
+    ? "ERROR - Reflection at port 1 time domain vs frequency domain problem";
+    error_count = error_count+1;
+}else{
+    ? "Passed! - "+ msg;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "Comparison of reflection at port 2 in frequency and time domain tests for "+ mode_label +" over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff_S22) + " and should be less than " + num2str(time_tolerance);
+pass = diff_S22 <= time_tolerance;
+if(!pass) {
+    ? "ERROR - Reflection at port 2 time domain vs frequency domain problem";
+    error_count = error_count+1;
+}else{
+    ? "Passed! - "+ msg;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+

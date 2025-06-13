@@ -1,0 +1,601 @@
+<head>
+<style>
+table, th, tr, td{
+border: 1px solid black;
+border-collapse: collapse;
+}
+tr, td{
+padding: .5%;
+}
+</style>
+}
+<body style="font-family:Tahoma;">
+<title>lum_fiber_array_8x8_stat_c</title>
+<H1>lum_fiber_array_8x8_stat_c (FAU)</H1>
+<div class="overview-image"><img src="symbol_lum_fiber_array_8x8_stat_c.png" border="1"></div>
+<P>Foundry parameterized 8x8 fiber array - C band TE</P>
+<H2>Keywords</H2>
+<P></P>
+<H2>Ports</H2>
+<table class="int-ports">
+<tr>
+<th width="40%">Name</th>
+<th width="60%">Type</th>
+</tr>
+<tr>
+<td>opt_1</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_2</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_3</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_4</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_5</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_6</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_7</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_8</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_9</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_10</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_11</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_12</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_13</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_14</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_15</td>
+<td>Optical Signal</td>
+</tr>
+<tr>
+<td>opt_16</td>
+<td>Optical Signal</td>
+</tr>
+</table>
+<H2>Properties</H2>
+<H3>General Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>name</b></p>
+<p>Defines the name of the element.</p></td>
+<td>lum_fiber_array_8x8_stat_c</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>enabled</b></p>
+<p>Defines whether or not the element is enabled.</p></td>
+<td>true</td>
+<td> - </td>
+<td>[true, false]</td>
+</tr>
+<tr>
+<td><p><b>description</b></p>
+<p>A brief description of the elements functionality.</p></td>
+<td>Foundry parameterized 8x8 fiber array - C band TE</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>prefix</b></p>
+<p>Defines the element name prefix.</p></td>
+<td>FAU</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>model</b></p>
+<p>Defines the element model name.</p></td>
+<td>lum_fiber_array_8x8_stat_c</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>library</b></p>
+<p>Defines the element location or source in the library (custom or design kit).</p></td>
+<td>::Custom::lumfoundry_template::Optical IO</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>expandable</b></p>
+<p>Defines whether or not the user can access the internal elements of the compound.</p></td>
+<td>false</td>
+<td> - </td>
+<td>[true, false]</td>
+</tr>
+</table>
+<H3>Thermal Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>temperature</b></p>
+<p>Defines the temperature.</p></td>
+<td>&percnt;temperature&percnt;</td>
+<td>K</td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+</table>
+<H3>Simulation Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>bitrate</b></p>
+<p>The output signal bitrate.</p></td>
+<td>&percnt;bitrate&percnt;</td>
+<td>bits/s</td>
+<td>(0, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>time window</b></p>
+<p>The duration of the generated signal. This is typically set by the global properties in the root (top-most) element.</p></td>
+<td>&percnt;time window&percnt;</td>
+<td>s</td>
+<td>(0, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>sample rate</b></p>
+<p>The sample rate of the generated signal. This is typically set by the global properties in the root (top-most) element.</p></td>
+<td>&percnt;sample rate&percnt;</td>
+<td>Hz</td>
+<td>[0, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>output signal mode</b></p>
+<p>The output signal mode.</p></td>
+<td>&percnt;output signal mode&percnt;</td>
+<td> - </td>
+<td>[sample, block</td>
+</tr>
+<tr>
+<td><p><b>number of output signals</b></p>
+<p>The number of simulation runs, or the number of generated signals.</p></td>
+<td>&percnt;number of output signals&percnt;</td>
+<td> - </td>
+<td>[1, +&infin;)</td>
+</tr>
+</table>
+<H3>Script Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>run setup script</b></p>
+<p>Defines whether to run setup script automatically or to force the setup script to run at the beginning of the simulation.</p></td>
+<td>automatic</td>
+<td> - </td>
+<td>[automatic, always</td>
+</tr>
+</table>
+<H3>Design Kit Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>version</b></p>
+<p></p></td>
+<td> - </td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>internal electrical equivalent</b></p>
+<p>Defines if the internal electrical equivalent circuits or elements are enabled.</p></td>
+<td>&percnt;internal electrical equivalent&percnt;</td>
+<td> - </td>
+<td>[true, false]</td>
+</tr>
+</table>
+<H3>Design Kit/Header Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>component id</b></p>
+<p>A component identifier, defined when importing a schematic from a file.</p></td>
+<td>true</td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>mcs filename</b></p>
+<p>The file containing a list of process design kit (pdk) names and correspondent pdk parameters.</p></td>
+<td> - </td>
+<td> - </td>
+<td> - </td>
+</tr>
+<tr>
+<td><p><b>mcs</b></p>
+<p>The process design kit name.</p></td>
+<td> - </td>
+<td> - </td>
+<td> - </td>
+</tr>
+</table>
+<H3>Validation Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>deadlock resolution</b></p>
+<p>Defines how do resolve simulation deadlock. Insert delays to break probable deadlocks (prevent). Locate where deadlock occurs and automatically insert delays (resolve). To run the simulation and manually resolve simulation deadlock use 'ignore' option.</p></td>
+<td>&percnt;deadlock resolution&percnt;</td>
+<td> - </td>
+<td>[ignore, prevent</td>
+</tr>
+<tr>
+<td><p><b>delay insertion</b></p>
+<p>Defines whether the simulator will add delays exclusively to bidirectional ports or to any output port.</p></td>
+<td>&percnt;delay insertion&percnt;</td>
+<td> - </td>
+<td>[output ports, bidirectional ports</td>
+</tr>
+<tr>
+<td><p><b>check internal monitors</b></p>
+<p>Defines whether or not to check for monitors inside of compound elements.</p></td>
+<td>true</td>
+<td> - </td>
+<td>[true, false]</td>
+</tr>
+</table>
+<H3>CML Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>decenter_x</b></p>
+<p></p></td>
+<td>0</td>
+<td><p>um*</p>
+<p>*std. unit is m</p></td>
+<td>[-4, 4]</td>
+</tr>
+<tr>
+<td><p><b>decenter_y</b></p>
+<p></p></td>
+<td>0</td>
+<td><p>um*</p>
+<p>*std. unit is m</p></td>
+<td>[-4, 4]</td>
+</tr>
+<tr>
+<td><p><b>tilt_theta</b></p>
+<p></p></td>
+<td>0</td>
+<td><p>deg*</p>
+<p>*std. unit is rad</p></td>
+<td>[-9.99811, 9.99811]</td>
+</tr>
+<tr>
+<td><p><b>tilt_phi</b></p>
+<p></p></td>
+<td>0</td>
+<td><p>deg*</p>
+<p>*std. unit is rad</p></td>
+<td>[-9.99811, 9.99811]</td>
+</tr>
+</table>
+<H3>CML/Statistical Properties</H3>
+<table class="int-properties">
+<tr>
+<th width="40%">Name</th>
+<th width="20%">Default value</th>
+<th width="20%">Default unit</th>
+<th width="20%">Range</th>
+</tr>
+<tr>
+<td><p><b>delta_x_1</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_2</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_3</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_4</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_5</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_6</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_7</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_x_8</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_1</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_2</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_3</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_4</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_5</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_6</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_7</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_y_8</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_1</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_2</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_3</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_4</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_5</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_6</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_7</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_theta_8</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_1</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_2</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_3</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_4</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_5</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_6</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_7</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+<tr>
+<td><p><b>delta_phi_8</b></p>
+<p></p></td>
+<td>0</td>
+<td> - </td>
+<td>(-&infin;, +&infin;)</td>
+</tr>
+</table>
+<H2>Results</H2>
+<table class="int-results">
+<tr>
+<th width="40%">Name</th>
+<th width="60%">Description</th>
+</tr>
+<tr>
+<td>diagnostic/response #/transmission</td>
+<td>The complex transmission vs. frequency corresponding to the ideal and designed filter.</td>
+</tr>
+<tr>
+<td>diagnostic/response #/gain</td>
+<td>The gain vs. frequency corresponding to the ideal and designed filter.</td>
+</tr>
+<tr>
+<td>diagnostic/response #/error</td>
+<td>Mean square error comparing the frequency response of the designed filter implementation with the ideal frequency response.</td>
+</tr>
+</table>
+</body>

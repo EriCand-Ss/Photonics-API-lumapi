@@ -1,0 +1,151 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="gc_fitted_stat_te_c";
+library_name="lumfoundry_template::Optical IO";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\gc_fitted_stat_te_c\gc_fitted_stat_te_c.json');
+feval('/aux_scripts/grating_coupler_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'gc_fitted_stat_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+
+##Backward compatibilty##
+
+if (exist("mode_no")) {
+    peak_wavelength_mainpol=peak_wavelength_mainpol.mean;
+    skew_mainpol=skew_mainpol.mean;
+    bandwidth_1dB_mainpol=bandwidth_1dB_mainpol.mean ;
+    dpeakwavelength_dT_mainpol=dpeakwavelength_dT_mainpol.mean;
+    if (mode_no==1){
+        mode_data=cell(1);
+        mode_data{1} = struct;
+        mode_data{1}.ID = 1;
+        mode_data{1}.name = "num2str("+mode_label+")";
+        eval("peak_IL_dB=peak_IL_("+mode_label+")_dB.mean");
+        eval("R1_dB=R1_("+mode_label+")_dB.mean");
+        eval("R2_dB=R2_("+mode_label+")_dB.mean");
+    }
+   if (mode_no==2){
+        mode_data=cell(2);
+        mode_data{1} = struct;
+        mode_data{1}.ID = 1;
+        mode_data{1}.name = "num2str("+mainpol_label+")";
+        mode_data{2} = struct;
+        mode_data{2}.ID = 2;
+        mode_data{2}.name = "num2str("+secondarypol_label+")";
+        mainpol_ID = 1 ;
+        secondarypol_ID = 2 ;
+        eval("peak_IL_dB=[peak_IL_" + mainpol_label + "_dB.mean , peak_IL_"+secondarypol_label+"_dB.mean];");
+        eval("R1_dB=[R1_"+mainpol_label+"_dB.mean,R1_"+secondarypol_label+"_dB.mean];");
+        eval("R2_dB=[R2_"+mainpol_label+"_dB.mean,R2_"+secondarypol_label+"_dB.mean];");
+   }
+}
+
+temp = cell(7);
+temp{1} = "peak_IL_dB"; temp{2} = "R1_dB"; temp{3} = "R2_dB"; temp{4} = "peak_wavelength_mainpol"; temp{5} = "bandwidth_1dB_mainpol"; temp{6} = "skew_mainpol"; temp{7} = "dpeakwavelength_dT_mainpol";
+
+for (i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM = " + temp{i} + ";");
+        if(isfield(FOM, 'default_value')){
+            eval(temp{i}+" = FOM.default_value;");
+        }
+    }
+} 
+
+##Initialise enviroment and workspace 
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+mode_no=length(mode_data);
+mode_label=mode_ID = cell(mode_no);
+for(ind=1:mode_no){
+    mode_label{ind} = mode_data{ind}.name;
+    mode_ID{ind} = mode_data{ind}.ID;
+}
+##QA options and settings
+if (!exist("loss_tolerance")){
+    ?"Warning: loss_tolerance is not defined in the '" + model + ".lsf' file. Using a default value of 1e-6.";
+    loss_tolerance = 1e-6;
+}
+if (!exist("reflection_tolerance")){
+    ?"Warning: reflection_tolerance is not defined in the '" + model + ".lsf' file. Using a default value of 1e-6.";
+    reflection_tolerance = 1e-6;
+}
+if (!exist("wavelength_tolerance")){
+    ?"Warning: wavelength_tolerance is not defined in the '" + model + ".lsf' file. Using a default value of 1e-10.";
+    wavelength_tolerance = 1e-10;
+}
+if (!exist("dpeakwavelength_dT_mainpol_rel_tolerance")){
+    ?"Warning: dpeakwavelength_dT_mainpol_rel_tolerance is not defined in the '" + model + ".lsf' file. Using a default value of 1e-3.";
+    dpeakwavelength_dT_mainpol_rel_tolerance = 1e-3;
+}
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+
+# statistical QA
+if (exist("enable_stat_qa")==0){
+enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if (exist("stat_peak_IL_tolerance")==0){
+        stat_peak_IL_tolerance = 0.0001; # dB
+    }
+    if (exist("stat_peak_wl_tolerance")==0){
+        stat_peak_wl_tolerance = 0.001e-9; # m
+    }
+    if (exist("stat_BW_tolerance")==0){
+        stat_BW_tolerance = 0.001e-9; # m
+    }
+    if (exist("stat_skew_tolerance")==0){
+        stat_skew_tolerance = 0.001e-9; # m
+    }
+}
+
+create_plots = true;
+break_at_failure = false;
+error_count = 0;
+
+#1. Build circuit
+feval("/aux_scripts/grating_coupler_setup_circuit.lsf");
+
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+}
+run;

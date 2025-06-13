@@ -1,0 +1,15 @@
+simulator lang=spectre
+library lumfoundry_template
+
+section nominal
+endsection nominal
+
+section statistical
+endsection statistical
+
+section corner_1
+endsection corner_1
+
+section corner_2
+endsection corner_2
+

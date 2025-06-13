@@ -1,0 +1,163 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+# Test circuit 8: BW
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if(mzm_electrical) {
+    new;
+    if(!exist("BW_bias")){
+        BW_bias = -1;    		# default test bias
+    }
+    pos = find(electrical_bandwidth_data(:,1) == BW_bias);
+
+    sample_rate = 16e12; 		#sample rate of root
+    delay = 8e-10;
+
+    groupscope("::Root Element"); #return to root
+    set("sample rate", sample_rate);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT4_name = get("name");
+    set("x position", 466);
+    set("y position", 110);
+
+    addelement("Step Source");
+    STEP1_name = get("name");
+    set("x position", 400);
+    set("y position", -185);
+    set("amplitude",.01); #hardcoded (we might want to estimate this)
+    set("delay", delay); # hardcoded (we might want to estimate this based on test with CW laser and DC bias)
+    set("bias", electrical_bandwidth_data(pos,1));
+    if(bias_node == "cathode"){
+        set("bias", -electrical_bandwidth_data(pos,1));
+    }
+
+    addelement("DC Source");
+    DC5_name = get("name");
+    set("x position", 300);
+    set("y position", -79);
+    set("amplitude",0);
+
+    addelement("CW Laser");
+    CWL2_name = get("name");
+    set("x position", 300);
+    set("y position", 73);
+    set("power", 0.001);
+    set("frequency", c/lambda0);
+
+    addelement("PIN Photodetector");
+    PIN1_name = get("name");
+    set("x position", 647);
+    set("y position", 86);
+    set("enable shot noise",false);
+
+    addelement("Oscilloscope");
+    OSC1_name = get("name");
+    set("x position", 800);
+    set("y position", 110);
+
+    connect(CWL2_name,"output",DUT4_name,ports{opt_1_RELAY}.name);
+    connect(PIN1_name,"input",DUT4_name,ports{opt_2_RELAY}.name);
+    connect(PIN1_name,"output",OSC1_name,"input");
+
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    if(bias_node == "anode"){ 
+    try{connect(STEP1_name,"output",DUT4_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    }
+    if(bias_node == "cathode"){ 
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(STEP1_name,"output",DUT4_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    }
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 8: BW
+
+    ## Calculate the 3dB bandwidth by using FFT to get the frequency response
+    signal = getresult("OSC_1", "signal");
+    I = getattribute(signal,getattribute(signal));
+    t = signal.time;
+    delay = 2e-10;
+    start = find(t,delay);
+    N= length(t);
+    I = I(start+1:N);
+    t = t(start+1:N);
+    N=N-start;
+    th = t(2:(N-1));
+    Nh = N-2;
+    dI = I(3:N) - I(1:Nh);
+    dt = t(3:N) - t(1:Nh);
+    dIdt = dI/dt;
+    
+    # Interpolate the impulse response to plot it on the same figure as the step
+    t_interp = th(1):0.1e-12:th(Nh);  #uniform time grid
+    dIdt_interp = interp(dIdt, th,t_interp);
+
+    # take fft of the original impulse response to get the frequency response
+    sf_out = fft(dIdt_interp,2,0);
+    f_out = fftw(t_interp - t_interp(1),2,0)/(2*pi);
+
+    if(create_plots){
+        # plot impulse response in frequency domain
+        plot(1e-9*f_out, 20*log10(abs(sf_out)/max(abs(sf_out))),"Frequency (GHz)", " Normalized response (dB)","","log10x");
+        legend("","");
+        setplot("x min",0.5); 
+        setplot("y max",0); 
+        setplot("x max",200);
+        setplot("y min",-25);
+        setplot("title", model+" BW test");
+    }
+
+
+    # find -3dB point
+    p1 = 2:find(f_out,200e9);
+    f_out = f_out(p1);
+    sf_out = sf_out(p1);
+    tempx = linspace(min(f_out),max(f_out),5000);
+    tempy = interp(20*log10(abs(sf_out)/max(abs(sf_out))),f_out,tempx);
+    f3dB = tempx(find(tempy,-3));
+
+    msg = "3dB BW is "+num2str(f3dB*1e-9)+" GHz and it should be "+num2str(electrical_bandwidth_data(pos,2)*1e-9)+" GHz";
+    change = abs(abs(f3dB)-abs(electrical_bandwidth_data(pos,2)))/abs(electrical_bandwidth_data(pos,2));
+    pass = change < BW_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

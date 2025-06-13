@@ -1,0 +1,46 @@
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'grating_model' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Testing:
+1. Insertion loss
+
+Conditions:
+1. For QA wavelength.
+2. For fixed polarization.
+3. Against tolerance values specified"
+;
+
+### Run individual subtests
+
+# 1. Single Parameter Test
+feval("fiber_array_single_loss_qa.lsf");
+
+# 2. Randomized Parameter Tests
+feval("fiber_array_randomized_loss_qa.lsf");
+
+# 3. Statistical QA
+feval("fiber_array_statistical_qa.lsf");
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+
+pause(2);

@@ -1,0 +1,19 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+setup_script =
+    "
+    for (m=1:length(mode_data)) {
+        m_data = mode_data{m};
+        setsparameter(ports{2}.name, m_data.name, m_data.ID, ports{1}.name, m_data.ID, \"propagation\",[frequency,loss(m_data.ID),neff(m_data.ID),c/ng(m_data.ID),D(m_data.ID)], wg_length, true, true, 0);
+        setsparameter(ports{1}.name, m_data.name, m_data.ID, ports{2}.name, m_data.ID, \"propagation\",[frequency,loss(m_data.ID),neff(m_data.ID),c/ng(m_data.ID),D(m_data.ID)], wg_length, true, true, 0);
+        setfir (\"rectangular\", 1, 2, 1e-4, 256);
+    }
+    ";

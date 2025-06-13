@@ -1,0 +1,317 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry thermal phase shifter - C band TE",
+    "prefix" : "PSTH",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_range",
+          "value" : "[0 V, 10 V]"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order" : 2
+    },
+    "th_pos" : 
+    {
+      "name" : "ele_h1",
+      "dir" : "Bidirectional",
+      "loc" : 0.15,
+      "pos" : "Top",
+      "order" : 3
+    },
+    "th_neg" : 
+    {
+      "name" : "ele_g1",
+      "dir" : "Bidirectional",
+      "loc" : 0.85,
+      "pos" : "Top",
+      "order" : 4
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "wg_length",
+      "min": 1.0e-05,
+      "max": 0.001,
+      "unit" : "um",
+      "default" : 0.0005,
+      "visible_to_user" : 0,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "phase_shifter_thermal",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        },
+        {
+          "ID" : 2.0,
+          "name" : "TM"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide":
+      {
+        "loss": {
+          "_complex" : false,
+          "_data" : [ 150.0, 150.0 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "neff": {
+          "_complex" : false,
+          "_data" : [ 2.2, 2.2 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "ng":  {
+          "_complex" : false,
+          "_data" : [ 4.0, 4.0 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "dneff_dT": {
+          "_complex" : false,
+          "_data" : [ 0.00018, 0.00018 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    },   
+    "bandwidth_data" : 100000.0,
+    "phase_shifter_data":
+    {
+      "power":
+      {
+        "_complex" : false,
+        "_data" : 
+        [ 
+        0.0,
+        0.04,
+        0.16,
+        0.36,
+        0.64,
+        1.0
+        ],
+        "_size" : [ 6, 1 ],
+        "_type" : "matrix"
+      },
+      "delta_phase":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          1.621467176046345,
+          6.4858687041853793,
+          14.5932045844171,
+          25.943474816741521,
+          40.53667940115862,
+          0.0,
+          1.621467176046345,
+          6.4858687041853793,
+          14.5932045844171,
+          25.943474816741521,
+          40.536679401158622
+
+        ],
+        "_size" : [ 6, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "th_eq_ckt_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0,
+        4.5,
+        5.0
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0,
+          0.00491667,
+          0.00966667,
+          0.01425,
+          0.0186667,
+          0.0229167,
+          0.027,
+          0.0309167,
+          0.0346667,
+          0.03825,
+          0.0416667
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      }
+    }
+  },
+  "FOMs":
+  {
+    "IL":
+    {
+      "value": 
+      {
+        "_complex" : false,
+        "_data" : 
+        [ 0.075, 0.075],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "tuning":
+      {
+        "_complex" : false,
+        "_data" : [ 1, 0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "max" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0.1, 0.1 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "min" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0, 0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "visible_to_user" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0, 0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "Ppi_thermal":
+    {
+      "value":
+      {
+        "_complex" : false,
+        "_data" : 
+        [ 0.0784, 0.0775],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "ref1":
+      {
+        "_complex" : false,
+        "_data" : [ 0, 0 ],
+        "_size" : [ 1, 2 ],
+        "_type" : "matrix"
+      },
+      "ref2": 
+      {
+        "_complex" : false,
+        "_data" : [ 0.0710267, 0.0710267],
+        "_size" : [ 1, 2 ],
+        "_type" : "matrix"
+      },
+      "tuning":
+      {
+        "_complex" : false,
+        "_data" : [ 1, 0 ],
+        "_size" : [ 1, 2 ],
+        "_type" : "matrix"
+      },
+      "max" : 
+      {
+        "_complex" : false,
+        "_data" : [ 1, 1 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "min" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0, 0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "visible_to_user" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0, 0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      }
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "BW_bias" : 4.0
+    },
+    "relative_tolerances" : 
+    {
+      "BW" : 0.05,
+      "IL" : 0.02,
+      "dneff_dT" : 0.01,
+      "Ppi_thermal" : 0.03
+    }  
+  }  
+}

@@ -1,0 +1,174 @@
+{
+  "general" : 
+  {
+    "description" : "waveguide connector model",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band"
+        },
+        {
+          "property" : "temperature_range",
+          "value" : "20C ~ 30C"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "prefix" : "WGCONN"
+  },
+  "ports": 
+  {
+    "port_1" : 
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_1",
+      "order" : 1.0,
+      "pos" : "Left"
+    },
+    "port_2" : 
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_2",
+      "order" : 2.0,
+      "pos" : "Right"
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1" : 
+    {
+      "default" : 0.0,
+      "name" : "rotation"
+    },
+    "parameter_2" : 
+    {
+      "default" : "0.1u",
+      "name" : "taperEndClamp"
+    },
+    "parameter_3" : 
+    {
+      "default" : 90.0,
+      "name" : "startPortAngle"
+    },
+    "parameter_4" : 
+    {
+      "default" : 270.0,
+      "name" : "endPortAngle"
+    },
+    "parameter_5" : 
+    {
+      "default" : "0",
+      "name" : "startPortRadius"
+    },
+    "parameter_6" : 
+    {
+      "default" : "0",
+      "name" : "endPortRadius"
+    },
+    "parameter_7" : 
+    {
+      "default" : "10u",
+      "name" : "Rmin"
+    },
+    "parameter_8" : 
+    {
+      "default" : "((1550n) (27))",
+      "name" : "modeSpec"
+    },
+    "parameter_9" : 
+    {
+      "default" : "waveguide",
+      "name" : "designIntentLayer"
+    },
+    "parameter_10" : 
+    {
+      "default" : "yes",
+      "name" : "fullLayout"
+    },
+    "parameter_11" : 
+    {
+      "default" : "100u",
+      "name" : "deltaX"
+    },
+    "parameter_12" : 
+    {
+      "default" : "30u",
+      "name" : "deltaY"
+    },
+    "parameter_13" : 
+    {
+      "default" : "0.5u",
+      "name" : "width"
+    },
+    "parameter_14" : 
+    {
+      "default" : "none",
+      "name" : "taperStyle"
+    },
+    "parameter_15" : 
+    {
+      "default" : "0.5u",
+      "name" : "startWidth"
+    },
+    "parameter_16" : 
+    {
+      "default" : "0.5u",
+      "name" : "endWidth"
+    },
+    "parameter_17" : 
+    {
+      "default" : "0.1u",
+      "name" : "taperStartClamp"
+    }
+  },
+  "model_data" : 
+  {
+    "connector_layout":{
+    	"libName" : "gopdkX",
+    	"cellName" : "wgCurveConnector",
+    	"viewName" : "layout"
+    },
+    "photonic_model" : "waveguide_connector",
+    "number_of_taps_estimation" : "disabled"
+  },
+  "QA": 
+  {
+    "parameters":
+    { "num_of_modes": 2,
+      "wavelength": 1.55e-6,
+      "neff":
+      {
+	"_complex": false,
+	"_data": [2.42071, 2.42071],
+	"_size": [2, 1],
+	"_type": "matrix"
+      },
+      "ng":
+      {
+	"_complex": false,
+	"_data": [4.1753, 4.1753],
+	"_size": [2, 1],
+	"_type": "matrix"
+      },
+      "loss":
+      {
+	"_complex": false,
+	"_data": [200, 300],
+	"_size": [2, 1],
+	"_type": "matrix"
+      }
+    },
+    "relative_tolerances": 
+    {
+      "loss" : 1e-06,
+      "neff" : 0.01,
+      "ng" : 0.5,
+      "delay_time" : 0.01
+    }  
+  }
+}

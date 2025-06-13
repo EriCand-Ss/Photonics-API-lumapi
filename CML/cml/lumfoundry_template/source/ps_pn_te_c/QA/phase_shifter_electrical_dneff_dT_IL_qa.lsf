@@ -1,0 +1,177 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");      
+}
+err=error_count;
+
+for(mode_ind = 1: N_modes){
+    new;
+
+
+    # 0. set up the simulation parameters in Root Element
+    groupscope("::Root Element"); #return to root
+    set("monitor data", "save to memory");
+    set("sample rate", sample_rate);
+    if(isFB_PINmodulator){
+        set("temperature", test_temperature);
+    }  
+
+    # 1. Build circuits for IL test
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT3_name = get("name");
+    set("x position", 290);
+    set("y position", -400);
+
+    addelement("DC Source");
+    DC4_name = get("name");
+    set("x position", 290);
+    set("y position", -580);
+    set("amplitude",0);
+
+    addelement("Optical Network Analyzer");
+    ONA2_name = get("name");
+    set("x position", 15);
+    set("y position", -580);
+    set("input parameter", "center and range");
+    set("plot kind", "wavelength");
+    set("center frequency", c/Operating_Wavelength);
+    set("frequency range", fspan);
+    set("orthogonal identifier", mode_data{mode_ind}.ID);
+    set("number of input ports", 1);
+    set("peak analysis","center");
+
+    connect(ONA2_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+    connect(ONA2_name,"input 1",DUT3_name,ports{opt_2_RELAY}.name);
+    connect(DC4_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+
+    if(isDoubleModulator){
+        connect(DC4_name,"output",DUT3_name,ports{ele_an_2_RELAY}.name);
+    }
+    if(ele_cat_RELAY!=ele_an_RELAY){
+        connect(DC4_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+    }
+
+    # 2. Build circtuis for dneff_dT test
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT6_name = get("name");
+    set("x position", 1000);
+    set("y position", -600);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT7_name = get("name");
+    set("x position", 1000);
+    set("y position", -400);
+    if(isFB_PINmodulator){
+        setexpression(DUT7_name, "temperature", num2str(test_temperature+0.1));
+    }
+    else{
+        setexpression(DUT7_name,"temperature","300.1");
+    }
+
+    addelement("Optical Splitter");
+    Split3_name = get("name");
+    set("x position", 750);
+    set("y position", -500);
+
+    addelement("DC Source");
+    DC8_name = get("name");
+    set("x position", 850);
+    set("y position", -785);
+    set("amplitude",0);
+
+    addelement("Optical Network Analyzer");
+    ONA5_name = get("name");
+    set("x position", 600);
+    set("y position", -715);
+    set("input parameter", "center and range");
+    set("plot kind", "wavelength");
+    set("center frequency", c/Operating_Wavelength);
+    set("frequency range", fspan);
+    set("number of points", 3);
+    set("orthogonal identifier", mode_data{mode_ind}.ID);
+    set("number of input ports", 2);
+    set("peak analysis","center");
+
+    connect(ONA5_name,"output",Split3_name,"input");
+    connect(Split3_name,"output 1",DUT6_name,ports{opt_1_RELAY}.name);
+    connect(Split3_name,"output 2",DUT7_name,ports{opt_1_RELAY}.name);
+    connect(ONA5_name,"input 1",DUT6_name,ports{opt_2_RELAY}.name);
+    connect(ONA5_name,"input 2",DUT7_name,ports{opt_2_RELAY}.name);
+
+    connect(DC8_name,"output",DUT6_name,ports{ele_an_RELAY}.name);
+    connect(DC8_name,"output",DUT7_name,ports{ele_an_RELAY}.name);
+
+    if(isDoubleModulator){
+        connect(DC8_name,"output",DUT6_name,ports{ele_an_2_RELAY}.name);
+        connect(DC8_name,"output",DUT7_name,ports{ele_an_2_RELAY}.name);
+    }
+    if(ele_cat_RELAY!=ele_an_RELAY){
+        connect(DC8_name,"output",DUT6_name,ports{ele_cat_RELAY}.name);
+        connect(DC8_name,"output",DUT7_name,ports{ele_cat_RELAY}.name);
+    }
+
+    # 3. Run the simulation
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }    
+    run;
+
+    # 4. Get result of IL test
+    T_3 = getresult(ONA2_name,"input 1/mode 1/transmission");
+    IL_test = -10*log10(mean(abs(T_3.getattribute(mode_data{mode_ind}.name + " transmission")))^2);  # dB/m
+
+    msg = "loss"+ mode_data{mode_ind}.name +" is " + num2str(IL_test) + " dB and should be " + num2str(IL(mode_ind)) + " dB.";
+    pass = almostequal(IL_test, IL(mode_ind), IL_rel_tolerance);
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    # 5. Get result of dneff_dT test
+    T_4 = getresult(ONA5_name,"input 1/mode 1/transmission");
+    angle_4 = unwrap(angle(T_4.getattribute(getattribute(T_4))));
+    angle_4 = angle_4(2);
+    T_5 = getresult(ONA5_name,"input 2/mode 1/transmission");
+    angle_5 = unwrap(angle(T_5.getattribute(getattribute(T_4))));
+    angle_5 = angle_5(2);
+    delta_angle_test = angle_5-angle_4;
+
+    dT = getnamed(DUT7_name,"temperature") - getnamed(DUT6_name,"temperature");
+    delta_angle = dneff_dT(1)*dT/Operating_Wavelength*2*pi*sum(L_all);  # using the total length of the device (active + passive)
+
+    msg = "Phase shift "+ mode_data{mode_ind}.name +" due to temperature is " + num2str(abs(delta_angle_test)) + " rad and should be " + num2str(delta_angle) +" rad";
+    pass = abs(delta_angle_test-delta_angle) < dneff_dT_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

@@ -1,0 +1,127 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");      
+}
+err=error_count;
+
+if (exist("Attn_eff")){
+    # Build and run Attn_eff tests for all modes 
+    for(mode_ind=1: N_modes){
+        new;
+    
+        # 0. set up the simulation parameters in Root Element
+        groupscope("::Root Element"); #return to root
+        set("monitor data", "save to memory");
+        set("sample rate", sample_rate); 
+        # 1. Build test circuit
+    
+        addelement("Optical Network Analyzer");
+        ONA1_name = get("name");
+        set("x position", -390);
+        set("y position", -115);
+        set("input parameter", "center and range");
+        set("plot kind", "wavelength");
+        set("center frequency", c/Operating_Wavelength);
+        set("frequency range", fspan);
+        set("number of points", 3);
+        set("orthogonal identifier", mode_data{mode_ind}.ID);
+        set("number of input ports", V_num);
+        set("peak analysis","center");
+        set('maximum number of iterations',10000);
+    
+        addelement("Optical Splitter");
+        Split1_name = get("name");
+        set("x position", -200);
+        set("y position", 100);
+        set("number of ports", V_num); ##
+        set("split ratio","none"); ##
+    
+        addelement("DC Source");
+        DC1_name = get("name");
+        set("x position", -140);
+        set("y position", -185);
+        set("amplitude",0);
+    
+        connect(ONA1_name,"output",Split1_name,"input");
+    
+        V_test = linspace(Attn_eff_voltage1(mode_ind), Attn_eff_voltage2(mode_ind), V_num);
+        DUT1_name_cell = cell(V_num);
+        DC2_name_cell = cell(V_num);
+    
+        for (DUT1_num = 1:V_num){
+            addelement(design_kit_name + model);
+            if(exist("container_selection_code")) { eval(container_selection_code); }
+            DUT1_name_cell{DUT1_num} = get("name");
+            set("x position", 0);
+            set("y position", 200*(DUT1_num-1));
+    
+            addelement("DC Source");
+            DC2_name_cell{DUT1_num} = get("name");
+            set("x position", 200);
+            set("y position", 200*(DUT1_num-1));
+            set("amplitude",V_test(DUT1_num));
+    
+            connect(Split1_name,"output "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_1_RELAY}.name);
+            connect(ONA1_name,"input "+num2str(DUT1_num),DUT1_name_cell{DUT1_num},ports{opt_2_RELAY}.name);
+            if(ele_cat_RELAY!=ele_an_RELAY){
+                connect(DC1_name,"output",DUT1_name_cell{DUT1_num},ports{ele_cat_RELAY}.name);
+            }
+            connect(DC2_name_cell{DUT1_num},"output",DUT1_name_cell{DUT1_num},ports{ele_an_RELAY}.name);
+    
+            # Connect DC source to the second anode if exists
+            if(isDoubleModulator){
+                connect(DC2_name_cell{DUT1_num},"output",DUT1_name_cell{DUT1_num},ports{ele_an_2_RELAY}.name);
+            }
+        }
+    
+        # 2. Run the simulation
+        if(exist("stat_parameters")){
+            selectpartial(prefix);
+            set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+        }
+        run;
+
+        # Test result 1: Attn_eff
+        loss_data = matrix(V_num);
+
+        for (DUT1_num = 1:V_num){
+            loss_result = getresult("ONA_1","input "+num2str(DUT1_num)+"/mode 1/peak/gain");
+            loss_data(DUT1_num) = loss_result.getattribute("TE gain (dB)");
+        }
+
+        delta_loss = -(loss_data(V_num) - loss_data(1));
+        Attn_eff_test = 1e-3*delta_loss / (interp(IV_data(:,2), IV_data(:,1),Attn_eff_voltage2(mode_ind)) - interp(IV_data(:,2), IV_data(:,1),Attn_eff_voltage1(mode_ind)));
+
+        msg = "Attenuation efficiency is "+num2str(Attn_eff_test)+"dB/mA and it should be "+num2str(Attn_eff)+"dB/mA";
+        rel_change = abs(Attn_eff_test-Attn_eff)/Attn_eff;
+        pass = rel_change < Attn_eff_rel_tolerance;
+        if(!pass) {
+            ?msg;
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }    
+    }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

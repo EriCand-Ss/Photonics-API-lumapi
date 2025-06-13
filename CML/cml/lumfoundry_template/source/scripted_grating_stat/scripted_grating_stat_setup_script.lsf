@@ -1,0 +1,63 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+setup_script =    
+    '
+    # Statistical parameter perturbation
+    peak_IL_dB = peak_IL_dB + delta_peak_IL_dB*stat_parameters{1}.slope_peak_IL_dB;          
+    peak_wavelength = peak_wavelength + delta_peak_wavelength*stat_parameters{2}.slope_peak_wavelength;
+    bandwidth_1dB = bandwidth_1dB + delta_bandwidth_1dB*stat_parameters{3}.slope_bandwidth_1dB;
+
+    # Temperature dependence of peak wavelength
+    peak_wavelength = peak_wavelength + (temperature-temperature_ref)*dpeakwavelength_dT;
+
+    # Incident angle dependence of peak wavelength
+    peak_wavelength = peak_wavelength + (incident_angle-incident_angle_ref)*dpeakwavelength_dangle;
+
+    # Calculate S-parameters from analytical Gaussian formula
+    N = 101; # number of wavelength points for the s-parameter data 
+    lambda = linspace(peak_wavelength-50e-9,peak_wavelength+50e-9,N); # wavelength points for the s-parameter data 
+
+    ## Calculate coefficients for Gaussian power transmission formula a*exp(-(x-b)^2/2/d^2
+    x = lambda;
+    a = 10^(peak_IL_dB/10);
+    b = peak_wavelength;
+    BW_dB = 1;
+    BW = bandwidth_1dB;
+    d = BW/sqrt(8*log(10^(0.1*BW_dB))); 
+
+    ## Calculate Gaussian power transmission
+    gaussian = matrix(N);
+    for (i=1:N)	{ gaussian(i)=a*exp(-(x(i)-b)^2/2/d^2); }
+
+    ## Calculate S-parameters
+    f = c/lambda;
+    S11 = S21 = S12 = S22 = matrix(N);
+
+    for (i=1:N) {
+        eval("S11(i) = sqrt(10^(R1_dB(1)/10));"); # Constant reflection
+        S21(i) = sqrt(gaussian(i)); # Transmission amplitude
+        eval("S22(i) = sqrt(10^(R2_dB(1)/10));"); # Constant reflection 
+    }
+    S11 = [f, abs(S11), angle(S11)];
+    S21 = [f, abs(S21), angle(S21)];
+    S12 = S21;
+    S22 = [f, abs(S22), angle(S22)];
+
+    # Set S-parameters
+    setsparameter(ports{1}.name, mode_data{1}.name, mode_data{1}.ID, ports{1}.name, mode_data{1}.ID, "transmission", S11);
+    setsparameter(ports{1}.name, mode_data{1}.name, mode_data{1}.ID, ports{2}.name, mode_data{1}.ID, "transmission", S12);
+    setsparameter(ports{2}.name, mode_data{1}.name, mode_data{1}.ID, ports{1}.name, mode_data{1}.ID, "transmission", S21);
+    setsparameter(ports{2}.name, mode_data{1}.name, mode_data{1}.ID, ports{2}.name, mode_data{1}.ID, "transmission", S22);
+
+    # Digital filter setting
+    setfir("rectangular",fir_taps);
+    ';

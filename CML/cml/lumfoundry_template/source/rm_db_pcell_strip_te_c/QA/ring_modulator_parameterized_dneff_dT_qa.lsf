@@ -1,0 +1,111 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+groupscope("::Root Element"); #return to root
+set("sample rate",sample_rate);
+
+## Test circuit 1d: dneff_dT for default parameter values
+addelement(design_kit_name + model);
+DUT6_name = get("name");
+set("x position", -140);
+set("y position", 110+650);
+setexpression(DUT6_name,"temperature","310");
+
+if(!ring_passive | !ring_resonator){
+    addelement("DC Source");
+    DC8_name = get("name");
+    set("x position", -140);
+    set("y position", -185+650);
+    set("amplitude",0);
+}    
+
+addelement("Optical Network Analyzer");
+ONA4_name = get("name");
+set("x position", -390);
+set("y position", -115+650);
+set("analysis type","scattering data");
+set("center frequency",f_c);
+set("frequency range",fspan);
+set("number of points",round( fspan*5e-9 ) );
+set("plot kind", "wavelength");
+set("peak at maximum",false);
+set("peak threshold",100);
+set("peak excursion",0.5);
+set("pit excursion",0.5);
+
+connect(ONA4_name,"output",DUT6_name,ports{opt_1_RELAY}.name);
+connect(ONA4_name,"input 1",DUT6_name,ports{opt_2_RELAY}.name);
+  
+if(!ring_passive){  
+    connect(DC8_name,"output",DUT6_name,ports{ele_th_1_RELAY}.name);
+    connect(DC8_name,"output",DUT6_name,ports{ele_th_2_RELAY}.name);
+}  
+if(!ring_resonator){
+    connect(DC8_name,"output",DUT6_name,ports{ele_cat_RELAY}.name);
+    connect(DC8_name,"output",DUT6_name,ports{ele_an_RELAY}.name);
+    
+    if (NOA == 2) {
+	   connect(DC8_name,"output",DUT6_name,ports{ele_an_2_RELAY}.name);
+    }
+}
+#---------------
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+}
+run;
+
+## Extract results
+# dneff_dT
+reslambda = getresult(ONA4_name,"input 1/mode 1/peak/frequency");
+pos = find(reslambda,lambda_c);
+reslambda = reslambda(pos);
+
+if(ring_resonator){
+    high_loss_waveguide_fill_factor = 0;
+}
+L_passive = (1-high_loss_waveguide_fill_factor)*(2*pi*radius + 2*Lc);
+L_active = (2*pi*radius + 2*Lc)*high_loss_waveguide_fill_factor;
+L_total = L_passive + L_active;
+
+FSR_f_model = abs(c/(lambda_c - FSR_ref/2)-c/(lambda_c + FSR_ref/2));
+ng_model = c/(FSR_f_model*L_total);
+fresnew = c/reslambda;
+f0 = c/wavelength_data;
+
+dneff_dT_test = ( ng_model*(f_c-fresnew)/f0 ) / (getnamed(DUT6_name,"temperature")-300);
+
+## Compare with reference data
+# Test result 1d: dneff_dT
+msg = "dneff_dT = " + num2str(dneff_dT_test) + " 1/K, and should be " + num2str(dneff_dT_ref) + " 1/K";
+pass = abs(dneff_dT_test-dneff_dT_ref)/dneff_dT_ref < dneff_dT_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

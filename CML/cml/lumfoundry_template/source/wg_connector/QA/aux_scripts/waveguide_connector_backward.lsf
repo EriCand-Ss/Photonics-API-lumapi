@@ -1,0 +1,78 @@
+##################################################################
+
+# Lumerical Confidential Information
+
+# This file should be encrypted before sharing with external users!
+
+##################################################################
+backward_warning="";
+warning_elements = "";
+backward_error="";
+
+
+
+if (exist("parameters")){
+    new_parameters=parameters;
+    clear(parameters);
+}
+
+new_ports=ports;
+if (isstruct(ports)){
+    strPorts=ports;
+    port_labels={"port_1", "port_2"};
+    portexist=cell(length(port_labels));
+    count=0;
+    for (p=1:length(port_labels)){
+        eval("portexist{"+num2str(p)+"}=isfield(strPorts,'"+port_labels{p}+"');");
+    }
+    pco=find(portexist==1);
+    plen=length(pco);
+
+    pord=matrix(1,plen);
+    for (p=1:length(pco)){ # if one port has "order" field, all of the ports have to have a "order" filed.
+        eval("ordexists=isfield(strPorts."+port_labels{pco(p)}+", 'order');"); 
+        if (ordexists==1){
+            eval("pord(1,"+num2str(p)+")=strPorts."+port_labels{pco(p)}+".order;"); 
+        }else{
+            pord(1,p)=0;
+        }
+    }
+    if ( (find(pord==0)!=0)  or max(pord)>plen){
+        if (sum(pord)!=0){
+            backward_warning=backward_warning+"\n           Port order is not defined properly for all the defined ports. Please check the source data. Default port order will be used!";
+        }
+        orderexists=0;
+    }else{
+        orderexists=1;
+    }
+    
+    for (po=1:length(pord)){
+        if (pord(po)!=1){
+            if (find(pord==pord(po)-1)==0){
+                if (orderexists==1){
+                    backward_warning=backward_warning+"\n           Port order is not defined properly for all the defined ports. Please check the source data. Default port order will be used!";
+                    orderexists=0;            
+                } 
+            }
+        }
+    }
+    
+    if (orderexists==1){
+        ports=cell(length(unique(pord)));
+    }else{
+        ports=cell(plen);
+    }
+
+    for (p=1:length(pco)){
+        if (orderexists==1){
+            eval("ord=strPorts."+port_labels{pco(p)}+".order;");
+        }else{
+            ord=p;
+        }
+        ports{ord}=struct;
+        eval("ports{"+num2str(ord)+"}=strPorts."+port_labels{pco(p)}+";");
+        ports{ord}.type="Optical Signal";
+    }
+    clear(strPorts);  
+}
+

@@ -1,0 +1,54 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'ring_modulator_parameterized' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Frequency domain tests:
+1. resonant wavelength, FSR, IL, Q
+2. dneff_dT
+3. thermal tuner Vpi
+4. electrical modulation efficiency (modulator)
+Time domain tests:
+1. quality factor
+2. electrical BW (modulator)
+3. thermal BW (optional)";
+
+### Run individual tests
+## Frequency domain tests:
+# 1. Resonant wavelength, IL, FSR, Q
+feval("ring_modulator_parameterized_resonant_wl_IL_FSR_Q_IL_drop_ER_qa.lsf");
+
+# 2. dneff_dT
+feval("ring_modulator_parameterized_dneff_dT_qa.lsf");
+
+# 3. Thermal tuner Vpi
+feval("ring_modulator_parameterized_thermal_Ppi_qa.lsf");
+
+# 4. Electrical modulation efficiency
+feval("ring_modulator_parameterized_modulation_efficiency_qa.lsf");
+    
+## Time domain tests:
+# 5. Electrical BW
+feval("ring_modulator_parameterized_electrical_BW_qa.lsf");    
+
+# 6. Thermal BW test (optional)
+feval("ring_modulator_parameterized_thermal_BW_qa.lsf");
+
+### Display QA reuslt
+if (error_count>0) { ?"error_count = " + num2str(error_count);}
+else {?"All tests completed";}pause(2);

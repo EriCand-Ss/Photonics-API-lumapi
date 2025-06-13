@@ -1,0 +1,236 @@
+# Copyright (c) 2003-2022, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");      
+}
+err=error_count;
+
+if (test_thermal_BW){
+    new;
+    groupscope("::Root Element"); #return to root
+    set("sample rate", sample_rate);
+
+    # Test circuit 1e: Reference data for thermal bandwidth calculation
+    addelement(design_kit_name + model);
+    DUT7_name = get("name");
+    set("x position", -140);
+    set("y position", 110+1200);
+
+    addelement("DC Source");
+    DC9_name = get("name");
+    set("x position", -140);
+    set("y position", -185+1200);
+    set("amplitude",BW_bias_thermal);
+
+    addelement("DC Source"); #ground
+    DC10_name = get("name");
+    set("x position", -140+200);
+    set("y position", -185+1200);
+    set("amplitude",0);
+
+    addelement("Optical Network Analyzer");
+    ONA5_name = get("name");
+    set("x position", -390);
+    set("y position", -115+1200);
+    set("analysis type","scattering data");
+    set("center frequency",c/lambda_c);
+    set("frequency range",fspan);
+    set("number of points",round( fspan*5e-9 ) );
+    set("plot kind", "wavelength");
+    set("peak at maximum",false);
+    set("peak threshold",100);
+    set("number of input ports", 1);
+    set("peak analysis", "center");
+
+    connect(ONA5_name,"output",DUT7_name,ports{opt_1_RELAY}.name);
+    connect(ONA5_name,"input 1",DUT7_name,ports{opt_2_RELAY}.name);
+    connect(DC9_name,"output",DUT7_name,ports{ele_th_1_RELAY}.name);
+    connect(DC10_name,"output",DUT7_name,ports{ele_th_2_RELAY}.name);
+    connect(DC9_name,"output",DUT7_name,ports{ele_th_3_RELAY}.name);
+    connect(DC10_name,"output",DUT7_name,ports{ele_th_4_RELAY}.name);
+    connect(DC10_name,"output",DUT7_name,ports{ele_cat_RELAY}.name);
+    connect(DC10_name,"output",DUT7_name,ports{ele_an_RELAY}.name);
+
+    # ---------
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    gain_center = getresult(ONA5_name,"input 1/mode 1/peak/gain");
+    gain_BWtest_ref = gain_center.getattribute("TE gain (dB)");
+    ?"gain_BWtest_ref = " + num2str(gain_BWtest_ref);
+
+
+    # Find optimum sample rate for thermal BW test (optional)
+    # Test circuit 2a: Test BW reference data in time domain
+
+    initial_sample_rate = 1/(2*pi*radius*ng_passive/c);
+    ?"initial_sample_rate = "+num2str(initial_sample_rate/1e12) + "THz";
+
+    new;
+    set("monitor data","save to memory");
+
+    addelement(design_kit_name + model);
+    DUT2a_name = get("name");
+    set("x position", -140);
+    set("y position", 110);
+
+    addelement("DC Source");
+    DC2a_th1 = get("name");
+    set("x position", -240);
+    set("y position", -185);
+    set("amplitude",BW_bias_thermal);
+
+    addelement("DC Source");
+    DC2a_ground = get("name");
+    set("x position", -40);
+    set("y position", -185);
+    set("amplitude",0);
+
+    addelement("CW Laser");
+    CWL2a_name = get("name");
+    set("x position", -390);
+    set("y position", -115);
+    set("power", 0.001);
+    set("frequency", c/lambda_c);
+
+    addelement("Optical oscilloscope");
+    OOSC2a_name = get("name");
+    set("x position", -140+200);
+    set("y position", 110);
+
+    connect(CWL2a_name,"output",DUT2a_name,ports{opt_1_RELAY}.name);
+    connect(OOSC2a_name,"input",DUT2a_name,ports{opt_2_RELAY}.name);
+
+    connect(DC2a_th1,"output",DUT2a_name,ports{ele_th_1_RELAY}.name);
+    connect(DC2a_ground,"output",DUT2a_name,ports{ele_th_2_RELAY}.name);
+    connect(DC2a_th1,"output",DUT2a_name,ports{ele_th_3_RELAY}.name);
+    connect(DC2a_ground,"output",DUT2a_name,ports{ele_th_4_RELAY}.name);
+    connect(DC2a_ground,"output",DUT2a_name,ports{ele_cat_RELAY}.name);
+    connect(DC2a_ground,"output",DUT2a_name,ports{ele_an_RELAY}.name);
+
+    N_test = 10;
+    sample_rate_estimate = matrix(N_test);
+    error_TdB_samplerate = matrix(N_test);
+
+    for (test2_num = 1:N_test){
+        sample_rate_estimate(test2_num) = initial_sample_rate/(2^(test2_num-1));
+        
+        switchtodesign;
+        groupscope("::Root Element"); #return to root
+        set("sample rate", sample_rate_estimate(test2_num));
+        if(exist("stat_parameters")){
+            selectpartial(prefix);
+            set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+        }
+        run;
+        
+        s_out = getresult(OOSC2a_name,"sum/signal");
+        t_out = s_out.time;
+        
+        attribute_name = getattribute(s_out);
+        s_out = s_out.getattribute(attribute_name);
+        
+        TdB_samplerate = 10*log10(s_out(length(s_out))/0.001);
+        
+        error_TdB_samplerate(test2_num) = abs(TdB_samplerate-gain_BWtest_ref)/abs(gain_BWtest_ref);
+    }
+
+    sample_rate_BWtest = sample_rate_estimate(max(find(error_TdB_samplerate < 0.05))); # keep samplign rate that works within 5 percent
+
+    ?"sample_rate_BWtest = " + num2str(sample_rate_BWtest);
+
+    # ----------
+
+    # Test circuit 2b: Test bandwidth of thermal tuner
+
+    switchtodesign;
+
+    groupscope("::Root Element"); #return to root
+    set("sample rate", sample_rate_BWtest);
+    time_costant = 1/(2*pi*thermal_bandwidth);
+    set("time window", 8*time_costant/3);
+
+    select(DC2a_th1);
+    delete;
+
+    addelement("Impulse");
+    IMP2a_th1 = get("name");
+    set("x position", -240);
+    set("y position", -185);
+    set("amplitude",0.075); 
+    set("delay", 1e-7); 
+    set("bias", BW_bias_thermal);
+
+    connect(IMP2a_th1,"output",DUT2a_name,ports{ele_th_1_RELAY}.name);
+
+    # ---------
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Extract test result
+
+    delay = getnamed(IMP2a_th1,"delay");
+    s_out = getresult(OOSC2a_name,"sum/signal");
+    t_out = s_out.time;
+    attribute_name = getattribute(s_out);
+    s_out = s_out.getattribute(attribute_name);
+    p2 = (find(t_out,delay)-1):length(t_out);
+    t_out = t_out(p2);
+    s_out = s_out(p2);
+    s_out = s_out-s_out(length(s_out));
+    sf_out = fft(s_out,2,0);
+    f_out = fftw(t_out,2,0)/(2*pi);
+    p2 = (1:find(f_out,2*thermal_bandwidth));
+    f_out = f_out(p2);
+    sf_out = sf_out(p2);
+    sf_out_dB = 20*log10(abs(sf_out)/abs(sf_out(1)));
+    if (create_plots){
+        title = model+"_thermalBW";
+        plot(f_out/1e3,sf_out_dB,"Frequency (kHz)", "transmission through-port (dB)", title);
+        exportfigure(title,800,600);
+    }
+    tempx = linspace(min(f_out),max(f_out),5000);
+    tempy = interp(sf_out_dB, f_out, tempx);
+    f3dB_test = tempx(find(tempy,-3));
+
+
+
+    # Test result 2b:
+    msg = "Thermal tuner 3dB cutoff frequency = " + num2str(f3dB_test/1e3) + "kHz , and should be " + num2str(thermal_bandwidth/1e3)+"kHz";
+    change = abs(f3dB_test-thermal_bandwidth)/thermal_bandwidth;
+    pass = change < thermal_bandwidth_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

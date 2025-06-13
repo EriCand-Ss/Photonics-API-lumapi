@@ -1,0 +1,464 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/photodetector_avalanche_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/photodetector_avalanche_init_qa.lsf");     
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+    new;
+
+    ## set up the simulation parameters in Root Element
+    groupscope("::Root Element"); 
+    set("monitor data","save to memory");
+    set("time window",4e-9);
+    set("sample rate",sample_rate_test);
+
+    test_bias = stat_qa_bias;
+
+    if (!exist('stat_qa_optical_power')){
+        stat_qa_optical_power = 0.001;
+    }
+
+    ## Test circuit 1a: Dark current measurement
+
+    # Add elements
+    addelement(design_kit_name + model);
+    DUT1_name = get("name");
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    set("x position", 600);
+    set("y position", 30);
+    set("enable_shot_noise", false);
+    set("thermal_noise",0);
+    
+    addelement("CW Laser");
+    CWL1_name = get("name");
+    set("x position", 300);
+    set("y position", 0);
+    set("power",0);
+    set("frequency", c/wavelength_test);
+    
+    addelement("DC Source"); #to be connected to cathode
+    DC1_name = get("name");
+    set("x position", 794);
+    set("y position", -150);
+    set("amplitude",0);
+    
+    addelement("DC Source"); #to be connected to anode
+    DC2_name = get("name");
+    set("x position", 548);
+    set("y position", -136);
+    set("amplitude", test_bias);
+    
+    addelement("Oscilloscope");
+    OSC1_name = get("name");
+    set("x position", 772);
+    set("y position", 154);
+    
+    
+    # Connect elements
+    connect(CWL1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+    connect(DC1_name,"output",DUT1_name,ports{ele_cat_RELAY}.name);
+    connect(DC2_name,"output",DUT1_name,ports{ele_an_RELAY}.name);
+    connect(DUT1_name,ports{ele_cat_RELAY}.name,OSC1_name,"input");
+    
+    ## Apply bias to the second anode if present
+    #if(ele_an_2_RELAY != 0) {
+        #connect(DC2_name,"output",DUT1_name,ports{ele_an_2_RELAY}.name);
+    #}
+
+    ## If the photodetector has two ports then add a dummy CW laser to that port
+    #if(opt_2_RELAY!=0) {
+        #addelement("CW Laser");
+        #CWL_dummy1_name = get("name");
+        #set("x position", 400);
+        #set("y position", 200);
+        #set("enabled",false);
+        #set("frequency", c/wavelength_test);
+        #connect(CWL_dummy1_name,"output",DUT1_name,ports{opt_2_RELAY}.name);
+    #}
+
+## Test circuit 1b: Photo current measurement
+
+    # Add elements
+    addelement(design_kit_name + model);
+    DUT2_name = get("name");
+    local_path=get("local path");
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    set("x position", 600);
+    set("y position", 680);
+    set("enable_shot_noise", false);
+    set("thermal_noise",0);
+    
+    addelement("CW Laser");
+    CWL2_name = get("name");
+    set("x position", 300);
+    set("y position", 650);
+    set("power",stat_qa_optical_power);
+    set("frequency", c/wavelength_test);
+    
+    addelement("DC Source"); #to be connected to cathode
+    DC3_name = get("name");
+    set("x position", 794);
+    set("y position", 500);
+    set("amplitude",0);
+    
+    addelement("DC Source"); #to be connected to anode
+    DC4_name = get("name");
+    set("x position", 548);
+    set("y position", 650-136);
+    set("amplitude", test_bias);
+    
+    addelement("Oscilloscope");
+    OSC2_name = get("name");
+    set("x position", 772);
+    set("y position", 650+154);
+    
+    
+    ## Connect elements
+    connect(CWL2_name,"output",DUT2_name,ports{opt_1_RELAY}.name);
+    connect(DC3_name,"output",DUT2_name,ports{ele_cat_RELAY}.name);
+    connect(DC4_name,"output",DUT2_name,ports{ele_an_RELAY}.name);
+    connect(DUT2_name,ports{ele_cat_RELAY}.name,OSC2_name,"input");
+    
+    ## Apply bias to the second anode if present
+    #if(ele_an_2_RELAY != 0) {
+        #connect(DC4_name,"output",DUT2_name,ports{ele_an_2_RELAY}.name);
+    #}
+    
+    ## If the photodetector has two ports then add a dummy CW laser to that port
+    #if(opt_2_RELAY!=0) {
+        #addelement("CW Laser");
+        #CWL_dummy2_name = get("name");
+        #set("x position", 400);
+        #set("y position", 400);
+        #set("enabled",false);
+        #set("frequency", c/wavelength_test);
+        #connect(CWL_dummy2_name,"output",DUT2_name,ports{opt_2_RELAY}.name);
+    #}
+
+## Test circuit 2: BW measurement
+if(!DC_operation_only){
+    
+    # Setting the simulation parameters
+    delay = 2e-9;  	# the impulse should not be applied at t = 0
+    
+    # Add elements
+    addelement(design_kit_name + model);
+    DUT3_name = get("name");
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    set("x position", -87);
+    set("y position", 30);
+    set("enable_shot_noise", false);
+    set("thermal_noise",0);
+    
+    addelement("CW Laser");
+    CWL3_name = get("name");
+    set("x position", -460);
+    set("y position", 0);
+    set("power",stat_qa_optical_power);
+    set("frequency", c/wavelength_test);
+    
+    addelement("Impulse");
+    IMP1_name = get("name");
+    set("x position", -260);
+    set("y position", -210);
+    set("delay",delay);
+    set("amplitude",1);
+    set("bias",0);
+    
+    addelement("Optical Amplitude Modulator");
+    AM1_name = get("name");
+    set("x position", -285);
+    set("y position", 30);
+    set("modulation index",0.01);
+    
+    addelement("DC Source"); #to be connected to anode
+    DC5_name = get("name");
+    set("x position", 94);
+    set("y position", -150);
+    set("amplitude", test_bias);
+    
+    addelement("DC Source"); #to be connected to cathode
+    DC6_name = get("name");
+    set("x position", -70);
+    set("y position", -150);
+    set("amplitude",0);
+    
+    addelement("Oscilloscope");
+    OSC3_name = get("name");
+    set("x position", 72);
+    set("y position", 154);
+    
+    # Connect elements
+    connect(CWL3_name,"output",AM1_name,"input");
+    connect(AM1_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+    connect(IMP1_name,"output",AM1_name,"modulation");
+    connect(DC6_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+    connect(DC5_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+    connect(DUT3_name,ports{ele_cat_RELAY}.name,OSC3_name,"input");
+    
+    ## Apply bias to the second anode if present
+    #if(ele_an_2_RELAY != 0) {
+        #connect(DC5_name,"output",DUT3_name,ports{ele_an_2_RELAY}.name);
+    #}
+    
+    ## If the photodetector has two ports then add a dummy CW laser to that port
+    #if(opt_2_RELAY!=0) {
+        #addelement("CW Laser");
+        #CWL_dummy3_name = get("name");
+        #set("x position", -300);
+        #set("y position", 200);
+        #set("enabled",false);
+        #set("frequency", c/wavelength_test);
+        #connect(CWL_dummy3_name,"output",DUT3_name,ports{opt_2_RELAY}.name);
+    #}
+}
+        
+## Set up MC sweep object
+dotlib_filename = importlib;     
+if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+    libname=splitstring(library_name,"::");
+    if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+        dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+    }else{
+        dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+    }
+}
+
+addsweep(2);
+MC_name = "mc_sweep";
+setsweep("Monte Carlo analysis", "name", MC_name);
+setsweep(MC_name, "number of trials", N_trials);
+setsweep(MC_name, "batch size", 10);
+setsweep(MC_name, "enable seed", 1);
+setsweep(MC_name, "seed", 1);
+setsweep(MC_name, "enable spatial correlations", 0);
+
+# define the parameter mc_lib 
+mc_lib = struct;
+mc_lib.Name = "mc_lib";
+mc_lib.library = dotlib_filename;
+mc_lib.Variant = "statistical";
+addsweepparameter(MC_name,mc_lib);
+
+mc_result_Resp = struct;
+mc_result_Resp.Name = "Resp";
+mc_result_Resp.Result = "::Root Element::Resp";
+mc_result_Resp.Estimation = false;
+
+addsweepresult(MC_name,mc_result_Resp);
+
+mc_result_Idark = struct;
+mc_result_Idark.Name = "Idark";
+mc_result_Idark.Result = "::Root Element::Idark";
+mc_result_Idark.Estimation = false;
+
+addsweepresult(MC_name,mc_result_Idark);
+
+if(!DC_operation_only){
+    mc_result_BW = struct;
+    mc_result_BW.Name = "BW";
+    mc_result_BW.Result = "::Root Element::BW";
+    mc_result_BW.Estimation = false;
+    
+    addsweepresult(MC_name,mc_result_BW);
+}
+
+# add results to the Root Element
+groupscope("::Root Element");
+analysis_script = '
+
+#Idark
+I_dark = getresult("' + OSC1_name + '","signal");
+I_dark = I_dark.getattribute("amplitude (a.u.)");
+I_dark = I_dark(length(I_dark));	# Idark (A) from simulation
+setresult("Idark",I_dark);
+';
+ 
+ 
+analysis_script = analysis_script + ' 
+# Resp   
+I_ph = getresult("' + OSC2_name + '","signal");
+I_ph = I_ph.getattribute("amplitude (a.u.)");
+I_ph = I_ph(length(I_ph)) - I_dark;  	# Iphoto (simulation) = Inet - Idark
+
+Resp = I_ph / 0.001;  # A/W
+setresult("Resp",Resp);
+';
+
+if(!DC_operation_only){
+
+    analysis_script = analysis_script + '
+    
+    # BW
+    
+    # Impulse response in time domain
+    s_out = getresult("' + OSC3_name + '","signal");
+    t_out = s_out.time;
+    s_out = s_out.getattribute("amplitude (a.u.)");
+    p2 = find(s_out,max(s_out)):length(s_out);
+    t_out = t_out(p2);
+    t_out = t_out - t_out(1);
+    s_out = s_out(p2);
+    
+    # Impulse response in frequency domain
+    sf_out = fft(s_out,2,0);
+    f_out = fftw(t_out,2,0)/(2*pi);
+    p2 = 2:find(f_out,500e9);
+    f_out = f_out(p2);
+    sf_out = sf_out(p2);
+    
+    sf_out = sf_out/abs(sf_out(1));  # normalize impulse response
+    
+    # Find 3dB crossing point
+    tempx = linspace(min(f_out),max(f_out),5000);
+    tempy = interp(20*log10(abs(sf_out)),f_out,tempx);
+    f3dB_test = tempx(find(tempy,-3));
+    
+    setresult("BW",f3dB_test);
+    '; 
+
+}   
+
+set("analysis script",analysis_script);
+run;
+runanalysis;
+switchtodesign;
+save("statistical_temp");
+#switchtolayout;
+#save("statistical_temp");
+runsweep(MC_name);
+
+stat_Resp = getsweepdata(MC_name,"Resp");
+stat_Idark = getsweepdata(MC_name,"Idark");
+if(!DC_operation_only){
+    stat_BW = getsweepdata(MC_name,"BW");
+}
+
+# Plot the results
+if(create_plots){
+    histc(stat_Resp);
+    setplot("x label","Resp (A/W)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+    legend(""); 
+    histc(stat_Idark);
+    setplot("x label","Dark current (A)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+    legend("");
+    if(!DC_operation_only){
+        histc(stat_BW);
+        setplot("x label","Bandwidth (Hz)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(""); 
+    }  
+}
+
+
+### Reference data comparison
+
+# Check reference data for testing:
+if(!stat_reference_data_available){
+    msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+    assert(msg,false);
+    error_count = error_count+1;
+    stat_Resp_ref = stat_Resp;
+    stat_Idark_ref = stat_Idark;
+    if(!DC_operation_only){
+        stat_BW_ref = stat_BW;
+    }
+
+    current_directory = pwd;
+    cd(foldername_ref);
+    if(!DC_operation_only){
+        matlabsave(filename_ref_stat, stat_Resp_ref, stat_Idark_ref, stat_BW_ref);
+    }
+    else{
+        matlabsave(filename_ref_stat, stat_Resp_ref, stat_Idark_ref);
+    }
+    cd(current_directory);
+
+    ?"******* Saved statistical reference data";
+}else{
+    # Compare with reference data
+    ?"Testing Monte-Carlo sweep results against reference data";
+
+current_directory = pwd;
+cd(foldername_ref);
+try{
+    matlabload(filename_ref_stat);
+}  catch(errMsg);
+cd(current_directory);
+if (errMsg !=''){
+    msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+    assert(msg,0);
+    error_count = error_count+1;
+    
+}else{
+
+change = max(abs(stat_Resp_ref-stat_Resp));
+msg = "Resp (A/W) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_Resp_tolerance);
+pass = change <= stat_Resp_tolerance;
+if(!pass) {
+    ? "ERROR - Resp in statistical QA";
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+change = max(abs(stat_Idark_ref-stat_Idark));
+msg = "Dark current (A) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_Idark_tolerance);
+pass = change <= stat_Idark_tolerance;
+if(!pass) {
+    ? "ERROR - Dark current in statistical QA";
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+if(!DC_operation_only){
+    change = max(abs(stat_BW_ref-stat_BW));
+    msg = "Bandwidth (Hz) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_BW_tolerance);
+    pass = change <= stat_BW_tolerance;
+    if(!pass) {
+        ? "ERROR - Bandwidth in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+}
+
+# delete temporary project file
+try{
+    del("statistical_temp.icp");
+}catch(ErrMsg);
+
+if(length(ErrMsg)!=0){
+    ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}
+}
+    
+}
+}
+
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

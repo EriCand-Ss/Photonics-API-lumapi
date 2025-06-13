@@ -1,0 +1,165 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry grating coupler - TE",
+    "prefix" : "GC",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band"
+        },
+        {
+          "property" : "polarizations",
+          "value" : "TE mode"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "port_1":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_1",
+      "pos" : "Left",
+      "type" : "Optical Signal",
+      "order":1
+    },
+    "port_2":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_2",
+      "pos" : "Right",
+      "type" : "Optical Signal",
+      "order":2
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1" : 
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : 0.13962634015954636,
+      "kind" : "Angle",
+      "max" : 0.3490658503988659,
+      "min" : 0.0,
+      "name" : "incident_angle",
+      "unit" : "deg",
+      "visible_to_user" : 1.0
+    },
+    "parameter_2" : 
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : "%temperature%",
+      "kind" : "Temperature",
+      "max" : 500,
+      "min" : 0.0,
+      "name" : "temperature",
+      "unit" : "C",
+      "visible_to_user" : 1.0
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "scripted_element",
+    "data" : 
+    {
+      "R1_dB" : 
+      {
+        "_complex" : false,
+        "_data" : [ -21.0, -29.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "R2_dB" : 
+      {
+        "_complex" : false,
+        "_data" : [ -17.0, -18.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "bandwidth_1dB" : 3.5e-08,
+      "dpeakwavelength_dT" : 8e-11,
+      "dpeakwavelength_dangle" : -5.72958e-07,
+      "fir_taps" : 64.0,
+      "incident_angle_ref" : 0.139626,
+      "mode_data" : 
+      {
+        "_data" : 
+        [
+          {
+            "ID" : 1.0,
+            "name" : "TE"
+          }
+        ],
+        "_type" : "cell"
+      },
+      "peak_IL_dB" : -2.0,
+      "peak_wavelength" : 1.55e-06,
+      "temperature_ref" : 300.0
+    },
+    "setup_script_filename" : "scripted_grating_stat_setup_script.lsf"  
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.1
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "mean" : 0.0,
+        "name" : "delta_peak_IL_dB",
+        "slope_peak_IL_dB" : 0.05
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.1
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "mean" : 0.0,
+        "name" : "delta_peak_wavelength",
+        "slope_peak_wavelength" : 2e-09
+      },
+      "parameter_3" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.1
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "mean" : 0.0,
+        "name" : "delta_bandwidth_1dB",
+        "slope_bandwidth_1dB" : 2e-09
+      }
+    }
+  }
+}

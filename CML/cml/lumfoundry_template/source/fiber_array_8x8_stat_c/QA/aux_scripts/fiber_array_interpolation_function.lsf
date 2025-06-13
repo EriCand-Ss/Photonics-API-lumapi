@@ -1,0 +1,28 @@
+function interpolate_Nmatrix(mat, values, value) {
+    
+    original_size = size(mat);
+    dim = length(original_size);
+    
+    vector = false;   
+    if(dim==2){
+        if(original_size(2)==1){
+            vector = true;
+        }
+    }
+    
+    if(vector==false){
+        N1 = prod(original_size(1:dim-1));
+        N2 = original_size(dim);
+        interp_size = [N1; N2];
+        
+        final_size = [original_size(1:dim-1)];
+        
+        mat = reshape(mat, interp_size);
+        mat = interp(mat, 1:N1, values, 1:N1, value);
+        mat = reshape(mat, final_size);
+    }
+    else{
+        mat = interp(mat,values,value);
+    }
+    return mat;
+}

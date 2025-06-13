@@ -1,0 +1,149 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# group delay(frequency and time domain) test
+# Test circuit 1a: frequency domain group delay
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_back_annotation_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_back_annotation_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+switchtodesign;
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT1a_name = get("name");
+set("x position", 0);
+set("y position", 200);
+
+addelement("Optical Network Analyzer");
+ONA1a_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("x position", 400);
+set("y position", 200);
+set("frequency range", 1e14);
+set("number of input ports", 1);
+set("peak analysis","center");
+
+connect(ONA1a_name,"output",DUT1a_name,ports{1}.name);
+connect(ONA1a_name,"input 1",DUT1a_name,ports{2}.name);
+
+# Test circuit 1b: time domain group delay
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT1b_name = get("name");
+set("x position", 800);
+set("y position", 200);
+
+addelement("Optical Network Analyzer");
+ONA1b_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("x position", 600);
+set("y position", 200);
+set("frequency range", 1e14);
+set("number of input ports", 1);
+set("peak analysis","center");
+set("analysis type","impulse response");
+connect(ONA1b_name,"output",DUT1b_name,ports{1}.name);
+connect(ONA1b_name,"input 1",DUT1b_name,ports{2}.name);
+
+wg_propagation = getnamed(DUT1a_name, "wg_propagation");
+trans = parsewaveguidebackannotation( wg_propagation, temperatureC );
+mode_no = length(trans);
+wavelength = c/trans{1}.propagation(:, 1);
+central_wavelength= wavelength(find(wavelength, (max(wavelength)+min(wavelength))/2));
+central_frequency = c / central_wavelength;
+
+?"Wavelength range: " + num2str(min(wavelength)*1e9) + " to " + num2str(max(wavelength)*1e9) + " nm";
+for (m=1:mode_no) {
+    ? "Testing mode " + num2str(m) + ": " + trans{m}.label;
+    ? "Beginning " + num2str(Nr) + " random parameter tests";
+    for(i=1:Nr) {
+        switchtodesign;
+        # set random temperature
+
+        val_T = rand(temperature_test_min,temperature_test_max);
+        setnamed(DUT1a_name, "temperatureC",val_T);
+        setnamed(DUT1b_name, "temperatureC",val_T);
+        temperature = val_T;
+
+        #We need to do this now, since temperatureC may have changed.
+        trans = parsewaveguidebackannotation( wg_propagation, temperature );
+
+        setnamed(ONA1a_name, "center frequency", central_frequency);
+        setnamed(ONA1a_name, "orthogonal identifier", trans{m}.orthogonal_identifier);
+        setnamed(ONA1a_name, "label", trans{m}.label);
+
+        setnamed(ONA1b_name, "center frequency", central_frequency);
+        setnamed(ONA1b_name, "orthogonal identifier", trans{m}.orthogonal_identifier);
+        setnamed(ONA1b_name, "label", trans{m}.label);
+
+        run;
+
+        # Test result 1a: frequency domain group delay
+        delay_type = trans{m}.label + " group delay (s)";
+        try{
+            S21_delay = getresult(ONA1a_name,"input 1/mode 1/group delay");
+            group_delay = S21_delay.getattribute(delay_type);
+        }
+        catch(errMsg);
+        if(errMsg != "") {
+            ?errMsg;
+            msg = "Error happened in group delay frequency domain test = for (band,m,i) =" + num2str([band,i,m]);
+            ?msg = msg + endl + "group_delay = " + num2str(group_delay);
+            assert(msg,true);
+            break;
+        }
+        # Test result 1b: time domain group delay
+        try{
+            S21_delay_time = getresult(ONA1b_name,"input 1/mode 1/group delay");
+            group_delay_time = S21_delay_time.getattribute(delay_type);
+        }
+        catch(errMsg);
+        if(errMsg != "") {
+            ?errMsg;
+            msg = "Error happened in group delay time domain test = for (band,m,i) =" + num2str([band,i,m]);
+            ?msg = msg + endl + "group_delay_time = " + num2str(group_delay_time);
+            assert(msg,true);
+            break;
+        }
+        # compare frequency and time domain
+        compare_time_bandwidth_fraction = 0.1; # only compare in middle region
+        wavelength1 = S21_delay.wavelength;
+        f1 = c/max(wavelength1);
+        f2 = c/min(wavelength1);
+        fc = 0.5*(f1+f2);
+        f = c/wavelength1;
+        pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+        diff = max(abs(group_delay(pos)-group_delay_time(pos))/abs(group_delay(pos)));
+        ?msg = "group delay comparison frequency and time domain over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max relative diff is: " + num2str(diff) + " and should be less than " + num2str(relative_delay_time_tolerance);
+        pass = diff <= relative_delay_time_tolerance;
+        assert(msg,pass);
+        error_count = error_count + !(pass);
+        if(break_at_failure & !pass) { break; }
+
+    }
+}
+
+
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+} 

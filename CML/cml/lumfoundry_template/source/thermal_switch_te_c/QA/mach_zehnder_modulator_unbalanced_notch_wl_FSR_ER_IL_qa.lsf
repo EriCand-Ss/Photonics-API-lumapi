@@ -1,0 +1,151 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");     
+}
+err=error_count;
+
+if (unbalanced_MZM){
+    new;
+    fspan= sample_rate_unbalanced;
+    sample_rate = sample_rate_unbalanced;
+
+    select("::Root Element::");
+    set("sample rate",sample_rate);
+
+    # Test circuit 4: notch_wavelength, FSR, ER, IL
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT1_name = get("name");
+    set("x position", -140);
+    set("y position", 110);
+    #!#set("internal electrical equivalent",false);
+
+    if(mzm_electrical or mzm_thermal){
+        addelement("DC Source");
+        DC1_name = get("name");
+        set("x position", -140);
+        set("y position", -185);
+        set("amplitude",0);
+    }
+    lambda_c = notch_wavelength;
+    f_c=c/lambda_c;
+
+    addelement("Optical Network Analyzer");
+    ONA1_name = get("name");
+    set("x position", -390);
+    set("y position", -115);
+    set("analysis type","scattering data");
+    set("center frequency",f_c);
+    set("frequency range",fspan);
+    set("number of points",round( fspan*1e-9 ) );
+    set("plot kind", "wavelength");
+    set("peak at maximum",false);
+    set("peak threshold",30);
+
+    connect(ONA1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+    connect(ONA1_name,"input 1",DUT1_name,ports{opt_2_RELAY}.name);
+
+    if(mzm_thermal){
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    }
+
+    if(mzm_electrical){
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+        try{connect(DC1_name,"output",DUT1_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    }
+
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 4: notch wavelength, FSR, IL, ER
+
+    gain_f = getresult(ONA1_name,"input 1/mode 1/gain");
+    T_f = getresult(ONA1_name,"input 1/mode 1/transmission");
+
+    notch_test = getresult(ONA1_name,"input 1/mode 1/peak/frequency");
+    pos = find(notch_test,lambda_c);
+    notch_test = notch_test(pos);
+
+    # unbalanced MZM
+    ER_test = getresult(ONA1_name,"input 1/mode 1/peak/extinction ratio");
+    ER_test = ER_test.getattribute("TE ratio (dB)");
+    ER_test = ER_test(pos);
+
+    IL_test = getresult(ONA1_name,"input 1/mode 1/peak/loss");
+    IL_test = IL_test.getattribute("TE loss (dB)");
+    IL_test = IL_test(pos) - ER_test;
+
+    FSR_test = getresult(ONA1_name,"input 1/mode 1/peak/free spectral range");
+    FSR_test = FSR_test.getattribute("TE free spectral range (m)");
+    FSR_test = FSR_test(pos);
+
+    msg = "resonant wavelength = " + num2str(notch_test*1e9) + "nm, and should be " + num2str(notch_wavelength*1e9) + "nm";
+    pass = abs(notch_test - notch_wavelength) / notch_wavelength < notch_wavelength_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    msg = "FSR = " + num2str(FSR_test*1e9) + "nm, and should be " + num2str(FSR*1e9) + "nm";
+    pass = abs(FSR_test-FSR) / FSR < FSR_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    msg = "IL = " + num2str(IL_test) + ", and should be " + num2str(IL);
+    pass = abs(IL_test-IL) / IL < IL_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    msg = "ER = " + num2str(ER_test) + ", and should be " + num2str(ER_V1);
+    pass = abs(ER_test-ER_V1) / ER_V1 < ER_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

@@ -1,0 +1,278 @@
+###########################################################
+## Wrapper for Ring Modulator Pcells
+## Save all inputs (source data and FOMs) into matrices and reset them to fixed cell format
+
+# parameters
+if(exist("couplercoeff_gap")){ # this parameter only exists in a ring Pcell
+    if(NOP==4){
+        N_geom = 4;
+    }
+    else{
+        N_geom = 3;
+    }
+    
+    geom_parameters = cell(N_geom);
+    
+    par = struct;
+    par.name = radius.name;
+    par.category = "CML";
+    par.type = "Number";
+    par.kind = "Distance";
+    par.unit = "um";
+    par.annotate = radius.annotate;
+    par.visible_to_user = radius.visible_to_user;
+    par.min = radius.min;
+    par.max = radius.max;
+    par.default_value = radius.default_value;
+    par.label = "radius";
+    
+    geom_parameters{1} = par;
+    
+    par = struct;
+    par.name = Lc.name;
+    par.category = "CML";
+    par.type = "Number";
+    par.kind = "Distance";
+    par.unit = "um";
+    par.annotate = Lc.annotate;
+    par.visible_to_user = Lc.visible_to_user;
+    par.min = Lc.min;
+    par.max = Lc.max;
+    par.default_value = Lc.default_value;
+    par.label = "coupling_length";
+    
+    geom_parameters{2} = par;
+    
+    par = struct;
+    par.name = coupling_gap_through.name;
+    par.category = "CML";
+    par.type = "Number";
+    par.kind = "Distance";
+    par.unit = "um";
+    par.annotate = coupling_gap_through.annotate;
+    par.visible_to_user = coupling_gap_through.visible_to_user;
+    par.min = coupling_gap_through.min;
+    par.max = coupling_gap_through.max;
+    par.default_value = coupling_gap_through.default_value;
+    par.label = "coupling_gap_through";
+    
+    geom_parameters{3} = par;
+    
+    if(NOP==4){
+        par = struct;
+        par.name = coupling_gap_drop.name;
+        par.category = "CML";
+        par.type = "Number";
+        par.kind = "Distance";
+        par.unit = "um";
+        par.annotate = coupling_gap_drop.annotate;
+        par.visible_to_user = coupling_gap_drop.visible_to_user;
+        par.min = coupling_gap_drop.min;
+        par.max = coupling_gap_drop.max;
+        par.default_value = coupling_gap_drop.default_value;
+        par.label = "coupling_gap_drop";
+        
+        geom_parameters{4} = par;
+    }
+    
+    if(!ring_resonator){
+        if(!ring_passive){
+            N_ff = 3;
+        }
+        else{
+            N_ff = 2;
+        }
+    }
+    else{
+        if(!ring_passive){
+            N_ff = 1;
+        }
+        else{
+            N_ff = 0;
+        }
+    }
+    
+    if(N_ff){
+        ff_parameters = cell(N_ff);
+        
+        FF_counter = 0;
+        if(!ring_passive){
+            par = struct;
+            par.name = thermal_fill_factor.name;
+            par.category = "CML";
+            par.type = "Number";
+            par.kind = "NonQuantity";
+            par.unit = "";
+            par.annotate = thermal_fill_factor.annotate;
+            par.visible_to_user = thermal_fill_factor.visible_to_user;
+            par.min = thermal_fill_factor.min;
+            par.max = thermal_fill_factor.max;
+            par.default_value = thermal_fill_factor.default_value;
+            par.label = "thermal_fill_factor";
+            
+            ff_parameters{1} = par;
+            FF_counter = 1;
+        }
+        
+        if(!ring_resonator){
+            par = struct;
+            par.name = high_loss_waveguide_fill_factor.name;
+            par.category = "CML";
+            par.type = "Number";
+            par.kind = "NonQuantity";
+            par.unit = "";
+            par.annotate = high_loss_waveguide_fill_factor.annotate;
+            par.visible_to_user = high_loss_waveguide_fill_factor.visible_to_user;
+            par.min = high_loss_waveguide_fill_factor.min;
+            par.max = high_loss_waveguide_fill_factor.max;
+            par.default_value = high_loss_waveguide_fill_factor.default_value;
+            par.label = "high_loss_waveguide_fill_factor";
+            
+            ff_parameters{FF_counter+1} = par;
+            
+            par = struct;
+            par.name = junction_fill_factor.name;
+            par.category = "CML";
+            par.type = "Number";
+            par.kind = "NonQuantity";
+            par.unit = "";
+            par.annotate = junction_fill_factor.annotate;
+            par.visible_to_user = junction_fill_factor.visible_to_user;
+            par.min = junction_fill_factor.min;
+            par.max = junction_fill_factor.max;
+            par.default_value = junction_fill_factor.default_value;
+            par.label = "junction_fill_factor";
+            
+            ff_parameters{FF_counter+2} = par;
+        }
+    }
+        
+    parameters = cell(N_geom+N_ff);
+    for(i=1:N_geom){
+    parameters{i} = geom_parameters{i};
+    }
+    if(N_ff!=0){
+        for(i=1:N_ff){
+        parameters{N_geom+i} = ff_parameters{i};
+    }
+}
+}
+
+# parameters {1} = radius, {2} = coupling_length (Lc), {3} = coupling_gap_through, {4} = coupling_gap_drop (for 4 port rings)
+# parameters is also used to identify if the model is a PCell or a fixed cell
+
+# source data
+
+if(exist("parameters")){
+    pcell_couplercoeff = couplercoeff;
+    couplercoeff1 = pinch(interp(pcell_couplercoeff, radius.data, couplercoeff_gap, 1:2, 1:2, radius.default_value, coupling_gap_through.default_value, 1:2, 1:2));
+    if(NOP==4){
+        couplercoeff2 = pinch(interp(pcell_couplercoeff, radius.data, couplercoeff_gap, 1:2, 1:2, radius.default_value, coupling_gap_drop.default_value, 1:2, 1:2));
+    }
+    
+    if(!ring_resonator){
+        pcell_electrical_bandwidth = electrical_bandwidth_data;
+        electrical_bandwidth_data = pinch(interp(pcell_electrical_bandwidth, radius.data, Lc.data, pcell_electrical_bandwidth(1,1,:,1), 1:2, radius.default_value, Lc.default_value, pcell_electrical_bandwidth(1,1,:,1), 1:2));
+    }
+    
+    if(!ring_passive){
+        if(exist('IV')){
+            pcell_IV = IV;
+            IV = pinch(interp(pcell_IV, radius.data, Lc.data, pcell_IV(1,1,:,1), 1:2, radius.default_value, Lc.default_value, pcell_IV(1,1,:,1), 1:2));
+        }
+        else{
+            pcell_R_thermal_tuner = R_thermal_tuner;
+            R_thermal_tuner = pinch(interp(pcell_R_thermal_tuner, radius.data, Lc.data, radius.default_value, Lc.default_value));
+        }
+        
+        pcell_thermal_bandwidth = thermal_bandwidth_data;
+        thermal_bandwidth = pinch(interp(pcell_thermal_bandwidth, radius.data, Lc.data, radius.default_value, Lc.default_value));
+        
+    }
+}
+
+# FOMs
+
+if(exist("parameters")){
+    
+    pcell_FSR = FSR.data;
+    FSR.default_value = pinch(interp(pcell_FSR, radius.data, Lc.data, radius.default_value, Lc.default_value));
+    FSR.visible_to_user = false;
+    
+    if(exist("IL")){
+        pcell_IL = IL.data;
+        if(NOP==4){
+            IL.default_value = pinch(interp(pcell_IL, radius.data, Lc.data, coupling_gap_through.data, coupling_gap_drop.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value, coupling_gap_drop.default_value));
+        }
+        else{
+            IL.default_value = pinch(interp(pcell_IL, radius.data, Lc.data, coupling_gap_through.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value));
+        }
+        IL.visible_to_user = false;
+    }
+    
+    pcell_Q = Q.data;
+    if(NOP==4){
+        Q.default_value = pinch(interp(pcell_Q, radius.data, Lc.data, coupling_gap_through.data, coupling_gap_drop.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value, coupling_gap_drop.default_value));
+    }
+    else{
+        Q.default_value = pinch(interp(pcell_Q, radius.data, Lc.data, coupling_gap_through.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value));
+    }
+    Q.visible_to_user = false;
+    
+    if(!ring_resonator){
+        pcell_mod_eff = mod_eff.data;
+        mod_eff.default_value = pinch(interp(pcell_mod_eff, radius.data, Lc.data, radius.default_value, Lc.default_value));
+        mod_eff.visible_to_user = false;
+    }
+    
+    if(!ring_passive){
+        pcell_mod_eff_thermal = mod_eff_thermal.data;
+        mod_eff_thermal.default_value = pinch(interp(pcell_mod_eff_thermal, radius.data, Lc.data, radius.default_value, Lc.default_value));
+        mod_eff_thermal.visible_to_user = false;
+    }
+    
+    pcell_resonant_wavelength = resonant_wavelength.data;
+    resonant_wavelength.default_value = pinch(interp(pcell_resonant_wavelength, radius.data, Lc.data, radius.default_value, Lc.default_value));
+    resonant_wavelength.visible_to_user = false;
+    
+    if(exist("IL_drop")){
+        pcell_IL_drop = IL_drop.data;
+        if(NOP==4){
+            IL_drop.default_value = pinch(interp(pcell_IL_drop, radius.data, Lc.data, coupling_gap_through.data, coupling_gap_drop.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value, coupling_gap_drop.default_value));
+        }
+        IL_drop.visible_to_user = false;
+    }
+    
+    if(exist("ER")){
+        pcell_ER = ER.data;
+        if(NOP==4){
+            ER.default_value = pinch(interp(pcell_ER, radius.data, Lc.data, coupling_gap_through.data, coupling_gap_drop.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value, coupling_gap_drop.default_value));
+        }
+        else{
+            ER.default_value = pinch(interp(pcell_ER, radius.data, Lc.data, coupling_gap_through.data, radius.default_value, Lc.default_value, coupling_gap_through.default_value));
+        }
+        ER.visible_to_user = false;
+    }
+    
+    radius_name = radius.name;
+    Lc_name = Lc.name;
+    gap_1_name = coupling_gap_through.name;
+    pcell_radius = radius.data;
+    pcell_Lc = Lc.data;
+    pcell_gap_1 = coupling_gap_through.data;
+    Lc = Lc.default_value;
+    radius = radius.default_value;
+    
+    if(!ring_passive){
+        thermal_fill_factor = thermal_fill_factor.default_value;
+    }
+    if(!ring_resonator){
+        high_loss_waveguide_fill_factor = high_loss_waveguide_fill_factor.default_value;
+        junction_fill_factor = junction_fill_factor.default_value;
+    }
+    
+    if(NOP==4){
+        gap_2_name = coupling_gap_drop.name;
+        pcell_gap_2 = coupling_gap_drop.data;
+    }
+}

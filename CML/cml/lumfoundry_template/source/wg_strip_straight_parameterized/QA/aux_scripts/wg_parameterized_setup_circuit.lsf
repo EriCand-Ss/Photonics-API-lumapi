@@ -1,0 +1,113 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 2.1 Setup Test Circuit
+
+new;
+set("monitor data", "save to memory");
+
+if (enable_backscatter == true){
+    DUT = cell(4);
+    ONA = cell(4);
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT{4} = get("name");
+    set("x position", 800);
+    set("y position", 200);
+    set("backscattering enabled",true);
+    set("transmission model","enforce passivity");
+    addelement("Optical Network Analyzer");
+    ONA{4} = get("name");
+    set("input parameter", "start and stop");
+    set("plot kind", "wavelength");
+    set("x position", 800);
+    set("y position", 0);
+    set("start frequency", c/wavelength_max_test);
+    set("stop frequency", c/wavelength_min_test);
+    set("sensitivity",1e-13);
+    set("orthogonal identifier", mode_data{m_test}.ID);
+    set("label", mode_data{m_test}.name);
+    set("number of input ports", 2);
+    set("peak analysis","center");
+    central_frequency  = get("center frequency");
+    connect(ONA{4},"output",DUT{4},ports{1}.name);
+    connect(ONA{4},"input 1",DUT{4},ports{1}.name);
+    connect(ONA{4},"input 2",DUT{4},ports{2}.name);
+}else {     
+
+    DUT = cell(3);
+    ONA = cell(3);
+}   
+# 2.1.1 Place elements in simulation
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT{1} = get("name");
+set("x position", 0);
+set("y position", 200);
+addelement("Optical Network Analyzer");
+ONA{1} = get("name");
+set("input parameter", "start and stop");
+set("plot kind", "wavelength");
+set("start frequency", c/wavelength_max_test);
+set("stop frequency", c/wavelength_min_test);
+set("sensitivity",1e-13);
+set("orthogonal identifier", mode_data{m_test}.ID);
+set("label", mode_data{m_test}.name);
+set("number of input ports", 1);
+set("peak analysis","center");
+central_frequency  = get("center frequency");
+connect(ONA{1},"output",DUT{1},ports{1}.name);
+connect(ONA{1},"input 1",DUT{1},ports{2}.name);
+
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT{2} = get("name");
+set("x position", 400);
+set("y position", 200);
+addelement("Optical Network Analyzer");
+ONA{2} = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("x position", 400);
+set("y position", 0);
+set("center frequency", central_frequency);
+set("frequency range", c/wavelength_min_test - c/wavelength_max_test);
+set("sensitivity",1e-13);
+set("orthogonal identifier", mode_data{m_test}.ID);
+set("label", mode_data{m_test}.name);
+set("number of input ports", 1);
+set("analysis type","impulse response");
+central_frequency  = get("center frequency");
+connect(ONA{2},"output",DUT{2},ports{1}.name);
+connect(ONA{2},"input 1",DUT{2},ports{2}.name);
+
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT{3} = get("name");
+set("x position", 600);
+set("y position", 200);
+addelement("Optical Network Analyzer");
+ONA{3} = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("x position", 600);
+set("y position", 0);
+set("center frequency", central_frequency);
+set("frequency range", c/wavelength_min_test - c/wavelength_max_test);
+set("sensitivity",1e-13);
+set("orthogonal identifier", mode_data{m_test}.ID);
+set("label", mode_data{m_test}.name);
+set("number of input ports", 1);
+set("analysis type","scattering data");
+central_frequency  = get("center frequency");
+connect(ONA{3},"output",DUT{3},ports{1}.name);
+connect(ONA{3},"input 1",DUT{3},ports{2}.name);
+            
+if (exist("stat_parameters")) {
+    selectpartial(prefix);
+    set('perturb_stat_params', 0);
+}

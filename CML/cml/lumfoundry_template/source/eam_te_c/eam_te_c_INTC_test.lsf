@@ -1,0 +1,37 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'eletro_absorption_modulator' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+# QA description:  This script performs the following tests
+?QA_description = "
+Frequency domain tests:
+1. IL, ER.
+Time domain tests:
+1. electrical BW.
+";
+
+
+# Test dark and photocurrent
+feval("electro_absorption_modulator_IL_ER_qa.lsf");
+
+# Test bandwidth
+feval("electro_absorption_modulator_BW_qa.lsf");    
+
+# Print final message in Script Prompt
+if (error_count>0) {?"error_count = " + num2str(error_count);}
+else {?"All tests completed";}pause(2);

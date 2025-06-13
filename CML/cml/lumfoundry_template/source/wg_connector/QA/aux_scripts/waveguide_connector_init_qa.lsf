@@ -1,0 +1,38 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="wg_connector";
+library_name="lumfoundry_template::Waveguides";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\wg_connector\wg_connector.json');
+feval('/aux_scripts/waveguide_connector_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'wg_connector';
+
+# Copyright (c) 2003-2021, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+#### Initializing variables [DO NOT EDIT THIS PART]
+new;
+set("monitor data","save to memory");
+
+design_kit_name = '::Design kits::' + library_name + "::";
+
+error_count = 0;
+
+#### QA options and settings
+break_at_failure = false; # if true, stop the QA when an error is encountered
+
+
+
