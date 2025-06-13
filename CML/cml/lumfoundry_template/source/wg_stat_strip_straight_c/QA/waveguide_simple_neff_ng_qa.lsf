@@ -1,0 +1,129 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");      
+}
+err=error_count;
+new;
+
+# neff and ng test
+if(!wg_length_visible_to_user){
+    ?endl+ "WARNING: "+ wg_length_name+" is a fixed property. It's only changed for testing purposes.";
+}
+
+# 1. Build the circuit
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT2_name = get("name");
+set("x position", 200);
+set("y position", 500);
+
+
+addelement("Waveguide Y Branch");
+Y1_name = get("name");
+set("x position", 0);
+set("y position", 600);
+set("orthogonal identifier 1", mode_data{1}.ID);
+set("label 1",mode_data{1}.name);
+addelement("Waveguide Y Branch");
+Y2_name = get("name");
+set("horizontal flipped",1);
+set("x position", 400);
+set("y position", 600);
+set("orthogonal identifier 1", mode_data{1}.ID);
+set("label 1",mode_data{1}.name);
+
+addelement("Optical Network Analyzer");
+ONA2_name = get("name");
+set("x position", 0);
+set("y position", 400);
+set("input parameter", "center and range");
+set("plot kind", "frequency");
+set("center frequency", central_frequency);
+set("frequency range", 10000e9);
+set("number of points", 10000);
+set("orthogonal identifier", mode_data{1}.ID);
+set("number of input ports", 1);
+set("peak analysis","multiple");
+
+connect(ONA2_name,"output",Y1_name,"port 1");
+connect(Y1_name,"port 2", DUT2_name, ports{1}.name);
+connect(Y2_name,"port 2", DUT2_name, ports{2}.name);
+connect(Y1_name,"port 3", Y2_name, "port 3");
+connect(ONA2_name,"input 1",Y2_name,"port 1");
+
+
+# 2. Run the loop to test all modes
+for (m=1:length(mode_data)) {
+    ? endl + "Testing mode " + num2str(m) + ": " + mode_data{m}.name;
+    switchtodesign;
+    setnamed(ONA2_name,"orthogonal identifier",mode_data{m}.ID);
+    setnamed(ONA2_name,"label", mode_data{m}.name);
+    neff_ref = neff(m);
+    L = 100*central_wavelength/neff_ref;
+    setnamed(DUT2_name, wg_length_name, L);
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+
+    # 2.1. Get test result: neff
+    ?"* effective index";
+    peak_frequencies = getresult(ONA2_name,"input 1/mode " + num2str(1) + "/peak/frequency");
+    peak_wavelength = c/peak_frequencies(find(peak_frequencies,central_frequency));
+
+    neff_rev = peak_wavelength*100/L;
+    ?"neff is "+ num2str(neff_rev) + ". Expected value is "+ num2str(neff_ref)+".";
+    msg = "Neff has been changed by: " + num2str(max(abs(neff_rev-neff_ref)));
+    pass = max(abs(neff_rev-neff_ref)) <= neff_tolerance;
+    if(!pass) {
+        ? "ERROR - neff problem";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    # 2.2. Get test result: ng
+    ?"* group index";
+    FSR = getresult(ONA2_name,"input 1/mode " + num2str(1) + "/peak/free spectral range");
+    data_type = mode_data{m}.name + " free spectral range (Hz)";
+    fsr = FSR.getattribute(data_type);
+
+    if (sqrt(var(fsr))*1e-9>1) {
+        ?"FSR std= " + num2str(sqrt(var(fsr))*1e-9) + " GHz";
+        ? "ONA resolution = 1 GHz";
+    }
+    fsr = mean(fsr);
+    ng_rev = c/fsr/L;
+    ng_ref = ng(m);
+    ?"ng is "+ num2str(ng_rev) + ". Expected value is "+ num2str(ng_ref)+".";
+    msg = "Ng has been changed by: " + num2str(max(abs(ng_rev-ng_ref)));
+    pass = max(abs(ng_rev-ng_ref)) <= ng_tolerance;
+    if(!pass) {
+        ? "ERROR - ng problem";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+} 

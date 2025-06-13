@@ -1,0 +1,51 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'sparsweep_pcell' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Testing:
+1. S parameter (amplitude and phase)
+2. Reciprocity, passivity
+Conditions:
+1. Frequency and time domain simulations
+2. All supported polarizations
+3. All parameter combinations
+4. Against reference data"
+;
+
+
+### Run tests
+#Passivity, Reciprocity and time domain test
+feval("sparsweep_pcell_passivity_reciprocity_time_domain_qa.lsf");
+
+#Regression test
+feval("sparsweep_pcell_regression_qa.lsf");
+
+# statistical QA test 
+feval("sparsweep_pcell_statistical_qa.lsf");
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+
+pause(2);

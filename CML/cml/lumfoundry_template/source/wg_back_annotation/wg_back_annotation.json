@@ -1,0 +1,59 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry waveguide connector (back annotation)",
+    "prefix" : "WGCONN",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order": 1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order": 2
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "waveguide_back_annotation",
+    "temperature" : 25.0,
+    "number_of_taps_estimation" : "disabled"
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "temperature":{
+        "min" : 0,
+        "max" : 100
+      }
+    },
+    "relative_tolerances" : 
+    {
+      "loss" : 1e-08,
+      "neff" : 1e-08,
+      "ng" : 0.005,
+      "delay_time" : 0.03
+    }  
+  }  
+}

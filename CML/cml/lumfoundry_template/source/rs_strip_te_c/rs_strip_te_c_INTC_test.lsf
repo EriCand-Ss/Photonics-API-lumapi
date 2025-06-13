@@ -1,0 +1,53 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'tunable_ring_switch' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Frequency domain tests:
+1. resonant wavelength, FSR, IL, Q
+2. dneff_dT
+3. thermal tuner Ppi
+4. electrical modulation efficiency (modulator)
+Time domain tests:
+1. electrical BW (modulator)
+2. thermal BW (optional)";
+
+### Run individual tests
+## Frequency domain tests:
+# 1. Resonant wavelength, IL, FSR, Q
+feval("tunable_ring_switch_resonant_wl_IL_FSR_Q_IL_drop_ER_qa.lsf");
+
+# 2. dneff_dT
+feval("tunable_ring_switch_dneff_dT_qa.lsf");
+
+# 3. Electrical modulation efficiency
+feval("tunable_ring_switch_modulation_efficiency_qa.lsf");
+
+# 4. Thermal tuner Ppi
+feval("tunable_ring_switch_thermal_Ppi_qa.lsf");
+
+## Time domain tests:
+# 5. Electrical BW
+feval("tunable_ring_switch_electrical_BW_qa.lsf");
+
+# 6. Thermal BW test (optional)
+feval("tunable_ring_switch_thermal_BW_qa.lsf");
+
+### Display QA result
+if (error_count>0) {?"error_count = " + num2str(error_count);}
+else {?"All tests completed";}pause(2);

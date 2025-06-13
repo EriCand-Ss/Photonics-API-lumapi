@@ -1,0 +1,32 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+# In this example:
+#    - Add the desired string for set-up script to the variable "setup_script"
+#    - Use command "toscript" to add data required for setup to string 
+setup_script ="
+    ## parameter set-up
+    radius_name='radius';
+    eval('radius = %' + radius_name + '%;'); 
+    ps_length=getnamed('ps','wg_length');
+    setnamed('wg','wg_length',((radius*pi*2)-ps_length));
+
+";
+setup_script=setup_script+toscript(stat_parameters)+toscript(width);
+
+setup_script=setup_script+"
+    width = width + delta_width*stat_parameters{1}.slope_width;
+    setnamed('wg', 'width', width);
+";
+
+
+
+    

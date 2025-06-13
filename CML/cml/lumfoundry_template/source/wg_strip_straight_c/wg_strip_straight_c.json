@@ -1,0 +1,127 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry strip waveguide - C band",    
+    "prefix" : "WG",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "temperature_range",
+          "value" : "Best accuracy between 273 and 373 K"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order":1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order":2
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "wg_length",
+      "min": 0,
+      "max": 1.0,
+      "unit" : "um",
+      "default":1e-5,
+      "visible_to_user" : 1,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "waveguide_simple",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        },
+        {
+          "ID" : 2.0,
+          "name" : "TM"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "wavelength": 1.55e-06,
+    "temperature":300,
+    "D" : {
+      "_complex" : false,
+      "_data" : [ 0.0013990912202146051, -0.016774074881458361 ],
+      "_size" : [ 2, 1 ],
+      "_type" : "matrix"
+    },
+    "loss": {
+      "_complex" : false,
+      "_data" : [ 300.0, 200.0 ],
+      "_size" : [ 2, 1 ],
+      "_type" : "matrix"
+    },
+    "neff": {
+      "_complex" : false,
+      "_data" : [ 2.4437875768351072, 1.7743995156610131 ],
+      "_size" : [ 2, 1 ],
+      "_type" : "matrix"
+    },
+    "ng":  {
+      "_complex" : false,
+      "_data" : [ 4.0496563638097092, 3.6666945657783709 ],
+      "_size" : [ 2, 1 ],
+      "_type" : "matrix"
+    },
+    "dneff_dT": {
+      "_complex" : false,
+      "_data" : [ 0.001, 0.0001 ],
+      "_size" : [ 2, 1 ],
+      "_type" : "matrix"
+    },
+    "number_of_taps_estimation" : "disabled"
+  },
+  "QA" : 
+  {
+    "parameters":
+    {
+      "wavelength":{
+        "min" : 1.53e-6,
+        "max" : 1.565e-06
+      }
+    },
+    "relative_tolerances" : 
+    {
+      "loss" : 1e-03,
+      "neff" : 0.01,
+      "ng" : 0.5,
+      "delay_time" : 0.01
+    }  
+  } 
+}

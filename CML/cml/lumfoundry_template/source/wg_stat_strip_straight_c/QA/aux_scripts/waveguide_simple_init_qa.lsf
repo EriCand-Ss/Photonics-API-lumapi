@@ -1,0 +1,86 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="wg_stat_strip_straight_c";
+library_name="lumfoundry_template::Waveguides";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\wg_stat_strip_straight_c\wg_stat_strip_straight_c.json');
+feval('/aux_scripts/waveguide_simple_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'wg_stat_strip_straight_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+#### Initializing variables [DO NOT EDIT THIS PART]
+new;
+
+set("monitor data","save to memory");
+
+design_kit_name = '::design kits::' + library_name + "::";
+
+error_count = 0;
+
+central_frequency = c/wavelength_data;
+central_wavelength = wavelength_data;
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+#### QA options and settings
+break_at_failure = false; # if true, stop the QA when an error is encountered
+write_log = false;
+create_plots = true; # if true, automatically generate plots
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 100.";
+        N_trials = 100;
+    }
+    if(!exist("stat_neff_tolerance")){
+        ?"No user provided value for stat_neff_tolerance. Using default value of stat_neff_tolerance = 0.001.";
+        stat_neff_tolerance = 0.001;
+    }
+    if(!exist("stat_ng_tolerance")){
+        ?"No user provided value for stat_ng_tolerance. Using default value of stat_ng_tolerance = 0.001.";
+        stat_ng_tolerance = 0.001;
+    }
+    if(!exist("stat_loss_tolerance")){
+        ?"No user provided value for stat_loss_tolerance. Using default value of stat_loss_tolerance = 0.1 dB/m.";
+        stat_loss_tolerance = .1;
+    }
+}
+if(write_log){
+    write (log_filename,QA_description);
+}

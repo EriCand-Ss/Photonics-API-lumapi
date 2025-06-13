@@ -1,0 +1,58 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/scripted_element_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/scripted_element_init_qa.lsf");     
+}
+err=error_count;
+
+addelement(design_kit_name + model);
+DUT_name_temp = get("name");
+port_names = splitstring(getports(DUT_name_temp),"\n");
+N_ports = length(port_names);
+
+select(DUT_name_temp);
+delete;
+
+input_port = 1;
+
+
+addelement(design_kit_name + model);
+DUT_name = get("name");
+set("x position", 0);
+set("y position", 200+400*(input_port-1));
+
+try{
+    run;
+} catch(msg);
+
+if(msg==""){
+    pass = true;
+}else{
+    pass = false;
+}
+if(!pass) {
+    ? msg = "Setup script failed to run";
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

@@ -1,0 +1,459 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry variable optical attenuator - C band TE",
+    "prefix" : "VOA",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_range",
+          "value" : "[0 V, 2.0 V]"
+        },
+        {
+          "property" : "bias_conditions",
+          "value" : "This element must be biased with voltage even though it is internally a current driven device."
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order" : 2
+    },
+    "ele_an" : 
+    {
+      "name" : "ele_an",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Top",
+      "order" : 3
+    },
+    "ele_cat" : 
+    {
+      "name" : "ele_cat",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Top",
+      "order" : 4
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "wg_length",
+      "min":1e-05,
+      "max":0.0005,
+      "unit" : "um",
+      "default" : 0.0001,
+      "visible_to_user" : 1,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "phase_shifter_electrical",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide_passive_left":
+      {
+        "length" : 0,
+        "loss" : 300.0,
+        "neff" : 2.3,
+        "ng" :  4.2,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_transition_left":
+      {
+        "length" : 0,
+        "loss" : 0,
+        "neff" : 2.6197516509085919,
+        "ng" :  4.0751544510088369,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_phase_shifter":
+      {
+        "loss" : 270.85756523374152,
+        "neff" : 2.504958,
+        "ng" : 3.84632,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_transition_right":
+      {
+        "length" : 0,
+        "loss" : 0,
+        "neff" : 2.6197516509085919,
+        "ng" :  3.1251544510088372,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_passive_right":
+      {
+        "length" : 0,
+        "loss" : 300.0,
+        "neff" : 2.3,
+        "ng" :  4.2,
+        "dneff_dT": 0.00018
+      }
+    }, 
+    "phase_shifter_data":
+    {
+      "current":
+      {
+        "_complex" : false,
+        "_data" : [ 
+          0.0,
+          0.001,
+          0.002,
+          0.003,
+          0.004,
+          0.005,
+          0.006,
+          0.007,
+          0.008,
+          0.009,
+          0.01,
+          0.011,
+          0.012,
+          0.013,
+          0.014,
+          0.015,
+          0.016,
+          0.017,
+          0.018,
+          0.019,
+          0.02	 
+        ],
+        "_size" : [ 21, 1],
+        "_type" : "matrix"
+      },
+      "delta_n":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0,
+          -1.41946e-06,
+          -3.66291e-06,
+          -7.67958e-06,
+          -1.51223e-05,
+          -2.86603e-05,
+          -5.27267e-05,
+          -9.45988e-05,
+          -0.000164626,
+          -0.000271192,
+          -0.000408016,
+          -0.000554856,
+          -0.00069675,
+          -0.000829079,
+          -0.000951987,
+          -0.00106684,
+          -0.00117504,
+          -0.00127783,
+          -0.00137619,
+          -0.00147092,
+          -0.00156268
+        ],
+        "_size" : [21, 1],
+        "_type" : "matrix"
+      },
+      "delta_k":
+      {
+        "_complex" : false,
+        "_data" :
+        [
+          0.0,
+          3.6118572225595595e-07,
+          1.0609614537572876e-06,
+          2.5378017469770384e-06,
+          5.6353655305500009e-06,
+          1.191249228776809e-05,
+          2.431557828659079e-05,
+          4.8291854949240752e-05,
+          9.2711716240421451e-05,
+          0.00016699588187028464,
+          0.00027029835563742113,
+          0.00038824420926476702,
+          0.00050754633510162396,
+          0.00062265507280964813,
+          0.00073240879314854634,
+          0.00083714072488162,
+          0.00093755313984180745,
+          0.00103435765272457,
+          0.0011281942496126961,
+          0.0012196094879637501,
+          0.0013090705109038555
+        ],
+        "_size" : [ 21, 1],
+        "_type" : "matrix"
+      }
+    },
+    "IV_data" : 
+    {
+      "current" : 
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          0.001,
+          0.002,
+          0.003,
+          0.004,
+          0.005,
+          0.006,
+          0.007,
+          0.008,
+          0.009,
+          0.01,
+          0.011,
+          0.012,
+          0.013,
+          0.014,
+          0.015,
+          0.016,
+          0.017,
+          0.018,
+          0.019,
+          0.02
+        ],
+        "_size" : [ 21, 1 ],
+        "_type" : "matrix"
+      },
+      "voltage" : 
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0,
+          0.1,
+          0.2,
+          0.3,
+          0.4,
+          0.5,
+          0.6,
+          0.7,
+          0.8,
+          0.9,
+          1.0,
+          1.1,
+          1.2,
+          1.3,
+          1.4,
+          1.5,
+          1.6,
+          1.7,
+          1.8,
+          1.9,
+          2.0
+        ],
+        "_size" : [ 21, 1 ],
+        "_type" : "matrix"
+      }
+    }
+  },
+  "FOMs":
+  {
+    "IL":
+    {
+      "value":0.0271,
+      "tuning":0,
+      "visible_to_user":0,
+      "min":0,
+      "max":1     
+    },
+    "Attn_eff" :
+    {
+      "value":0.3,
+      "ref1":0.5,
+      "ref2":1.7,
+      "tuning":0,
+      "visible_to_user":0,
+      "max" : 0.35,
+      "min" : 0
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "wavelength":1.55e-6
+    },
+    "relative_tolerances" : 
+    {
+      "IL" :  0.001,
+      "Attn_eff" : 0.01,
+      "dneff_dT" : 0.01
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_height"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.8
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.4, 2.4 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_height",
+        "slope_neff" : 0.006,
+        "slope_ng" : 0.0027
+      },
+      "parameter_2" : 
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_width"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.7
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.1, 2.1],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_width",
+        "slope_neff" : 0.007,
+        "slope_ng" : -0.0063
+      },
+      "parameter_3" : 
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_ridge_height"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.85
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.55, 2.55],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_ridge_height",
+        "slope_neff" : 6.1e-09,
+        "slope_ng" : -0.011
+      },
+      "parameter_4" : 
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.9
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.3],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Attn_eff",
+        "slope_Attn_eff" : 0.002
+      },
+      "parameter_5" : 
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.9
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.8, -0.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_IL",
+        "slope_IL" : 0.01
+      }
+    },
+    "QA":
+    {
+      "N_trials" : 50.0,
+      "VA_N_trials" : 5.0,
+      "enable_qa" : 1.0,
+      "reference_data_available" : 1.0,
+      "VA_reference_data_available" : 1.0,
+      "absolute_tolerances" : 
+      {
+        "IL" : 0.001,
+        "Attn_eff" : 1e-05
+      }
+    }
+  }
+}

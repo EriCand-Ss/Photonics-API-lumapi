@@ -1,0 +1,69 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="fiber_array_8x8_stat_c";
+library_name="lumfoundry_template::Optical IO";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\fiber_array_8x8_stat_c\fiber_array_8x8_stat_c.json');
+feval('/aux_scripts/fiber_array_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'fiber_array_8x8_stat_c';
+
+####  Initializing variables [ DO NOT EDIT THIS SECTION ]
+design_kit_name = '::design kits::' + library_name + "::";
+error_count = 0;
+#test_count = 0; # count how many tests have been run
+break_at_failure = false;
+create_plots = true;
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+foldername_ref = foundry_directory+"/source/"+foundry_element;
+filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_reference_data_available")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+    filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+# Performs interpolation on the desired dimension of an N-dimensional matrix.
+feval("/aux_scripts/fiber_array_interpolation_function.lsf");
+
+if(enable_stat_qa){
+    if(!isfield(statistical.QA,"N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 50.";
+        statistical.QA.N_trials=50;
+    }
+    if(!isfield(statistical.QA.absolute_tolerances,"loss")){
+        ?"No user provided value for absolute tolernace of loss. Using a default value of 0.001 dB.";
+         statistical.QA.absolute_tolerances.loss= 0.001;
+    }
+    if(!isfield(QA.relative_tolerances, "loss")){
+        ?"No user provided value for relative tolernace of loss. Using a default value of 1e-05.";
+        QA.relative_tolerances.loss=1e-5;
+    }
+    if (!isfield(QA,"wavelength")){
+        QA.wavelength = 1.55e-6;
+        ?"No user provided value for QA wavelength. Using default value of " + num2str(QA.wavelength) + " m.";
+    }
+    
+    if (!isfield(statistical.QA.parameters,"wavelength")){
+        statistical.QA.parameters.wavelength = 1.55e-6;
+        ?"No user provided value for stat_qa_wavelength. Using default value of stat_qa_wavelength = " + num2str(statistical.QA.parameters.wavelength) + " m.";
+    }
+}

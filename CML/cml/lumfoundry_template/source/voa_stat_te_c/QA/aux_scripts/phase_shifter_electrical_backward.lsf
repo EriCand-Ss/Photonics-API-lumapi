@@ -1,0 +1,356 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+warning_elements = "";
+backward_warning="";
+backward_error = "";
+
+### New Data Format
+
+# general
+if (exist("general")){
+    description=general.description;
+    prefix=general.prefix;
+    notes=general.notes;
+    clear(general);
+}
+
+
+# ports
+if (isstruct(ports)){
+    new_ports=ports;
+    strPorts=splitstring(getfield(new_ports),endl);
+    plen=length(strPorts);
+    fplen=0;
+    if (plen!=0){
+        for (p=1:plen){
+            eval("fpexists=isfield(new_ports,'floating_port_"+num2str(p)+"');");
+            if (fpexists==1){
+                if (p!=fplen+1){
+                    backward_error=backward_error+"Floating port names are not consistent. Please check the source data.";
+                    break;
+                }else{
+                    fplen=fplen+1;
+                }
+            }
+        }
+    }
+
+    pord=matrix(1,plen);
+    for (p=1:plen){ # if one port has "order" field, all of the ports have to have a "order" filed.
+        eval("ordexists=isfield(new_ports."+strPorts{p}+", 'order');"); 
+        if (ordexists==1){
+            eval("pord(1,"+num2str(p)+")=new_ports."+strPorts{p}+".order;"); 
+        }else{
+            pord(1,p)=0;
+        }
+    }
+
+    if ( (find(pord==0)!=0)  or max(pord)>plen){
+        if (sum(pord)!=0){
+            backward_warning=backward_warning+"\n           Port order is not defined properly for all the ports. Please check the source data. Default port order will be used!";
+        }
+        orderexists=0;
+    }else{
+        orderexists=1;
+    }
+    
+    for (po=1:length(pord)){
+        if (pord(po)!=1){
+            if (find(pord==pord(po)-1)==0){
+                if (orderexists==1){
+                    backward_warning=backward_warning+"\n           Port order is not defined properly for all the ports. Please check the source data. Default port order will be used!";
+                    orderexists=0;            
+                } 
+            }
+        }
+    }
+    
+    if (orderexists==1){
+        ports=cell(length(unique(pord)));
+    }else{
+        ports=cell(plen);
+    }
+    
+    for (p=1:plen){
+        fport=0;
+        for (fp=(1:fplen)){
+            fname="floating_port_"+num2str(fp);
+            if (fname==strPorts{p}){
+                fport=1;
+            }
+        }
+        if (orderexists==1){
+            eval("ord=new_ports."+strPorts{p}+".order;");
+        }else{
+            ord=p;
+        }
+        ports{ord}=struct;
+        eval("ports{"+num2str(ord)+"}=new_ports."+strPorts{p}+";");
+        if (strPorts{p}=="opt_1" or strPorts{p}=="opt_2"){
+            ports{ord}.type="Optical Signal";
+        }else{
+            ports{ord}.type="Electrical Signal";
+        }
+        if (fport!=1){
+            eval(strPorts{p}+"_RELAY="+num2str(ord)+";");
+        }
+    }
+    clear(new_ports);
+}
+
+# parameters
+if (exist("parameters")){
+    L_active_name = parameters.wg_length.name;
+    L_active_unit = parameters.wg_length.unit;
+    L_active_visible_to_user = parameters.wg_length.visible_to_user;
+    if (isfield(parameters.wg_length,"max")){L_active_max = parameters.wg_length.max;}
+    if (isfield(parameters.wg_length,"min")){L_active_min = parameters.wg_length.min;}
+    temperature=parameters.temperature.default;
+}
+
+# model_data
+if (exist("model_data")){
+    photonic_model=model_data.photonic_model;
+    mode_data=model_data.mode_data;
+    if (isfield(model_data.waveguide_data,"wavelength")){wavelength_data=model_data.waveguide_data.wavelength;}    
+    if (isfield(model_data.waveguide_data,"temperature")){temperature_data=model_data.waveguide_data.temperature;}
+    wgs={"waveguide_passive_left","waveguide_transition_left","waveguide_phase_shifter","waveguide_transition_right","waveguide_passive_right"};
+    N_modes = length(mode_data);
+    neff_all=matrix(N_modes,5);
+    ng_all=matrix(N_modes,5);
+    L_all=matrix(1,5);
+    loss_all=matrix(N_modes,5);
+    dneff_dT_all=matrix(N_modes,5);
+    for (wg=1:5){
+        eval("wgexists=isfield(model_data.waveguide_data,'"+wgs{wg}+"');");
+        if (wgexists==1){
+            eval("neff_all(:,"+num2str(wg)+")=model_data.waveguide_data."+wgs{wg}+".neff;");
+            eval("ng_all(:,"+num2str(wg)+")=model_data.waveguide_data."+wgs{wg}+".ng;");
+            eval("loss_all(:,"+num2str(wg)+")=model_data.waveguide_data."+wgs{wg}+".loss;");
+            eval("dneff_dT_all(:,"+num2str(wg)+")=model_data.waveguide_data."+wgs{wg}+".dneff_dT;");
+            if (wg==3){
+                L_all(3)=parameters.wg_length.default;
+            }else{
+                eval("L_all("+num2str(wg)+")=model_data.waveguide_data."+wgs{wg}+".length;");
+            }
+        }
+    }
+
+
+    #electrical_bandwidth
+    if (isfield(model_data,"bandwidth_data")){
+        electrical_bandwidth_data=matrix(length(model_data.bandwidth_data.bandwidth),2);
+        if (isfield(model_data.bandwidth_data,"current")){
+            electrical_bandwidth_data(:,1)=model_data.bandwidth_data.current;
+        }else{
+            electrical_bandwidth_data(:,1)=model_data.bandwidth_data.voltage;
+        }
+        electrical_bandwidth_data(:,2)=model_data.bandwidth_data.bandwidth;
+    }
+
+    #phase_shifter
+    if (isfield(model_data,"phase_shifter_data")){
+        phase_shifter_data = cell(length(mode_data));
+        for (i=1:length(phase_shifter_data)){
+            phase_shifter_data{i} = struct;
+            if(isfield(model_data.phase_shifter_data,"voltage")){
+                phase_shifter_data{i}.voltage = model_data.phase_shifter_data.voltage;
+            }else{
+                phase_shifter_data{i}.current = model_data.phase_shifter_data.current;     
+            }
+            phase_shifter_data{i}.delta_n = model_data.phase_shifter_data.delta_n(:,i);
+            phase_shifter_data{i}.delta_k = model_data.phase_shifter_data.delta_k(:,i);
+        }
+    }
+
+    # IV 
+    if (isfield(model_data,"IV_data")){
+        IV_data=model_data.IV_data;
+        if (!isfield(IV_data,"temperature")){
+            temp_IV_data = IV_data;
+            IV_data = matrix(length(temp_IV_data.voltage),2);
+            IV_data(:,1) = temp_IV_data.voltage;
+            IV_data(:,2) = temp_IV_data.current;
+        }
+    }
+    
+
+    #elec_eq_ckt_data
+    if (isfield(model_data,"elec_eq_ckt_data")){
+        par = getfield(model_data.elec_eq_ckt_data);
+        par = splitstring(par,endl);
+        for (i=1:length(par)){
+            eval(par{i}+"=model_data.elec_eq_ckt_data."+par{i}+";");
+        }
+        if (isfield(model_data.elec_eq_ckt_data.Cj_data,"voltage")){
+            Cj=matrix(length(model_data.elec_eq_ckt_data.Cj_data.voltage),2);
+            Cj(:,1)=model_data.elec_eq_ckt_data.Cj_data.voltage;
+        }else{
+            Cj=matrix(length(model_data.elec_eq_ckt_data.Cj_data.current),2);   
+            Cj(:,1)=model_data.elec_eq_ckt_data.Cj_data.current;
+        }
+        
+        Cj(:,2)=model_data.elec_eq_ckt_data.Cj_data.cap;
+        
+    }
+
+    if (isfield(model_data,"use_travelling_wave_electrode")){
+        use_travelling_wave_electrode=model_data.use_travelling_wave_electrode;}
+    clear(model_data);
+    clear(parameters);
+}
+
+# FOMs and locking
+if (exist("FOMs")){
+    FOM_names={"Vpi_Lpi","IL","Attn_eff"};
+    for (f=1:length(FOM_names)){
+        eval("fOMexists=isfield(FOMs,'"+FOM_names{f}+"');");
+        if (fOMexists==1){
+            eval(FOM_names{f}+"=struct;");
+            eval(FOM_names{f}+"=FOMs."+FOM_names{f}+";");
+            eval(FOM_names{f}+".default_value=FOMs."+FOM_names{f}+".value;");
+            eval("visexists=isfield(FOMs."+FOM_names{f}+",'visible_to_user');");
+            if (visexists!=1){
+                eval(FOM_names{f}+".visible_to_user=0;");
+            } 
+            if (FOM_names{f}=="Vpi_Lpi"){
+                Vpi_Lpi_voltage1=FOMs.Vpi_Lpi.ref1;
+                Vpi_Lpi_voltage2=FOMs.Vpi_Lpi.ref2;
+            }
+            if (FOM_names{f}=="Attn_eff"){
+                Attn_eff_voltage1=FOMs.Attn_eff.ref1;
+                Attn_eff_voltage2=FOMs.Attn_eff.ref2;
+            }
+            eval("tunexists=isfield(FOMs."+FOM_names{f}+",'tuning');");
+            if (tunexists==1){
+                if(FOM_names{f}=="IL"){
+                    eval("lock_loss=FOMs."+FOM_names{f}+".tuning;");    
+                }else{
+                    eval("lock_"+FOM_names{f}+"=FOMs."+FOM_names{f}+".tuning;");    
+                }
+            }
+        }   
+    }
+    clear(FOMs);  
+}
+
+# QA configuration
+if (exist("QA")){
+    if (isfield(QA.parameters,"BW_bias")){BW_test_bias=QA.parameters.BW_bias;}
+    if (isfield(QA.parameters,"temperature")){test_temperature=QA.parameters.temperature;}
+    if (isfield(QA.parameters,"wavelength")){wavelength_test=QA.parameters.wavelength;}
+    if (isfield(QA,"BW_qa_type")){BW_qa_type=QA.BW_qa_type;}
+    if (isfield(QA,"low_3dB_bandwidth")){low_3dB_bandwidth=QA.low_3dB_bandwidth;}
+
+    if (isfield(QA,'relative_tolerances')){
+        tols={"BW","IL","Vpi_Lpi","dneff_dT","Attn_eff"};
+        for (t=1:length(tols)) {
+            eval("tolexist=isfield(QA.relative_tolerances,'"+tols{t}+"');");
+            if (tolexist==1){
+                if (tols{t}=="dneff_dT"){
+                    eval(tols{t}+"_tolerance=QA.relative_tolerances."+tols{t}+";");
+                }else{
+                    eval(tols{t}+"_rel_tolerance=QA.relative_tolerances."+tols{t}+";");
+                }
+            }
+        }
+    }
+    clear(QA);
+}
+
+# statistical
+if (exist("statistical")){
+    if (isfield(statistical,"parameters")){
+        statPars=splitstring(getfield(statistical.parameters),endl);
+        if (length(statPars)!=0){
+            stat_parameters=cell(length(statPars));
+            for (p=1:length(statPars)){
+                eval("stat_parameters{"+num2str(p)+"}=statistical.parameters."+statPars{p}+";");
+                }
+        }
+    }
+    if (isfield(statistical,"QA")){
+        N_trials=statistical.QA.N_trials;
+        if (isfield(statistical.QA,"VA_N_trials")){VA_N_trials=statistical.QA.VA_N_trials;}
+        enable_stat_qa=statistical.QA.enable_qa;
+        stat_reference_data_available=statistical.QA.reference_data_available;
+        if (isfield(statistical.QA,"VA_reference_data_available")){VA_stat_reference_data_available=statistical.QA.VA_reference_data_available;}
+
+        if (isfield(statistical.QA,'absolute_tolerances')){
+            stattols={"IL","Vpi_Lpi","Attn_eff"};
+            for (t=1:length(stattols)) {
+                eval("stattolexist=isfield(statistical.QA.absolute_tolerances,'"+stattols{t}+"');");
+                if (stattolexist==1){
+                    eval("stat_"+stattols{t}+"_tolerance=statistical.QA.absolute_tolerances."+stattols{t}+";");
+                }
+            }
+        }
+    }
+    clear(statistical);
+}
+
+### Backward compatibility code
+temp = cell(3); units = cell(length(temp));
+temp{1} = "Vpi_Lpi";
+temp{2} = "IL";
+temp{3} = "Attn_eff";
+
+units{1} = 'V'; units{2} = 'dB'; units{3} = 'dB/mA';
+
+if (!exist("L_active_visible_to_user")){
+    L_active_visible_to_user = 0;
+    warning_elements = warning_elements + " L_active_visible_to_user";   
+}
+
+#FOMs
+for (i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM_name = " + temp{i} + ";");
+        if(!isfield(FOM_name, 'default_value')){
+            if(length(FOM_name) ==1){
+                temp_save = num2str(FOM_name);
+                eval(temp{i}+"=struct;");
+                eval(temp{i}+".default_value="+temp_save+";");
+                eval(temp{i}+".visible_to_user = 0;");
+            }else {
+                temp_save1 = num2str(FOM_name(1));
+                temp_save2 = num2str(FOM_name(2));
+                eval(temp{i}+"=struct;");
+                eval(temp{i}+".default_value=["+temp_save1+","+temp_save2+"];");
+                eval(temp{i}+".visible_to_user = [0,0];");
+            }
+            warning_elements = warning_elements + " "+temp{i};                 
+        }  
+    }
+} 
+
+# Old notes
+note_count=0;
+for(i=1:10) {
+    if(exist("note_" + num2str(i))==1){
+        note_count=note_count+1;  
+    }
+}
+if (note_count!=0){
+    notes=cell(note_count);
+    for (i=1:note_count){
+        notes{i}=struct;
+        eval('notes{'+num2str(i)+'}.property = note_' + num2str(i) + '.property;');
+        eval('notes{'+num2str(i)+'}.value = note_' + num2str(i) + '.value;');
+        eval('clear(note_'+ num2str(i)+');');
+    }
+    warning_elements = warning_elements + " notes";
+}
+if (warning_elements!= ""){
+    backward_warning = backward_warning+ "\n           WARNING: Following data are in an old format or do not exist:\n          "+ warning_elements+endl+"           This format may not be supported in the future. Please refer to the documentation and update the data format.\n          "+endl;
+}
+

@@ -1,0 +1,239 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");      
+}
+err=error_count;
+
+
+# Reference data comparison
+# Use saved reference parameter test settings to rerun the tests and compare to saved data
+if (!reference_data_available){
+    msg = "Regression QA test is skipped. Saving reference data in " + foldername_ref;
+    assert(msg,false);
+    error_count = error_count+1;
+
+    current_directory = pwd;
+    cd(foldername_ref);
+    ref_test_ranges = test_ranges;
+    N_ref = Nr;
+    if (fileexists(filename_ref)) { rm(filename_ref);}
+    matlabsave(filename_ref,ref_test_ranges, ref_data, ref_params,N_ref,ref_freq_points);
+    cd(current_directory);
+    ? "----- This is not a proper reference data test, saving reference data in " + foldername_ref+" -----";
+}else{
+     ?"Testing S parameter against reference data";
+
+
+current_directory = pwd;
+cd(foldername_ref);
+try{
+    matlabload(filename_ref);
+}  catch(errMsg);
+
+cd(current_directory);
+if (errMsg !=''){
+    msg=filename_ref+".mat does not exist in "+foldername_ref;
+    assert(msg,0);
+    error_count = error_count+1;
+    
+}else{
+    N_freq_points_tot = 0;
+    freq_points = 0;
+    for (ii=1:length(ref_test_ranges)){
+        N_freq_points_tot = N_freq_points_tot+ref_test_ranges{ii}.number_of_points;
+    }
+
+    for (test_num=1:N_ref){
+        new;
+        set("monitor data","save to memory");
+        addelement(design_kit_name + model);
+        DUT_name_temp = get("name");
+        ?"------Test "+num2str(test_num)+"-------";
+        #Setting the parameter values used for the reference tests
+        for(j=1:length(parameters_test)) {
+            if(parameters_test{j}.name!="dummy_type"){
+                set(ref_params{test_num}{j}.name,ref_params{test_num}{j}.val);
+                eval("%" + ref_params{test_num}{j}.name + "% = get('" + ref_params{test_num}{j}.name+ "');");
+            }else{
+                eval("%" + ref_params{test_num}{j}.name + "% = 'dummy_type1';");
+            }
+            try{?ref_params{test_num}{j}.name + " = " + ref_params{test_num}{j}.val;}catch(errMsg);
+            if (errMsg !=""){?ref_params{test_num}{j}.name + " = " + num2str(ref_params{test_num}{j}.val); }
+        }
+
+        N_freq_points = 0;
+
+        for (lambda_test = 1:length(ref_test_ranges)){
+            if (lambda_test>1){switchtodesign;}
+
+            for (input_port = 1:N_ports){
+
+                for (mode_number = 1:mode_no) {
+
+                    if (lambda_test==1){
+                        select(DUT_name_temp);
+                        copy;
+                        DUT_name = get("name");
+                        set("x position", 400*(mode_number-1));
+                        set("y position", 200+400*(input_port-1));
+                    }
+
+                    ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number};
+
+                    if (lambda_test==1){
+                        addelement("Optical Network Analyzer");
+                        set("name", ONA_name);
+                        set("x position", 400*(mode_number-1));
+                        set("y position", 50+400*(input_port-1));
+                        set("plot kind", "wavelength");
+                        set("sensitivity",0);
+                    }else{select(ONA_name);}
+
+                    if (ref_test_ranges{lambda_test}.number_of_points>1){
+                        set("input parameter", "start and stop");
+                        set("start frequency", c/ref_test_ranges{lambda_test}.wavelength_stop);
+                        set("stop frequency", c/ref_test_ranges{lambda_test}.wavelength_start);
+                        set("number of points", ref_test_ranges{lambda_test}.number_of_points);
+                    }else{
+                        set("input parameter", "center and range");
+                        set("center frequency", c/ref_test_ranges{lambda_test}.wavelength_start);
+                        set("frequency range", 100e9);
+                        set("number of points", 3);
+                    }
+                    if (lambda_test==1){
+                        set("orthogonal identifier", mode_ID(mode_number));
+                        set("number of input ports", N_ports);
+                        set("peak analysis","center");
+
+                        eval("input_port_name = "+"'"+port_names{input_port}+"'"+";"); #Find name of element's port where input will be connected
+                        connect(ONA_name,'output',DUT_name,input_port_name);
+
+                        for (output_port = 1:N_ports){
+                            eval("output_port_name="+"'"+ port_names{output_port}+"'"+";"); #Find name of element's output port
+                            connect(ONA_name, "input "+num2str(output_port), DUT_name, output_port_name);
+                        }
+                    }
+                }
+
+            }
+
+            ##################
+
+
+            run;
+            
+            # Preparing S matrix to contain all test data
+            if (lambda_test==1){
+                Ntot = N_ports * mode_no;
+                S_complex = matrix(Ntot,Ntot,N_freq_points_tot);
+                
+            } 
+            
+            # Populating S_complex to contain all test data
+
+            for(mode_number_source = 1:mode_no) {
+                for (input_port = 1:N_ports){
+                    for (output_port = 1:N_ports){
+                        ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number_source};
+                        for (mode_number = 1:mode_no) {
+
+                            if (ref_test_ranges{lambda_test}.number_of_points>1){
+                                result_name = "input " + num2str(output_port) + "/mode "+num2str(mode_number)+"/transmission";
+                            }else{
+                                result_name = "input " + num2str(output_port) + "/mode "+num2str(mode_number)+"/peak/transmission";
+                            }
+                            if(haveresult(ONA_name,result_name)) {
+                                   S_mode = getresult(ONA_name, result_name);
+            
+                                   gain_type = mode_label{mode_number} + " transmission";
+                                   ii = output_port + N_ports*(mode_ID(mode_number)-1);
+                                   jj = input_port + N_ports*(mode_ID(mode_number_source)-1);
+                                   S_complex(ii,jj,N_freq_points+1:N_freq_points+ref_test_ranges{lambda_test}.number_of_points) = S_mode.getattribute(gain_type);
+                                   wavelength_result = S_mode.wavelength;
+                                }           
+                            }
+                        }
+                    }
+                }
+
+            
+            N_freq_points = N_freq_points+ref_test_ranges{lambda_test}.number_of_points;
+            if (test_num==1){
+                freq_points = [freq_points; c/S_mode.wavelength];
+                size(freq_points);
+            }
+        }
+
+
+
+        #############################
+        # Test against reference data:
+        
+            change = max(abs(S_complex-ref_data{test_num}));
+            msg = "S_complex{"+num2str(mode_number)+"} has been changed by: " + num2str(change);
+            pass = change <= S_tolerance;
+            if(!pass) {
+                ? "ERROR - Transmission problem for (output_port, input_port) = (" +
+                num2str(output_port) +","+ num2str(input_port) +")";
+                error_count = error_count+1;
+            }
+            assert(msg,pass);
+            if(break_at_failure & !pass) { break; }
+        
+            S_dB =     20*log10(abs(S_complex+1e-100));
+            S_dB_ref = 20*log10(abs(ref_data{test_num}+1e-100));
+            change = max(abs(S_dB-S_dB_ref));
+            msg = "S in dB has been changed by: " + num2str(change) + " and should be less than " + num2str(power_tolerance_dB);
+            pass = change <= power_tolerance_dB;
+            if(!pass) {
+                ? "ERROR - Transmission problem for (output_port, input_port) = (" +
+                num2str(output_port) +","+ num2str(input_port) +")";
+                error_count = error_count+1;
+            }
+            assert(msg,pass);
+            if(break_at_failure & !pass) { break; }
+
+    }
+
+    freq_points = freq_points(2:end);
+ 
+    if (length(freq_points) == length(ref_freq_points)){
+        change = max(abs(freq_points - ref_freq_points));
+        msg = "The test frequency points have been changed by a maximum of: " + num2str(change)+" Hz";
+        pass = change <= freq_tolerance;
+        if(!pass) {
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }else{
+        msg = "The number of test frequency points does not match the reference data";
+        pass = 0;
+        if(!pass) {
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+}
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

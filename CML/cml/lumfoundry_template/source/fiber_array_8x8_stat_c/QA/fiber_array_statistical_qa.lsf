@@ -1,0 +1,153 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");      
+}
+err=error_count;
+
+# build test circuit
+if(exist("stat_parameters") and enable_stat_qa){
+    feval("/aux_scripts/fiber_array_setup_circuit.lsf");
+    
+############################
+ # get .lib filename
+
+        dotlib_filename = importlib;   
+        if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+            libname=splitstring(library_name,"::");
+            if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+            }else{
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+            }
+        }
+   
+        # create MC sweep
+        addsweep(2);
+        MC_name = "mc_sweep";
+        setsweep("Monte Carlo analysis", "name", MC_name);
+        setsweep(MC_name, "number of trials", statistical.QA.N_trials);
+        setsweep(MC_name, "batch size", 10);
+        setsweep(MC_name, "enable seed", 1);
+        setsweep(MC_name, "seed", 1);
+        setsweep(MC_name, "enable spatial correlations", 0);
+        
+        ## define the parameter mc_lib
+        mc_lib = struct;
+        mc_lib.Name = "mc_lib";
+        mc_lib.library = dotlib_filename;
+        mc_lib.Variant = "statistical";
+        addsweepparameter(MC_name,mc_lib);
+        
+        mc_result_transmission = struct;
+        mc_result_transmission.Name = "transmission_loss_dB";
+        mc_result_transmission.Result = "::Root Element::transmission_loss_dB";
+        mc_result_transmission.Estimation = false;
+        addsweepresult(MC_name,mc_result_transmission);
+       
+        ## add results to the Root Element
+        groupscope("::Root Element");       
+        analysis_script = toscript(plen) + '
+        
+        ## Transmission loss
+        transmission_test_mat=matrix(plen/2,1);
+        for (i=1:plen/2){
+            transmission_test= getresult("ONA_1","input " +num2str(i)+"/mode 1/peak/loss");
+            transmission_test_mat(i) = transmission_test.getattribute("TE loss (dB)");     
+        }
+        setresult("transmission_loss_dB",transmission_test_mat);
+        ';  
+        set("analysis script",analysis_script);
+        run;
+        runanalysis;
+        switchtodesign;
+        save("statistical_temp");
+        
+        runsweep(MC_name);
+        ?"Running Monte-Carlo sweep using default pcell parameter values";
+        stat_transmission = getsweepdata(MC_name,"transmission_loss_dB");
+      
+    ## Plot the results
+        if(create_plots){
+            for (k=1:numport){
+                histc(stat_transmission(k,:));
+                setplot("x label","Transmission loss (dB)"); setplot("y label","count"); setplot("title","output "+num2str(k)+", N_trials = " + num2str(statistical.QA.N_trials));
+            }        
+        }
+        ## Reference data comparison
+        filename_ref_stat = foundry_element+"_stat_refdata";
+        # Check reference data for testing:
+        if(!stat_reference_data_available){
+            msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+            assert(msg,false);
+            error_count = error_count+1;
+            stat_transmission_ref = stat_transmission;
+            current_directory = pwd;
+            cd(foldername_ref);
+            matlabsave(filename_ref_stat, stat_transmission_ref);
+            cd(current_directory);
+            
+            ?"******* Saved statistical reference data";
+        }else{
+            # Compare with reference data
+            ?"Testing Monte-Carlo sweep results against reference data";
+        
+        current_directory = pwd;
+        cd(foldername_ref);
+        try{
+            matlabload(filename_ref_stat);
+        }  catch(errMsg);
+        cd(current_directory);
+    
+        if (errMsg !=''){
+            msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+            assert(msg,0);
+            error_count = error_count+1;
+            
+        }else{
+            
+            change_stat_transmission = max(abs(stat_transmission_ref-stat_transmission));
+            msg = "Transmission loss(dB) from MC analysis has a maximum variation of " + num2str(change_stat_transmission) + " compared to reference. Variation should be less than " + num2str(statistical.QA.absolute_tolerances.loss)+"dB";
+            pass = change_stat_transmission <= statistical.QA.absolute_tolerances.loss;
+            if(!pass) {
+                ? "ERROR - Transmission loss(dB)  in statistical QA";
+                error_count = error_count+1;
+            }
+            assert(msg,pass);
+            if(break_at_failure & !pass) { break; }
+            
+            # delete temporary project file
+            try{
+                del("statistical_temp.icp");
+            }catch(ErrMsg);
+    
+            if(length(ErrMsg)!=0){
+                ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+            }
+            if (err==error_count){
+                ?filebasename(currentscriptname)+" test passed.";
+            }
+        }
+}
+}
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

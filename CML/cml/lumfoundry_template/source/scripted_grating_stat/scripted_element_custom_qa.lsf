@@ -1,0 +1,30 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+
+# Runs custom QA scripts
+
+# Prints set-up script
+QA_filename = source_directory + "/scripted_grating_stat_qa_print_setup_script.lsf";
+?"\nRunning " + QA_filename +"...\n";
+feval(QA_filename);
+
+# Runs grating coupler QA tests
+# Circuits are generated from script
+QA_filename = source_directory + "/scripted_grating_stat_qa.lsf";
+?"\nRunning " + QA_filename +"...\n";
+feval(QA_filename);
+
+# Runs grating coupler QA tests
+# Circuits are loaded from a project file
+QA_filename = source_directory + "/scripted_grating_stat_qa_load_project.lsf";
+?"\nRunning " + QA_filename +"...\n";
+feval(QA_filename);

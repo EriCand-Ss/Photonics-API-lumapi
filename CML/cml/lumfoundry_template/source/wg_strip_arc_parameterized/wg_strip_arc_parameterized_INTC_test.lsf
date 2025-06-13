@@ -1,0 +1,44 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'wg_parameterized' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Testing:
+1. neff, ng, D, loss, and group delay for random sets of parameters
+";
+
+### Run individual subtests
+
+# 1. Randomized Parameter Tests
+feval("wg_parameterized_randomized_neff_ng_D_loss_group_delay_qa.lsf");
+
+# 2. Single Parameter Test
+feval("wg_parameterized_single_neff_ng_D_loss_group_delay_qa.lsf");
+
+# 3. Statistical QA
+feval("wg_parameterized_statistical_qa.lsf");
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+pause(2);

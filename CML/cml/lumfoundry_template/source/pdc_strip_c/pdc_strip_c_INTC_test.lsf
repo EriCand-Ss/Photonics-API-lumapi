@@ -1,0 +1,46 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'directional_coupler_parameterized' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "
+This QA performs the following tests:
+1. Complex cross and through amplitudes, Phase difference between cross and through amplitudes (frequency domain)
+2. Cross-over length (time domain)
+Conditions:
+* TE and TM polarization (TM if data is available in the model)
+";
+
+
+### Run individual subtests
+# 1. transmission and angle test
+feval("directional_coupler_parameterized_transmission_angle_qa.lsf");
+
+# 2. cross-over length test
+feval("directional_coupler_parameterized_cross_over_length_qa.lsf");
+
+
+### Display QA result
+?endl;
+if (error_count>0) {
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+pause(2);

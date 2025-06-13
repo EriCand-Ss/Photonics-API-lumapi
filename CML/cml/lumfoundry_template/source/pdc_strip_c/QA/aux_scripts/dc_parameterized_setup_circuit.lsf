@@ -1,0 +1,85 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 1. Configuration to test S11, S21, S31 and S41 (TE mode):
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT_name_TE = get("name");
+set("x position", 0);
+set("y position", 200);
+for(j=1:length(bend_length_props)) {
+    try {
+        minval = bend_length_props{j}.test_min;
+        maxval = bend_length_props{j}.test_max;
+    }catch(errMsg);
+    if(errMsg != "") {
+        minval = bend_length_props{j}.min;
+        maxval = bend_length_props{j}.max;
+    }
+
+    val = rand(minval,maxval);
+
+    if(arm_curvature_included) { if(j==bend_length_props_Rind){ arm_radius_reference = val; } }
+
+    if(bend_length_props{j}.visible_to_user){
+        set(bend_length_props{j}.name,val);
+        eval("%" + bend_length_props{j}.name + "% = get('" + bend_length_props{j}.name + "');");
+    }
+    else {
+        eval("%" + bend_length_props{j}.name + "% =" + num2str(bend_length_props{j}.default_value) + ";");
+    }
+}
+eval(length_formula);
+
+addelement("Optical Network Analyzer");
+ONA_name_TE = get("name");
+set("x position", 0);
+set("y position", 50);
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("center frequency", c/wavelength_data);
+set("frequency range", 100e9);
+set("orthogonal identifier", mode_data{1}.ID);
+set("number of input ports", 4);
+set("peak analysis","center");
+
+connect(ONA_name_TE,"output",DUT_name_TE,ports{opt_1_RELAY}.name);
+connect(ONA_name_TE,"input 1",DUT_name_TE,ports{opt_1_RELAY}.name);
+connect(ONA_name_TE,"input 2",DUT_name_TE,ports{opt_2_RELAY}.name);
+connect(ONA_name_TE,"input 3",DUT_name_TE,ports{opt_3_RELAY}.name);
+connect(ONA_name_TE,"input 4",DUT_name_TE,ports{opt_4_RELAY}.name);
+
+
+### 2. Configuration to test S11, S21, S31 and S41 (TM mode):
+if(length(mode_data)==2){
+
+select(DUT_name_TE);
+copy;
+DUT_name_TM = get("name");
+set("x position", 400);
+set("y position", 200);
+
+addelement("Optical Network Analyzer");
+ONA_name_TM = get("name");
+set("x position", 400);
+set("y position", 50);
+set("analysis type","scattering data");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("center frequency", c/wavelength_data);
+# set("frequency range", 100e9);
+set("orthogonal identifier", mode_data{2}.ID);
+set("number of input ports", 4);
+set("peak analysis","center");
+
+connect(ONA_name_TM,"output",DUT_name_TM,ports{opt_1_RELAY}.name);
+connect(ONA_name_TM,"input 1",DUT_name_TM,ports{opt_1_RELAY}.name);
+connect(ONA_name_TM,"input 2",DUT_name_TM,ports{opt_2_RELAY}.name);
+connect(ONA_name_TM,"input 3",DUT_name_TM,ports{opt_3_RELAY}.name);
+connect(ONA_name_TM,"input 4",DUT_name_TM,ports{opt_4_RELAY}.name);
+
+}

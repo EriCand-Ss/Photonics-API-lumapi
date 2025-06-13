@@ -1,0 +1,178 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/phase_shifter_electrical_init_qa.lsf");      
+}
+err=error_count;
+
+if (exist("electrical_bandwidth_data")){
+    if (optical_attenuator){
+        electrical_bandwidth_data(:,1) = interp(IV_data(:,1), IV_data(:,2), electrical_bandwidth_data(:,1));
+    }
+    
+new;
+# 0. set up the simulation parameters in Root Element
+if(low_3dB_bandwidth){
+    time_window = 5e-7;
+    sample_rate = 10e9;
+    delay = 1e-8;
+    fmax = 2500e5;
+}
+
+groupscope("::Root Element"); #return to root
+set("time window",time_window);
+set("sample rate",sample_rate);
+if(isFB_PINmodulator){
+    set("temperature", test_temperature);
+}  
+
+# 1. Build circuits for electrical bandwidth test
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT8_name = get("name");
+set("x position", -728);
+set("y position", 69);
+
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT9_name = get("name");
+set("x position", -728);
+set("y position", 264);
+
+addelement("Waveguide Y Branch");
+YB1_name = get("name");
+set("x position", -900);
+set("y position", 150);
+
+addelement("Waveguide Y Branch");
+YB2_name = get("name");
+set("x position", -560);
+set("y position", 150);
+set("horizontal flipped",1);
+
+addelement("CW Laser");
+CWL1_name = get("name");
+set("x position", -1100);
+set("y position", 8);
+set("frequency",c/Operating_Wavelength);
+set("power",0.001);
+set("azimuth", 0);
+set("orthogonal identifier 1", mode_data{1}.ID);
+set("label 1", mode_data{1}.name);
+
+addelement("Impulse");
+IMP1_name = get("name");
+set("x position", -816);
+set("y position", -166);
+set("delay",delay);
+set("amplitude",0.05);
+set("bias",BW_test_bias);
+
+addelement("DC Source");
+DC9_name = get("name");
+set("x position", -626);
+set("y position", -106);
+set("amplitude",0);
+
+addelement("Optical Oscilloscope");
+OOSC1_name = get("name");
+set("x position", -346);
+set("y position", 178);
+
+connect(CWL1_name,"output",YB1_name,"port 1");
+connect(YB1_name,"port 2",DUT8_name,ports{opt_1_RELAY}.name);
+connect(YB1_name,"port 3",DUT9_name,ports{opt_1_RELAY}.name);
+connect(IMP1_name,"output",DUT8_name,ports{ele_an_RELAY}.name);
+connect(DC9_name,"output",DUT9_name,ports{ele_an_RELAY}.name);
+
+if(isDoubleModulator){
+    connect(IMP1_name,"output",DUT8_name,ports{ele_an_2_RELAY}.name);
+    connect(DC9_name,"output",DUT9_name,ports{ele_an_2_RELAY}.name);
+}
+if(ele_cat_RELAY!=ele_an_RELAY){
+    connect(DC9_name,"output",DUT8_name,ports{ele_cat_RELAY}.name);
+    connect(DC9_name,"output",DUT9_name,ports{ele_cat_RELAY}.name);
+}
+connect(DUT8_name,ports{opt_2_RELAY}.name,YB2_name,"port 2");
+connect(DUT9_name,ports{opt_2_RELAY}.name,YB2_name,"port 3");
+connect(YB2_name,"port 1",OOSC1_name,"input");
+
+
+# 2. Run the simulation
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_parameters to zero for comparison with target values
+}
+run;
+
+# 3. Get result of bandwidth test
+s_out = getresult(OOSC1_name,"mode 1/signal");
+t_out = s_out.time;
+s_out = s_out.getattribute(getattribute(s_out));
+p2 = find(t_out,delay):length(s_out);
+t_out = t_out(p2);
+t_out = t_out - t_out(1);
+s_out = s_out(p2);
+
+
+sf_out = fft(s_out,2,0);
+f_out = fftw(t_out,2,0)/(2*pi);
+p2 = 2:find(f_out,fmax);
+f_out = f_out(p2);
+sf_out = sf_out(p2);
+
+sf_out = sf_out/abs(sf_out(1));
+
+
+if (create_plots){
+    title = model+"_bandwidth";
+    plot(f_out/1e9, 20*log10(abs(sf_out)), "Frequency (GHz)", "Gain (dB)", title);
+}
+
+tempx = linspace(min(f_out),max(f_out),5000);
+tempy = interp(20*log10(abs(sf_out)),f_out,tempx);
+f3dB_test = tempx(find(tempy,-3));
+
+if (isFB_PINmodulator){
+    if(isstruct(IV_data)){
+        current_data_interp = pinch(interp(IV_data.current, IV_data.voltage, IV_data.temperature, IV_data.voltage, test_temperature));
+        IV_data_T = [IV_data.voltage , current_data_interp];
+    }
+    else{IV_data_T = IV_data;}
+    BW_V = interp(IV_data_T(:,1),IV_data_T(:,2), electrical_bandwidth_data(:,1));
+    f3dB_model = interp(electrical_bandwidth_data(:,2),BW_V,BW_test_bias);
+}
+else {
+    f3dB_model = interp(electrical_bandwidth_data(:,2),electrical_bandwidth_data(:,1),BW_test_bias);
+}
+
+msg = "3dB cutoff freq is " + num2str(f3dB_test*1e-9) + " GHz and should be " + num2str(f3dB_model*1e-9) + " GHz";
+pass = abs((f3dB_test-f3dB_model)/f3dB_model) < BW_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}
+}else{
+    ?"Test-bench is not applicable to this element. No bandwidth data provided. "+ filebasename(currentscriptname)+" did not run!";
+}

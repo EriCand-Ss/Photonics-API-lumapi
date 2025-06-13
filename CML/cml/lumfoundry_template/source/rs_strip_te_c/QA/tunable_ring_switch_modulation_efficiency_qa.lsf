@@ -1,0 +1,139 @@
+# Copyright (c) 2003-2022, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+groupscope("::Root Element"); #return to root
+set("sample rate",sample_rate);
+
+## Test circuit 1b: phase shifter modulation efficiency
+addelement(design_kit_name + model);
+DUT2_name = get("name");
+set("x position", -140+500);
+set("y position", 35);
+
+addelement(design_kit_name + model);
+DUT3_name = get("name");
+set("x position", -140+500);
+set("y position", 210);
+
+addelement("Optical Splitter");
+Split1_name = get("name");
+set("x position", 185);
+set("y position", 125);
+
+addelement("DC Source");
+DC2_name = get("name");
+set("x position", -140+500);
+set("y position", -185);
+set("amplitude",0);
+
+addelement("DC Source");
+DC3_name = get("name");
+set("x position", 550);
+set("y position", -185);
+set("amplitude",mod_eff_voltage1);
+
+addelement("DC Source");
+DC4_name = get("name");
+set("x position", -140+500);
+set("y position", 400);
+set("amplitude",mod_eff_voltage2);
+
+addelement("Optical Network Analyzer");
+ONA2_name = get("name");
+set("x position", -390+500);
+set("y position", -115);
+set("analysis type","scattering data");
+set("center frequency",f_c);
+set("frequency range",fspan);
+set("number of points",round( fspan*2e-8 ) );
+set("plot kind", "wavelength");
+set("peak at maximum",false);
+set("peak threshold",100);
+set("number of input ports", 2);
+set("peak excursion",0.5);
+set("pit excursion",0.5);
+
+connect(ONA2_name,"output",Split1_name,"input");
+connect(Split1_name,"output 1",DUT2_name,ports{opt_1_RELAY}.name);
+connect(Split1_name,"output 2",DUT3_name,ports{opt_1_RELAY}.name);
+connect(ONA2_name,"input 1",DUT2_name,ports{opt_2_RELAY}.name);
+connect(ONA2_name,"input 2",DUT3_name,ports{opt_2_RELAY}.name);
+connect(DC2_name,"output",DUT2_name,ports{ele_cat_RELAY}.name);
+connect(DC3_name,"output",DUT2_name,ports{ele_an_RELAY}.name);
+connect(DC2_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+connect(DC4_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+
+connect(DC2_name,"output",DUT2_name,ports{ele_th_1_RELAY}.name);
+connect(DC2_name,"output",DUT2_name,ports{ele_th_2_RELAY}.name);
+connect(DC2_name,"output",DUT2_name,ports{ele_th_3_RELAY}.name);
+connect(DC2_name,"output",DUT2_name,ports{ele_th_4_RELAY}.name);
+connect(DC2_name,"output",DUT3_name,ports{ele_th_1_RELAY}.name);
+connect(DC2_name,"output",DUT3_name,ports{ele_th_2_RELAY}.name);
+connect(DC2_name,"output",DUT3_name,ports{ele_th_3_RELAY}.name);
+connect(DC2_name,"output",DUT3_name,ports{ele_th_4_RELAY}.name);
+
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+}
+run;
+
+## Extract results
+# electrical modulation efficiency
+reslambda1 = getresult(ONA2_name,"input 1/mode 1/peak/frequency");
+pos1 = find(reslambda1,lambda_c);
+reslambda1 = reslambda1(pos1);
+
+reslambda2 = getresult(ONA2_name,"input 2/mode 1/peak/frequency");
+pos2 = find(reslambda2,lambda_c);
+reslambda2 = reslambda2(pos2);
+
+mod_eff_test = - (reslambda2 - reslambda1) / (mod_eff_voltage2 - mod_eff_voltage1);
+
+# create plots
+if(create_plots){
+    input1_gain_result = getresult(ONA2_name,"input 1/mode 1/gain");
+    wl = input1_gain_result.wavelength;
+    input1_gain = getresultdata(ONA2_name,"input 1/mode 1/gain");
+    input2_gain = getresultdata(ONA2_name,"input 2/mode 1/gain");
+
+    title= model + ' modulation efficiency';
+    plot(wl*1e9, input1_gain, input2_gain, 'wavelength [nm]', 'gain [dB]', title);
+    legend(num2str(mod_eff_voltage1)+" V", num2str(mod_eff_voltage2)+ "V");
+}
+
+
+## Assert test results
+# Test result 1b: phase shifter modulation efficiency
+msg = "mod_eff = " + num2str(mod_eff_test*1e9) + "nm/V, and should be " + num2str(mod_eff_ref*1e9) + " nm/V";
+pass = abs(mod_eff_test-mod_eff_ref)/mod_eff_ref < mod_eff_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

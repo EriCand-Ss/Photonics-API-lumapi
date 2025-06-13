@@ -1,0 +1,391 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");      
+}
+err=error_count;
+
+ref_params = cell(Nr);
+ref_data = cell(Nr);
+freq_points = 0;
+for (test_num=1:Nr){
+    if (!reference_data_available){
+        ref_params{test_num} = cell(length(parameters_test));
+    }
+    new;
+    set("monitor data","save to memory");
+    addelement(design_kit_name + model);
+    DUT_name_temp = get("name");
+    ?"------Test "+num2str(test_num)+"-------";
+
+    if (!test_all_combo){
+        # Random values are chosen for all parameters_test
+        for(j=1:length(parameters_test)) {
+            if (parameters_test{j}.type=="Number"){
+                try {
+                    minval = parameters_test{j}.test_min;
+                    maxval = parameters_test{j}.test_max;
+                }catch(errMsg);
+                if(errMsg != "") {
+                    minval = parameters_test{j}.min;
+                    maxval = parameters_test{j}.max;
+                }
+                val = rand(minval,maxval);
+            }else if(parameters_test{j}.type=="ComboChoice"){
+                choice_vals = splitstring(parameters_test{j}.choices,";");
+                val = choice_vals{rand(1,length(choice_vals),2)};
+            }else if(parameters_test{j}.type=="Logical"){
+                val = rand(0,1,2);
+            }
+
+            if(parameters_test{j}.name!="dummy_type"){
+                set(parameters_test{j}.name,val);
+                eval("%" + parameters_test{j}.name + "% = get('" + parameters_test{j}.name + "');");
+            }else{
+                eval("%" + parameters_test{j}.name + "% = 'dummy_type1';");
+            }
+
+            if(parameters_test{j}.type=="ComboChoice"){
+                ?parameters_test{j}.name + " = " + val;
+            }
+            else{
+                ?parameters_test{j}.name + " = " + num2str(val);
+            }
+            if (!reference_data_available){
+                ref_params1 = struct;
+                ref_params1.name = parameters_test{j}.name;
+                ref_params1.val = val;
+                ref_params{test_num}{j} = ref_params1;
+            }
+        }
+    }else{
+        # Test are done for each combination of choices
+        if (length(parameters_test)-size_combo_params(1)>0.1){
+            # Random values chosen for the "Number" type parameters_test
+            for(jj=1:length(parameters_test)-size_combo_params(1)) {
+
+                j = noncombo_params(jj);
+                try {
+                    minval = parameters_test{j}.test_min;
+                    maxval = parameters_test{j}.test_max;
+                }catch(errMsg);
+                if(errMsg != "") {
+                    minval = parameters_test{j}.min;
+                    maxval = parameters_test{j}.max;
+                }
+                val = rand(minval,maxval);
+                set(parameters_test{j}.name,val);
+                eval("%" + parameters_test{j}.name + "% = get('" + parameters_test{j}.name + "');");
+                ?parameters_test{j}.name + " = " + num2str(val);
+                if (!reference_data_available){
+                    ref_params1 = struct;
+                    ref_params1.name = parameters_test{j}.name;
+                    ref_params1.val = val;
+                    ref_params{test_num}{j} = ref_params1;
+                }
+            }
+        }
+        for(jj=1:size_combo_params(1)) {
+            # ComboChoice and Logical parameters_test are assigned values so that all are tested
+            j = combo_params(jj);
+            if (size_combo_params(1)!=length(parameters_test)){
+                ind = ceil(test_num/N_test);
+            }else{
+                ind = test_num;
+            }
+            if(parameters_test{j}.type=="ComboChoice"){
+                choice_vals = splitstring(parameters_test{j}.choices,";");
+                val = choice_vals{indices(ind,jj)};
+            }else if(parameters_test{j}.type=="Logical"){
+                val = logical_choice_vals{indices(ind,jj)};
+            }
+            if(parameters_test{j}.name!="dummy_type"){
+                set(parameters_test{j}.name,val);
+                eval("%" + parameters_test{j}.name + "% = get('" + parameters_test{j}.name + "');");
+            }else{
+                eval("%" + parameters_test{j}.name + "% = 'dummy_type1';");
+            }
+
+            ?parameters_test{j}.name + " = " + val;
+            if (!reference_data_available){
+                ref_params1 = struct;
+                ref_params1.name = parameters_test{j}.name;
+                ref_params1.val = val;
+                ref_params{test_num}{j} = ref_params1;
+            }
+
+
+        }
+
+    }
+
+    N_freq_points = 0;
+    # For a given component with random parameter values, tests are run over all test_ranges, for each port and mode supported by the component.
+    for (lambda_test = 1:length(test_ranges)){
+        if (lambda_test>1){switchtodesign;}
+
+        for (input_port = 1:N_ports){
+
+            for (mode_number = 1:mode_no) {
+
+                if (lambda_test==1){
+                    select(DUT_name_temp);
+                    copy;
+                    DUT_name = get("name");
+                    set("x position", 400*(mode_number-1));
+                    set("y position", 200+400*(input_port-1));
+                }
+
+                ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number};
+
+
+                if (lambda_test==1){
+                    addelement("Optical Network Analyzer");
+                    set("name", ONA_name);
+                    set("x position", 400*(mode_number-1));
+                    set("y position", 50+400*(input_port-1));
+                    set("plot kind", "wavelength");
+                    set("sensitivity",0);
+                }else{select(ONA_name);}
+                setnamed(ONA_name,"analysis type", "scattering data");
+                if (test_ranges{lambda_test}.number_of_points>1){
+                    set("input parameter", "start and stop");
+                    set("start frequency", c/test_ranges{lambda_test}.wavelength_stop);
+                    set("stop frequency", c/test_ranges{lambda_test}.wavelength_start);
+                    set("number of points", test_ranges{lambda_test}.number_of_points);
+                }else{
+                    set("input parameter", "center and range");
+                    set("center frequency", c/test_ranges{lambda_test}.wavelength_start);
+                    set("frequency range", 100e9);
+                    set("number of points", 3);
+                }
+                if (lambda_test==1){
+                    set("orthogonal identifier", mode_ID(mode_number));
+                    set("number of input ports", N_ports);
+                    set("peak analysis","center");
+
+                    eval("input_port_name = "+"'"+port_names{input_port}+"'"+";"); #Find name of element's port where input will be connected
+                    connect(ONA_name,'output',DUT_name,input_port_name);
+
+                    for (output_port = 1:N_ports){
+                        eval("output_port_name="+"'"+ port_names{output_port}+"'"+";"); #Find name of element's output port
+                        connect(ONA_name, "input "+num2str(output_port), DUT_name, output_port_name);
+                    }
+                }
+            }
+
+        }
+
+        ############################
+
+
+        run;
+
+        # Preparing S matrix to contain all test data
+        if (lambda_test==1){
+            Ntot = N_ports * mode_no;
+            S_complex_fd = matrix(Ntot,Ntot,N_freq_points_tot);
+        }
+
+        # Populating S_complex_fd to contain all test data
+              
+        for(mode_number_source = 1:mode_no) {
+                for (input_port = 1:N_ports){
+                    for (output_port = 1:N_ports){
+                        ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number_source};
+                        for (mode_number = 1:mode_no) {
+
+                            if (test_ranges{lambda_test}.number_of_points>1){
+                                result_name = "input " + num2str(output_port) + "/mode "+num2str(mode_number)+"/transmission";
+                            }else{
+                                result_name = "input " + num2str(output_port) + "/mode "+num2str(mode_number)+"/peak/transmission";
+                            }
+                            if(haveresult(ONA_name,result_name)) {
+                                   S_mode = getresult(ONA_name, result_name);
+            
+                                   gain_type = mode_label{mode_number} + " transmission";
+                                   ii = output_port + N_ports*(mode_ID(mode_number)-1);
+                                   jj = input_port + N_ports*(mode_ID(mode_number_source)-1);
+                                   S_complex_fd(ii,jj,N_freq_points+1:N_freq_points+test_ranges{lambda_test}.number_of_points) = S_mode.getattribute(gain_type);
+                                   wavelength_result = S_mode.wavelength;
+                            }           
+                        }
+                    }
+                }
+            }
+      
+    
+
+
+
+        ############################
+        # Time domain test
+        if (time_domain_test){
+            switchtolayout;
+
+            for (input_port = 1:N_ports){
+                for (output_port = 1:N_ports){
+
+                    for (mode_number = 1:mode_no) {
+                        ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number};
+                        setnamed(ONA_name,"analysis type","impulse response");
+                    }
+                }
+            }
+            run;
+
+            if (lambda_test==1){
+                Ntot = N_ports * mode_no;
+                S_complex_time = matrix(Ntot,Ntot,N_freq_points_tot);
+            }
+
+            # Populating S_complex_time to contain all test data
+
+            for(mode_number_source = 1:mode_no) {
+                for (input_port = 1:N_ports){
+                    for (output_port = 1:N_ports){
+                        ONA_name = "ONA" + num2str(input_port) + "_" + mode_label{mode_number_source};
+                        for (mode_number = 1:mode_no) {
+                            # search through output mode list until we find data
+                            # if we don't find it, then it means S parameter elements are 0 and we can skip
+                            output_mode_count = 0;
+                            for(found_result = false; !found_result; 1 ) { # a while loop
+                                output_mode_count = output_mode_count + 1;
+                                if (test_ranges{lambda_test}.number_of_points>1){
+                                    result_name = "input " + num2str(output_port) + "/mode "+num2str(output_mode_count)+"/transmission";
+                                }else{
+                                    result_name = "input " + num2str(output_port) + "/mode "+num2str(output_mode_count)+"/peak/transmission";
+                                }
+                                if(!haveresult(ONA_name,result_name)) {
+                                    found_result = true; # just skip out, there is no more data to find. 'output_mode_count' variable corresponds ONA result mode count.
+                                } else {
+                                    S_mode = getresult(ONA_name, result_name);
+            
+                                    gain_type = mode_label{mode_number} + " transmission";
+                                    ii = output_port + N_ports*(mode_ID(mode_number)-1);
+                                    jj = input_port + N_ports*(mode_ID(mode_number_source)-1);
+                                    try {  
+                                        temp= S_mode.getattribute(gain_type);      # Checks for TE or TM transmission for a particular ONA output mode count.   
+                                    } catch(errMsg);
+                                    if(errMsg == "") {
+                                        try{
+                                           S_complex_time(ii,jj,N_freq_points+1:N_freq_points+test_ranges{lambda_test}.number_of_points) = temp; # Checks if number of frequency points is correct.
+                                        }catch(errONA);
+                                        if (errONA !=""){
+                                            ?errONA;
+                                            msg = "Error: ONA collected one less frequency point, rerunning simulation";
+                                            assert(msg,true);
+                                            switchtodesign;
+                                            run;
+                                            S_complex_time(ii,jj,N_freq_points+1:N_freq_points+test_ranges{lambda_test}.number_of_points) = S_mode.getattribute(gain_type);
+                                        }
+                                        wavelength_result = S_mode.wavelength;
+                                        found_result = true;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
+
+        
+        N_freq_points = N_freq_points+test_ranges{lambda_test}.number_of_points;
+        if (test_num==1){
+            freq_points = [freq_points; c/S_mode.wavelength];
+        }
+    }
+    if (!reference_data_available){
+        ref_data{test_num} = S_complex_fd;
+    }
+
+    
+
+
+    #############################
+    # Test reciprocity:
+
+        diff_abs = max(abs(S_complex_fd) - abs(permute(S_complex_fd,[2,1,3])));
+        pass_abs = diff_abs <= reciprocity_tolerance;
+        ?msg = "Reciprocity violation considering only abs(S) is " + num2str(diff_abs) + " and should be less than " + num2str(reciprocity_tolerance);
+        if(!pass_abs) {
+            ? "ERROR - Reciprocity violation (not including phase)";
+            error_count = error_count+1;
+        }
+        assert(msg,pass_abs);
+        if(break_at_failure & !pass_abs) { break; }
+
+        diff = max(abs(S_complex_fd - permute(S_complex_fd,[2,1,3])));
+        pass = diff <= reciprocity_tolerance;
+        ?msg = "Reciprocity violation including phase is " + num2str(diff) + " and should be less than " + num2str(reciprocity_tolerance) +
+        ", note that violation in abs(S) is " + num2str(diff_abs);
+        if(!pass) {
+            ? "ERROR - Reciprocity violation (including phase)";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+
+    #############################
+    # Test passivity:
+
+        diff = 0;
+        for(wc=1:N_freq_points) {
+            S = pinch(S_complex_fd(:,:,wc));
+            diff = max([norm(S)-1,diff]);
+        }
+        pass = diff <= passivity_tolerance;
+        ?msg = "Passivity violation is " + num2str(diff) + " and should be less than " + num2str(passivity_tolerance);
+        if(!pass) {
+            ? "ERROR - Passivity violation";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+
+    #############################
+    # Compare frequency and time domain
+    if (time_domain_test){
+        compare_time_bandwidth_fraction = 0.3; # only compare in middle region
+        for (lambda_test = 1:length(test_ranges)){
+            if (test_ranges{lambda_test}.number_of_points==1){
+                pos = 1;
+            }else{
+                f1 = c/test_ranges{lambda_test}.wavelength_stop;
+                f2 = c/test_ranges{lambda_test}.wavelength_start;
+                fc = 0.5*(f1+f2);
+                f = freq_points;
+                pos = find(abs(f-fc) <= compare_time_bandwidth_fraction*0.5*(f2-f1));
+            }
+            diff = max(abs(S_complex_fd(:,:,pos)-S_complex_time(:,:,pos)));
+            msg = "S comparison frequency and time domain over middle " + num2str(compare_time_bandwidth_fraction) + " of bandwidth, max diff is: " + num2str(diff) + " and should be less than " + num2str(S_time_tolerance);
+            pass = diff <= S_time_tolerance;
+            assert(msg,pass);
+            if(break_at_failure & !pass) { break; }
+        }
+    }
+}
+freq_points = freq_points(2:end);
+if (!reference_data_available){
+    ref_freq_points=freq_points;
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

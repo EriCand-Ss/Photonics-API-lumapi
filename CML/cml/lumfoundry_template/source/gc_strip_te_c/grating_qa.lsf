@@ -1,0 +1,95 @@
+##################################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+##################################################################
+
+if (!exist("count")){
+    error_count = 0;
+}
+if (!exist("break_at_failure")){
+    break_at_failure = false;
+}
+
+new;
+
+# QA settings:
+peak_wavelength = 1555.56e-9;
+bandwidth_1dB = 55.245e-9;
+wavelength_tolerance=1e-10;
+bandwidth_tolerance=0.01;
+mode_label = "TE";
+
+
+# Frequency domain test bench
+load(source_directory + "/"+"grating_qa.icp");
+switchtolayout;
+ONA_name1 = "ONA_1";
+ONA_name2 = "ONA_2";
+
+run;
+
+# Extract and analyze results
+S21 = getresult(ONA_name1,"input 1/mode 1/gain");
+S11 = getresult(ONA_name1,"input 2/mode 1/gain");
+
+S12 = getresult(ONA_name2,"input 1/mode 1/gain");
+S22 = getresult(ONA_name2,"input 2/mode 1/gain");
+
+gain_type = mode_label + " gain (dB)";
+
+IL21_dB = S21.getattribute(gain_type);
+IL12_dB = S12.getattribute(gain_type);
+
+R1test_dB = S11.getattribute(gain_type);
+R2test_dB = S22.getattribute(gain_type);
+
+
+BW_dB=1;
+wavelength = S21.wavelength;
+P_1dB=max(IL21_dB)-BW_dB;
+peak_wl=getresult(ONA_name1,"input 1/mode 1/peak/frequency");
+out=find(IL21_dB> P_1dB);
+W1=min(out); W2=max(out);
+WL1=wavelength(W1);
+WL2=wavelength(W2);
+BW=abs(WL2-WL1);
+
+# Compare to expected results
+## Peak wavelength 
+msg = "Peak wavelength for "+ mode_label +" has been changed by: " + num2str(abs(peak_wl-peak_wavelength));
+pass = abs(peak_wl-peak_wavelength) <= wavelength_tolerance;
+msg_result = "Peak wavelength for "+ mode_label + " mode is " + num2str(peak_wl*1e9) + " nm, and should be " + num2str(peak_wavelength*1e9) + " nm.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+## 1dB bandwidth 
+msg = "Bandwidth for "+ mode_label +" has been changed by: " + num2str(abs(BW-bandwidth_1dB));
+pass = abs(BW-bandwidth_1dB) <= bandwidth_tolerance;
+msg_result = "Bandwidth for "+ mode_label +" mode is " + num2str(BW*1e9) + " nm, and should be " + num2str(bandwidth_1dB*1e9) + " nm.";
+if(!pass) {
+    ? "ERROR - " + msg_result;
+    error_count = error_count+1;
+} else {
+    ?"Passed! - " + msg_result;
+    
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+
+
+

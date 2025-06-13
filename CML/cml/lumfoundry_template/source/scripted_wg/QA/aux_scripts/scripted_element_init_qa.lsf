@@ -1,0 +1,37 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="scripted_wg";
+library_name="lumfoundry_template";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\scripted_wg\scripted_wg.json');
+feval('/aux_scripts/scripted_element_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'scripted_wg';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 1. QA options and settings
+break_at_failure = false; # if true, stop the QA when an error is encountered
+write_log = false;
+
+### 2. Initialise enviroment and workspace [!!!DO NOT MODIFY!!!]
+new;
+set("monitor data","save to memory");
+
+design_kit_name = '::design kits::' + library_name + "::";
+
+error_count = 0;
+error_flag = 0;

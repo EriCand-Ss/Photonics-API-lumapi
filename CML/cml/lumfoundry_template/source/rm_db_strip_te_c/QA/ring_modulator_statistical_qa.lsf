@@ -1,0 +1,712 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/ring_modulator_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/ring_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+      
+    ### Frequency-domain QA
+
+    # IL, FSR, Q, notch and modulation efficiency statistical qa
+    stat_IL = matrix(1,N_trials);
+    stat_IL_drop = matrix(1,N_trials);
+    stat_ER = matrix(1,N_trials);
+    stat_FSR = matrix(1,N_trials);
+    stat_Q = matrix(1,N_trials);
+    stat_mod_eff = matrix(1,N_trials);
+    stat_notch = matrix(1,N_trials);
+
+    #Manual MC
+    ?"---------------------------------";
+    ?"Testing IL, FSR, Q, mod_eff, and notch location using manual monte-carlo sweep: " + num2str(N_trials) + " trials.";
+    for (i= 1:N_trials){
+        ?"Trial #" + num2str(i);
+        stat_perturbation = 1.01;  #perturb statistical parameters to determine notch shift direction. Number should be bigger than 1. Will be increased automatically if no notch shift is being detected
+        new;
+        groupscope("::Root Element"); #return to root
+        set("sample rate",sample_rate);
+
+        ## Test circuit 1a: IL, notch, FSR, and ER
+        addelement(design_kit_name + model);
+        DUT1_name = get("name");
+        set("x position", -140);
+        set("y position", 110);
+
+        #nominal element
+        addelement(design_kit_name + model);
+        DUT3_name = get("name");
+        local_path=get("local path");
+        set("x position", -140+300);
+        set("y position", 110);
+        set("perturb_stat_params", 0);
+        
+        if(!ring_resonator){
+            ## Test circuit 1b: phase shifter modulation efficiency
+            addelement(design_kit_name + model);
+            DUT4_name = get("name");
+            set("x position", -140+500);
+            set("y position", 35);
+        }
+        # set up statistical parameter in first element
+        dotlib_filename = importlib;
+        if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+            libname=splitstring(library_name,"::");
+            if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+            }else{
+                dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+            }}
+        importlib(dotlib_filename,"statistical",{"seed":i});
+       
+        if(!ring_passive | !ring_resonator){
+            #Continue test circuit 1a: notch
+            addelement("DC Source");
+            DC1_name = get("name");
+            set("x position", -140);
+            set("y position", -185);
+            set("amplitude",0);
+            
+            addelement("DC Source");
+            DC2_name = get("name");
+            set("x position", -140+500);
+            set("y position", -185+100);
+            set("amplitude",0);
+            
+            addelement("DC Source");
+            DC3_name = get("name");
+            set("x position", -140+300);
+            set("y position", -185+200);
+            set("amplitude",0);
+        }
+        
+        addelement("Optical Network Analyzer");
+        ONA1_name = get("name");
+        set("x position", -390);
+        set("y position", -115);
+        set("analysis type","scattering data");
+        set("center frequency",f_c);
+        set("frequency range",fspan);
+        set("number of points",round( fspan*5e-9 ) );
+        set("plot kind", "wavelength");
+        set("peak at maximum",false);
+        set("peak threshold",100);
+        set("peak excursion",0.5);
+        set("pit excursion",0.5);
+        if (NOP==4){
+            set("number of input ports",2);
+            connect(ONA1_name,"input 2",DUT1_name,ports{opt_3_RELAY}.name);
+        }
+        connect(ONA1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+        connect(ONA1_name,"input 1",DUT1_name,ports{opt_2_RELAY}.name);       
+            
+        select(DUT1_name);
+        copy;    # copy the first element to use the same values for the statistical parameters
+        DUT2_name = get("name");
+        set("x position", -140+500);
+        set("y position", 210);
+
+        addelement("Optical Network Analyzer");
+        ONA2_name = get("name");
+        set("x position", -690);
+        set("y position", -115);
+        set("analysis type","scattering data");
+        set("center frequency",f_c);
+        set("frequency range",fspan);
+        set("number of points",round( fspan*5e-9 ) );
+        set("plot kind", "wavelength");
+        set("peak at maximum",false);
+        set("peak threshold",100);
+        set("peak excursion",0.5);
+        set("pit excursion",0.5);
+
+        connect(ONA2_name,"output",DUT2_name,ports{opt_1_RELAY}.name);
+        connect(ONA2_name,"input 1",DUT2_name,ports{opt_2_RELAY}.name);
+        
+        addelement("Optical Network Analyzer");
+        ONA3_name = get("name");
+        set("x position", -490);
+        set("y position", -315);
+        set("analysis type","scattering data");
+        set("center frequency",f_c);
+        set("frequency range",fspan);
+        set("number of points",round( fspan*5e-9 ) );
+        set("plot kind", "wavelength");
+        set("peak at maximum",false);
+        set("peak threshold",100);
+        set("peak excursion",0.5);
+        set("pit excursion",0.5);
+
+        connect(ONA3_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+        connect(ONA3_name,"input 1",DUT3_name,ports{opt_2_RELAY}.name);
+        
+        if(!ring_passive){ 
+            connect(DC1_name,"output",DUT1_name,ports{ele_th_1_RELAY}.name);
+            connect(DC1_name,"output",DUT1_name,ports{ele_th_2_RELAY}.name);
+            
+            connect(DC2_name,"output",DUT2_name,ports{ele_th_1_RELAY}.name);
+            connect(DC2_name,"output",DUT2_name,ports{ele_th_2_RELAY}.name);
+            
+            connect(DC3_name,"output",DUT3_name,ports{ele_th_1_RELAY}.name);
+            connect(DC3_name,"output",DUT3_name,ports{ele_th_2_RELAY}.name);        
+        }        
+        
+        if(!ring_resonator){
+            connect(DC1_name,"output",DUT1_name,ports{ele_cat_RELAY}.name);
+            connect(DC1_name,"output",DUT1_name,ports{ele_an_RELAY}.name);
+        
+            if (NOA == 2){
+                connect(DC1_name,"output",DUT1_name,ports{ele_an_2_RELAY}.name);
+            }
+            
+            connect(DC2_name,"output",DUT2_name,ports{ele_cat_RELAY}.name);
+            connect(DC2_name,"output",DUT2_name,ports{ele_an_RELAY}.name);
+    
+            if (NOA == 2){
+            connect(DC2_name,"output",DUT2_name,ports{ele_an_2_RELAY}.name);
+            }
+            
+            connect(DC3_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+            connect(DC3_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+    
+            if (NOA == 2){
+            connect(DC3_name,"output",DUT3_name,ports{ele_an_2_RELAY}.name);
+            }    
+        
+            #continue test circuit 1b
+            select(DUT4_name);
+            copy;    # copy the first element to use the same values for the statistical parameters
+            DUT5_name = get("name");
+            set("x position", -140+500);
+            set("y position", 210);
+    
+            addelement("Optical Splitter");
+            Split1_name = get("name");
+            set("x position", 185);
+            set("y position", 125);
+            
+            addelement("DC Source");
+            DC4_name = get("name");
+            set("x position", -140+500);
+            set("y position", -185);
+            set("amplitude",0);
+            
+            addelement("Optical Network Analyzer");
+            ONA4_name = get("name");
+            set("x position", -390+500);
+            set("y position", -115);
+            set("analysis type","scattering data");
+            set("center frequency",f_c);
+            set("frequency range",fspan);
+            set("number of points",round( fspan*2e-8 ) );
+            set("plot kind", "wavelength");
+            set("peak at maximum",false);
+            set("peak threshold",100);
+            set("number of input ports", 2);
+            set("peak excursion",0.5);
+            set("pit excursion",0.5);
+    
+            connect(ONA4_name,"output",Split1_name,"input");
+            connect(Split1_name,"output 1",DUT4_name,ports{opt_1_RELAY}.name);
+            connect(Split1_name,"output 2",DUT5_name,ports{opt_1_RELAY}.name);
+            connect(ONA4_name,"input 1",DUT4_name,ports{opt_2_RELAY}.name);
+            connect(ONA4_name,"input 2",DUT5_name,ports{opt_2_RELAY}.name);
+            
+            if(!ring_passive){
+                connect(DC4_name,"output",DUT4_name,ports{ele_th_1_RELAY}.name);
+                connect(DC4_name,"output",DUT4_name,ports{ele_th_2_RELAY}.name);
+                connect(DC4_name,"output",DUT5_name,ports{ele_th_1_RELAY}.name);
+                connect(DC4_name,"output",DUT5_name,ports{ele_th_2_RELAY}.name);
+            }
+        
+            addelement("DC Source");
+            DC5_name = get("name");
+            set("x position", 550);
+            set("y position", -185);
+            set("amplitude",mod_eff_voltage1);
+        
+            addelement("DC Source");
+            DC6_name = get("name");
+            set("x position", -140+500);
+            set("y position", 400);
+            set("amplitude",mod_eff_voltage2);
+            
+            connect(DC4_name,"output",DUT4_name,ports{ele_cat_RELAY}.name);
+            connect(DC5_name,"output",DUT4_name,ports{ele_an_RELAY}.name);
+            connect(DC4_name,"output",DUT5_name,ports{ele_cat_RELAY}.name);
+            connect(DC6_name,"output",DUT5_name,ports{ele_an_RELAY}.name);
+    
+            if (NOA == 2) {
+                connect(DC5_name,"output",DUT4_name,ports{ele_an_2_RELAY}.name);
+                connect(DC6_name,"output",DUT5_name,ports{ele_an_2_RELAY}.name);
+            }
+        }
+        
+        perturb_stat = true;
+        for(0; perturb_stat == 1 ;0){  # while stat_perturbation is not enough, increase it until notch shift direction is detected
+
+            perturb_stat = false;
+            switchtodesign;
+            setnamed(DUT2_name,"perturb_stat_params", stat_perturbation); 
+            run;  
+            
+            if(!ring_resonator){
+                ## Extract results
+                # electrical modulation efficiency
+                reslambda1 = getresult(ONA4_name,"input 1/mode 1/peak/frequency");
+                pos1 = find(reslambda1,lambda_c);
+                reslambda1 = reslambda1(pos1);
+    
+                reslambda2 = getresult(ONA4_name,"input 2/mode 1/peak/frequency");
+                pos2 = find(reslambda2,reslambda1);
+                reslambda2 = reslambda2(pos2);
+                
+            
+                stat_mod_eff(1,i) = - (reslambda2 - reslambda1) / (mod_eff_voltage2 - mod_eff_voltage1);  
+            }
+            # notch
+            notch_test_nominal = sort(getresult(ONA3_name,"input 1/mode 1/peak/frequency"));
+            pos_n = find(notch_test_nominal,lambda_c);
+            notch_test_nominal_c = notch_test_nominal(pos_n);
+
+            notch_test = sort(getresult(ONA1_name,"input 1/mode 1/peak/frequency"));
+            pos = find(notch_test,notch_test_nominal_c);
+            notch_test_c = notch_test(pos);
+
+            notch_test2 = sort(getresult(ONA2_name,"input 1/mode 1/peak/frequency"));
+            pos_2 = find(notch_test2,notch_test_c);
+            notch_test2_c = notch_test2(pos_2); 
+            
+            #Determine the shift direction
+            if((notch_test2_c - notch_test_c) * (notch_test_c - notch_test_nominal_c) > 0){
+                notch_test_c = notch_test(pos);
+            }
+            else if((notch_test2_c - notch_test_c) * (notch_test_c - notch_test_nominal_c) < 0){
+                if((notch_test_c - notch_test_nominal_c) < 0){
+                    pos = pos + 1;
+                    notch_test_c = notch_test(pos);
+                }
+                else {
+                    pos = pos - 1;
+                    notch_test_c = notch_test(pos);
+                }
+
+            }
+            else if((notch_test2_c - notch_test_c) == 0 & (notch_test_c - notch_test_nominal_c) != 0){
+                if( abs(notch_test_c - notch_test_nominal_c) > stat_notch_tolerance){
+                    ?"Unable to detect notch shift direction possibly due to low sensitivity of notch variation to stat parameters.\n Increased the value of perturbation ...";              
+                    stat_perturbation = stat_perturbation * 1.1;
+                    if(stat_perturbation < 1.5){
+                        perturb_stat = true;
+                    }
+                    else{
+                        perturb_stat = false;
+                    }
+                }
+                else{
+                    notch_test_c = notch_test_nominal_c;
+                }
+            }    
+        }
+        
+        notch_shift = notch_test_c - notch_test_nominal_c;
+        stat_notch(1,i) = notch_test_nominal_c + notch_shift;
+        #IL, Q and FSR
+        IL_test = getresult(ONA1_name,"input 1/mode 1/peak/loss");
+        IL_test = IL_test.getattribute("TE loss (dB)");
+        stat_IL(1,i) = IL_test(length(IL_test)-pos+1);
+
+        FSR_test = getresult(ONA1_name,"input 1/mode 1/peak/free spectral range");
+        FSR_test = FSR_test.getattribute("TE free spectral range (m)");
+        stat_FSR(1,i) = FSR_test(length(IL_test)-pos+1);
+
+        T = getresult(ONA1_name,"input 1/mode 1/transmission");
+        lambda = T.wavelength;
+        T = T.getattribute(getattribute(T));
+        T = abs(T)^2;
+        maxx = T(find(lambda , stat_notch(1,i)));
+        T = T(find(lambda , stat_notch(1,i) + stat_FSR(1,i) / 2):find(lambda , stat_notch(1,i) - stat_FSR(1,i) / 2) , 1);
+        lambda = lambda(find(lambda , stat_notch(1,i) + stat_FSR(1,i) / 2):find(lambda , stat_notch(1,i) - stat_FSR(1,i) / 2));
+        maxx1 = lambda(find(T , maxx + ((max(T) - maxx) / 2)));
+        T(find(T , maxx + ((max(T) - maxx) / 2))) = 0;
+        maxx2 = lambda(find(T , maxx + ((max(T) - maxx) / 2)));
+        stat_Q(1,i) = stat_notch(1,i) / abs(maxx2 - maxx1);
+
+        gain_f = getresult(ONA1_name,"input 1/mode 1/gain");
+        gain_f = gain_f.getattribute("TE gain (dB)");
+        stat_ER(1,i) = abs(max((gain_f)) - stat_IL(1,i));  
+
+        if (NOP==4){       
+            IL_drop_test = getresult(ONA1_name,"input 2/mode 1/loss");
+            wl = IL_drop_test.wavelength;
+            IL_drop_test = IL_drop_test.getattribute("TE loss (dB)");
+            notch_pos = find(wl==stat_notch(1,i));
+            stat_IL_drop(1,i) = abs(IL_drop_test(notch_pos));
+        }
+
+    }
+
+    # Plot the results
+    if(create_plots){
+        if(exist('IL')){
+            histc(stat_IL);
+            setplot("x label","IL (dB)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(""); 
+        }
+        histc(stat_notch*1e9);
+        setplot("x label","resonant_wavelength (nm)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend("");          
+        histc(stat_FSR);
+        setplot("x label","FSR (m)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(""); 
+        histc(stat_Q);
+        setplot("x label","Q"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend("");
+        if (exist('ER')){
+            histc(stat_ER);
+            setplot("x label","ER (dB)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(""); 
+        }
+        if (NOP==4){ 
+            histc(stat_IL_drop);
+            setplot("x label","IL_drop (dB)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(""); 
+        }
+        if(!ring_resonator){
+            histc(stat_mod_eff*1e9);
+            setplot("x label","mod_eff (nm/V)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend("");   
+        } 
+    }
+
+    ### Time-domain QA (electrical bandwidth)
+    # Only run the electrical bandwidth QA if at least one statistical parameter includes slope_electrical_bandwidth
+    run_BW_QA = false;
+    for (spid = 1:length(stat_parameters)) {
+        run_BW_QA = run_BW_QA | isfield(stat_parameters{spid}, "slope_electrical_bandwidth");
+    }
+
+    if (run_BW_QA) {
+        ?"---------------------------------";
+        ?"Testing Electrical Bandwidth with manual monte-carlo sweep: " + num2str(N_trials) + " trials.";
+
+        stat_f3dB = matrix(N_trials);
+
+        for (i = 1:N_trials) {
+            ?"Trial #" + num2str(i);
+            switchtodesign;
+
+            ### Build testbenches
+            new;
+            groupscope("::Root Element"); #return to root
+            set("sample rate",sample_rate);
+
+            # Test circuit 1f: net BW calculation
+            addelement(design_kit_name + model);
+            DUT8_name = get("name");
+            set("x position", -140);
+            set("y position", 1110);
+            importlib(dotlib_filename,"statistical",{"seed":i});
+
+            addelement("Step Source");
+            STEP2_name = get("name");
+            set("x position", -240);
+            set("y position", 915);
+
+            set("amplitude",imp_amplitude);  # important to get a large eneough change in optical response
+            set("bias",BW_bias);  # important to operate in a linear region
+            set("delay",1e-9);  
+
+            addelement("DC Source");
+            DC11_name = get("name");
+            set("x position", -40);
+            set("y position", 915);
+            set("amplitude",0);
+
+            addelement("CW Laser");
+            CWL1_name = get("name");
+            set("x position", -390);
+            set("y position", 1085);
+            set("power", 0.001);
+            set("frequency", c/stat_notch(i));
+
+            addelement("Optical oscilloscope");
+            OOSC1_name = get("name");
+            set("x position", -140+200);
+            set("y position", 1110);
+
+            connect(CWL1_name,"output",DUT8_name,ports{opt_1_RELAY}.name);
+            connect(OOSC1_name,"input",DUT8_name,ports{opt_2_RELAY}.name);
+
+            connect(DC11_name,"output",DUT8_name,ports{ele_cat_RELAY}.name);
+            connect(STEP2_name,"output",DUT8_name,ports{ele_an_RELAY}.name);
+
+            if (NOA == 2) {
+                connect(STEP2_name,"output",DUT8_name,ports{ele_an_2_RELAY}.name);
+            }
+
+            # Test circuit 1g: optical BW calculation (quality factor)
+            select(DUT8_name);
+            copy; # Copy to ensure that the statistical parameters match.
+            DUT9_name = get("name");
+            set("x position", -140);
+            set("y position", 1510);
+
+            addelement("Optical Amplitude Modulator");
+            AM1_name = get("name");
+            set("x position", -390);
+            set("y position", 1510);
+            set("modulation index",1);
+
+            addelement("Step Source");
+            STEP1_name = get("name");
+            set("x position", -390);
+            set("y position", 1315);
+            set("amplitude",-1);
+            set("bias",1);
+            set("delay",1e-9);
+
+            addelement("CW Laser");
+            CWL2_name = get("name");
+            set("x position", -590);
+            set("y position", 1510);
+            set("frequency",c/stat_notch(i));
+
+            addelement("DC Source");
+            DC12_name = get("name");
+            set("x position", -40);
+            set("y position", 1315);
+            set("amplitude",0);
+
+            addelement("Optical oscilloscope");
+            OOSC2_name = get("name");
+            set("x position", -140+200);
+            set("y position", 1510);
+
+            connect(CWL2_name,"output",AM1_name,"input");
+            connect(STEP1_name,"output",AM1_name,"modulation");
+            connect(AM1_name,"output",DUT9_name,ports{opt_1_RELAY}.name);
+            connect(OOSC2_name,"input",DUT9_name,ports{opt_2_RELAY}.name);
+
+            if(!ring_passive){
+                connect(DC11_name,"output",DUT8_name,ports{ele_th_1_RELAY}.name);
+                connect(DC11_name,"output",DUT8_name,ports{ele_th_2_RELAY}.name);
+                connect(DC12_name,"output",DUT9_name,ports{ele_th_1_RELAY}.name);
+                connect(DC12_name,"output",DUT9_name,ports{ele_th_2_RELAY}.name);
+            }
+            
+            connect(DC12_name,"output",DUT9_name,ports{ele_cat_RELAY}.name);
+            connect(DC12_name,"output",DUT9_name,ports{ele_an_RELAY}.name);
+
+            if (NOA == 2) {
+                connect(DC12_name,"output",DUT9_name,ports{ele_an_2_RELAY}.name);
+            }
+
+            run;
+
+            # net 3dB BW
+            delay = getnamed(STEP2_name,"delay");
+            s_out = getresult(OOSC1_name,"sum/signal");
+            t_out = s_out.time;
+            attribute_name = getattribute(s_out);
+            s_out = s_out.getattribute(attribute_name);
+            p2 = (find(t_out,delay)-1+50):length(t_out);  # Truncating the curve from 100 samples after "delay" to pick only the exponentially decaying part
+            t_out = t_out(p2);
+            s_out = s_out(p2);
+            s_out = s_out-s_out(length(s_out));
+            sf_out = fft(s_out,2,0);
+            f_out = fftw(t_out,2,0)/(2*pi);
+            p2 = (1:find(f_out,100e9));
+            f_out = f_out(p2);
+            sf_out = sf_out(p2);
+            sf_out_dB = 20*log10(abs(sf_out)/abs(sf_out(1)));
+            tempx = linspace(min(f_out),max(f_out),5000);
+            tempy = interp(sf_out_dB, f_out, tempx);
+            f3dB_net_test = tempx(find(tempy,-3));
+
+            # optical 3dB BW
+            delay = getnamed(STEP1_name,"delay");
+            s_out = getresult(OOSC2_name,"sum/signal");
+            t_out = s_out.time;
+            attribute_name = getattribute(s_out);
+            s_out = s_out.getattribute(attribute_name);
+            p2 = (find(t_out,delay)+100):length(t_out);
+            t_out = t_out(p2);
+            s_out = s_out(p2);
+            s_out = s_out-s_out(length(s_out));
+            sf_out = fft(s_out,2,0);
+            f_out = fftw(t_out,2,0)/(2*pi);
+            p2 = (1:find(f_out,100e9));
+            f_out = f_out(p2);
+            sf_out = sf_out(p2);
+            sf_out_dB = 20*log10(abs(sf_out)/abs(sf_out(1)));
+            tempx = linspace(min(f_out),max(f_out),5000);
+            tempy = interp(sf_out_dB, f_out, tempx);
+            f3dB_opt_test = tempx(find(tempy,-3));
+
+            # electrical 3dB BW
+            stat_f3dB(i) = (f3dB_net_test^-2 - f3dB_opt_test^-2)^-0.5;
+        }
+
+        # Create plots (if necessary)
+        if (create_plots) {
+            histc(stat_f3dB/1e9);
+            setplot("x label","Electrical Bandwidth (GHz)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(""); 
+        }
+    }
+
+    ### Reference data comparison
+
+    # Check reference data for testing:
+    if(!stat_reference_data_available){
+        msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+        assert(msg,false);
+        error_count = error_count+1;
+        stat_IL_ref = stat_IL;
+        stat_notch_ref = stat_notch;
+        stat_FSR_ref = stat_FSR;
+        stat_Q_ref = stat_Q;
+        stat_IL_drop_ref = stat_IL_drop;
+        stat_ER_ref = stat_ER;
+        stat_mod_eff_ref = stat_mod_eff;
+        if (exist("stat_f3dB")) {stat_f3dB_ref = stat_f3dB;}
+
+        current_directory = pwd;
+        cd(foldername_ref);
+        if (exist("stat_f3dB_ref")) { matlabsave(filename_ref_stat, stat_f3dB_ref, stat_IL_ref, stat_notch_ref, stat_FSR_ref, stat_Q_ref, stat_IL_drop_ref, stat_ER_ref, stat_mod_eff_ref); }
+        else { matlabsave(filename_ref_stat, stat_IL_ref, stat_notch_ref, stat_FSR_ref, stat_Q_ref, stat_IL_drop_ref, stat_ER_ref, stat_mod_eff_ref); }
+        cd(current_directory);
+
+        ?"******* Saved statistical reference data";
+    }else{
+        # Compare with reference data
+        ?"Testing Monte-Carlo sweep results against reference data";
+    
+    current_directory = pwd;
+    cd(foldername_ref);
+    try{
+        matlabload(filename_ref_stat);
+    }  catch(errMsg);
+    cd(current_directory);
+    if (errMsg !=''){
+        msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+        assert(msg,0);
+        error_count = error_count+1;
+        
+    }else{
+
+    if(exist('IL')){
+        change = max(abs(stat_IL_ref-stat_IL));
+        msg = "IL (dB) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_IL_tolerance);
+        pass = change <= stat_IL_tolerance;
+        if(!pass) {
+            ? "ERROR - IL in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+    change = max(abs(stat_notch_ref-stat_notch));
+    msg = "Resonant wavelength (m) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_notch_tolerance);
+    pass = change <= stat_notch_tolerance;
+    if(!pass) {
+        ? "ERROR - notch in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    change = max(abs(stat_FSR_ref-stat_FSR));
+    msg = "FSR (m) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_FSR_tolerance);
+    pass = change <= stat_FSR_tolerance;
+    if(!pass) {
+        ? "ERROR - FSR in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    change = max(abs(stat_Q_ref-stat_Q));
+    msg = "Q from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_Q_tolerance);
+    pass = change <= stat_Q_tolerance;
+    if(!pass) {
+        ? "ERROR - Q in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (exist('ER')){
+        change = max(abs(stat_ER_ref-stat_ER));
+        msg = "ER (dB) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_ER_tolerance);
+        pass = change <= stat_ER_tolerance;
+        if(!pass) {
+            ? "ERROR - ER in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+    if(NOP==4){
+        change = max(abs(stat_IL_drop_ref-stat_IL_drop));
+        msg = "IL_drop (dB) from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_IL_drop_tolerance);
+        pass = change <= stat_IL_drop_tolerance;
+        if(!pass) {
+            ? "ERROR - IL_drop in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+    if(!ring_resonator){
+        change = max(abs(stat_mod_eff_ref-stat_mod_eff));
+        msg = "Modulation efficiency from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_mod_eff_tolerance);
+        pass = change <= stat_mod_eff_tolerance;
+        if(!pass) {
+            ? "ERROR - modulation efficiency in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    
+        if (exist("stat_f3dB")) {
+            change = max(abs(stat_f3dB_ref-stat_f3dB));
+            msg = "Electrical Bandwidth from MC analysis has a maximum variation of " + num2str(change) + " compared to reference. Variation should be less than " + num2str(stat_f3dB_tolerance);
+            pass = change <= stat_f3dB_tolerance;
+            if(!pass) {
+                ? "ERROR - Electrical Bandwidth in statistical QA";
+                error_count = error_count+1;
+            }
+            assert(msg,pass);
+            if(break_at_failure & !pass) { break; }
+        }
+    }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+    }
+    }
+}
+
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

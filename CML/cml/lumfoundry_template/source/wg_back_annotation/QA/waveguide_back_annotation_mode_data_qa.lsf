@@ -1,0 +1,188 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# loss, neff and ng test
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_back_annotation_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_back_annotation_init_qa.lsf");      
+}
+err=error_count;
+
+# Test circuit 1: neff, ng
+addelement(design_kit_name + model);
+DUT1_name = get("name");
+set("x position", 200);
+set("y position", 500);
+
+addelement("Waveguide Y Branch");
+Y1_name = get("name");
+set("x position", 0);
+set("y position", 600);
+
+addelement("Waveguide Y Branch");
+Y2_name = get("name");
+set("horizontal flipped",1);
+set("x position", 400);
+set("y position", 600);
+
+addelement("Optical Network Analyzer");
+ONA1_name = get("name");
+set("x position", 0);
+set("y position", 400);
+set("input parameter", "center and range");
+set("plot kind", "frequency");
+set("frequency range", 10000e9);
+set("number of points", 10000);
+set("number of input ports", 1);
+set("peak analysis","multiple");
+
+connect(ONA1_name,"output",Y1_name,"port 1");
+connect(Y1_name,"port 2", DUT1_name, ports{1}.name);
+connect(Y2_name,"port 2", DUT1_name, ports{2}.name);
+connect(Y1_name,"port 3", Y2_name, "port 3");
+connect(ONA1_name,"input 1",Y2_name,"port 1");
+
+# Test circuit 2: loss
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT2_name = get("name");
+set("x position", 0);
+set("y position", 200);
+
+addelement("Optical Network Analyzer");
+ONA2_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("frequency range", 1e14);
+set("number of input ports", 1);
+set("peak analysis","center");
+
+connect(ONA2_name,"output",DUT2_name,ports{1}.name);
+connect(ONA2_name,"input 1",DUT2_name,ports{2}.name);
+
+wg_propagation = getnamed(DUT1_name, "wg_propagation");
+trans = parsewaveguidebackannotation( wg_propagation, temperatureC );
+mode_no = length(trans);
+wavelength = c/trans{1}.propagation(:, 1);
+
+
+?"Wavelength range: " + num2str(min(wavelength)*1e9) + " to " + num2str(max(wavelength)*1e9) + " nm";
+for (m=1:mode_no) {
+    ? "Testing mode " + num2str(m) + ": " + trans{m}.label;
+    ? "Beginning " + num2str(Nr) + " random parameter tests";
+
+    for(i=1:Nr) {
+
+        switchtodesign;
+        # set random temperature
+
+        val_T = rand(temperature_test_min,temperature_test_max);
+        setnamed(DUT1_name, "temperatureC",val_T);
+        setnamed(DUT2_name, "temperatureC",val_T);
+        temperature = val_T;
+
+        #We need to do this now, since temperatureC may have changed.
+        trans = parsewaveguidebackannotation( wg_propagation, temperature );
+
+        # select mode properties based on the mode number.
+        neff = trans{m}.propagation(:, 3);
+        ng = c/trans{m}.propagation(:, 4);
+        loss = trans{m}.propagation(:, 2);
+
+
+        setnamed(Y1_name, "orthogonal identifier 1", trans{m}.orthogonal_identifier);
+        setnamed(Y1_name, "label 1",trans{m}.label);
+        setnamed(Y2_name, "orthogonal identifier 1", trans{m}.orthogonal_identifier);
+        setnamed(Y2_name, "label 1",trans{m}.label);
+
+        central_wavelength= wavelength(find(wavelength, (max(wavelength)+min(wavelength))/2));
+        central_frequency = c / central_wavelength;
+        setnamed(ONA1_name, "center frequency", central_frequency);
+        setnamed(ONA1_name, "orthogonal identifier", trans{m}.orthogonal_identifier);
+        setnamed(ONA1_name, "label", trans{m}.label);
+
+        neff = neff(find(wavelength,central_wavelength));
+        L = 100*central_wavelength/neff;
+        setnamed(DUT1_name, "wg_length",L);
+
+        setnamed(DUT2_name, "wg_length",L);
+        setnamed(ONA2_name, "center frequency", central_frequency);
+        setnamed(ONA2_name, "orthogonal identifier", trans{m}.orthogonal_identifier);
+        setnamed(ONA2_name, "label", trans{m}.label);
+
+        run;
+
+        # 2.1. Get test result: neff
+        ?"* effective index";
+        peak_frequencies = getresult(ONA1_name,"input 1/mode " + num2str(1) + "/peak/frequency");
+        peak_wavelength = c/peak_frequencies(find(peak_frequencies,central_frequency));
+
+        neff_rev = peak_wavelength*100/L;
+
+        ?"neff is "+ num2str(neff_rev) + ". Expected value is "+ num2str(neff)+".";
+        msg = "Neff has been changed by: " + num2str(max(abs(neff_rev-neff)));
+        diff1 = max(abs(neff_rev-neff));
+        ?msg1 = "relative max neff diff = " + num2str(diff1) + " and should be less than " + num2str(relative_neff_tolerance);
+        pass1 = diff1 < relative_neff_tolerance;
+        assert(msg1,pass1);
+
+        # 2.2. Get test result: ng
+        ?"* group index";
+        FSR = getresult(ONA1_name,"input 1/mode " + num2str(1) + "/peak/free spectral range");
+        data_type = trans{m}.label + " free spectral range (Hz)";
+        fsr = FSR.getattribute(data_type);
+
+        if (sqrt(var(fsr))*1e-9>1) {
+            ?"FSR std= " + num2str(sqrt(var(fsr))*1e-9) + " GHz";
+            ? "ONA resolution = 1 GHz";
+        }
+        fsr = mean(fsr);
+        ng_rev = c/fsr/L;
+        ng = ng(find(wavelength,central_wavelength));
+
+        ?"ng is "+ num2str(ng_rev) + ". Expected value is "+ num2str(ng)+".";
+        msg = "Ng has been changed by: " + num2str(max(abs(ng_rev-ng)));
+        diff2 = max(abs(ng_rev-ng));
+        ?msg2 = "relative max ng diff = " + num2str(diff2) + " and should be less than " + num2str(relative_ng_tolerance);
+        pass2 = diff2 < relative_ng_tolerance;
+        assert(msg2,pass2);
+
+        # 2.3. Get test result: loss
+        ?"* loss";
+        S21 = getresult(ONA2_name,"input 1/mode " + num2str(1) + "/peak/gain");
+        gain_type = trans{m}.label + " gain (dB)";
+        loss_dB_m = S21.getattribute(gain_type) / getnamed(DUT1_name, "wg_length");
+
+        loss_ref = loss(find(wavelength,central_wavelength));
+
+        ?"Loss is "+ num2str(-loss_dB_m)+" dB/m. Expected value is "+ num2str(loss_ref)+" dB/m.";
+        msg = "Loss has been changed by: " + num2str(max(abs(-loss_dB_m-loss_ref)));
+        diff3 = max(abs(-loss_dB_m-loss_ref));
+        ?msg3 = "relative max loss diff = " + num2str(diff3) + " and should be less than " + num2str(relative_loss_tolerance);
+        pass3 = diff3 < relative_loss_tolerance;
+        assert(msg3,pass3);
+
+        error_count = error_count + !( pass1 & pass2 & pass3 );
+        if(break_at_failure & !( pass1 & pass2 & pass3 )) { break; }
+    }
+}
+
+
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+} 

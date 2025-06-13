@@ -1,0 +1,451 @@
+{
+  "general" : 
+  {
+    "description" : "Thermo-Optic Switch (Unbalanced) - C band TE",
+    "prefix" : "TOS",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1560 nm)"
+        },
+        {
+          "property" : "bias_voltage_range",
+          "value" : "[0 V, 10 V]"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order":1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order":2
+    },
+    "th_neg_top" : 
+    {
+      "name" : "ele_g1",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Top",
+      "order":3
+    },
+    "th_neg_bot" : 
+    {
+      "name" : "ele_g2",
+      "dir" : "Bidirectional",
+      "loc" :  0.875,
+      "pos" : "Bottom",
+      "order":4
+    },
+    "th_pos_top" : 
+    {
+      "name" : "ele_th1",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Top",
+      "order":5
+    },
+    "th_pos_bot" : 
+    {
+      "name" : "ele_th2",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Bottom",
+      "order":6
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "switch_length",
+      "min":0.0001,
+      "max":1.0,
+      "unit" : "um",
+      "default" : 0.0005,
+      "visible_to_user" : 0,
+      "annotate":0
+    },
+    "imbalance_length":
+    {
+      "name" : "imbalance_length",
+      "max" : 1.0,
+      "min" : 0.0,
+      "unit" : "um",
+      "default" :  5e-05,
+      "visible_to_user" : 0,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "mach_zehnder_modulator",
+    "mode_data" : 
+    {
+        "_data" : 
+        [
+            {
+                "ID" : 1.0,
+                "name" : "TE"
+            }
+        ],
+        "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide_hangover_left":
+      {
+        "D" : 0,
+        "length" : 5e-05,
+        "loss" : 140.0,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_thermal_tuner":
+      {
+        "D" : 0,
+        "loss" : 0,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_hangover_right":
+      {
+        "D" : 0,
+        "length" : 5e-05,
+        "loss" : 140,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      }
+    },
+    "thermal_tuner_data":
+    {
+      "bandwidth_data" : 100000.0,
+      "phase_shifter_data":
+      {
+        "power":
+        {
+          "_complex" : false,
+          "_data" : 
+          [ 
+          0.0,
+          0.04,
+          0.16,
+          0.36,
+          0.64,
+          1.0
+          ],
+          "_size" : [ 6, 1 ],
+          "_type" : "matrix"
+        },
+        "delta_phase":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+          0.0,
+          0.1621467176046345,
+          0.64858687041853791,
+          1.4593204584417101,
+          2.5943474816741521,
+          4.0536679401158624
+          ],
+          "_size" : [ 6, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "th_eq_ckt_data":
+    { 
+      "R_thermal_tuner" : 100.0,
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0,
+        4.5,
+        5.0
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0,
+          0.00491667,
+          0.00966667,
+          0.01425,
+          0.0186667,
+          0.0229167,
+          0.027,
+          0.0309167,
+          0.0346667,
+          0.03825,
+          0.0416667
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "splitter_data" : 
+    {
+      "input" : "opt_1",
+      "output1" : "opt_2",
+      "output2" : "opt_3",
+      "spar_filename" : "thermal_switch_stat_MMI_S_params.txt",
+      "splitter_loss" : 0.66,
+      "number_of_taps_estimation" : "group delay"
+    },
+    "enable_thermal_time_constant" : 1.0,
+    "longer_arm" : 1.0
+  },
+  "FOMs":
+  {
+    "IL":
+    {
+      "value":5.8,
+      "tuning":1,
+      "visible_to_user":0,
+      "min":3.0,
+      "max":10      
+    },
+    "Ppi_thermal":
+    {
+      "value":0.2,
+      "ref1":0,
+      "ref2":  0.2,
+      "tuning":1,
+      "visible_to_user":0,
+      "max" : 1.0,
+      "min" : 0.0
+    },
+    "notch_wavelength":
+    {
+      "value":1.55e-06,
+      "tuning":1,
+      "visible_to_user":0,
+      "min":1.3e-06,
+      "max":1.7e-06      
+    },
+    "FSR":
+    {
+      "value":1.2e-08,
+      "tuning":1,
+      "visible_to_user":0,
+      "min":1e-08,
+      "max":2e-08      
+    },
+    "ER":
+    {
+      "value":30,
+      "tuning":1,
+      "visible_to_user":0,
+      "min":0,
+      "max":60    
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "wavelength":1.55e-6,
+      "thermal_BW_bias" : 1.5
+    },
+    "relative_tolerances" : 
+    {
+      "BW_thermal":0.01,
+      "ER" : 0.01,
+      "FSR" : 0.01,
+      "IL" : 0.05,
+      "dneff_dT" : 0.02,
+      "Ppi_thermal" : 0.05,
+      "notch_wavelength" : 0.0001
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : -5.3,
+          "sigma" : 0.95
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : -5.3,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -1.0, 1.5 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_FSR",
+        "slope_FSR" : 1e-10
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 0.95
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.8 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_IL",
+        "slope_IL" : 0.1
+      },
+      "parameter_3" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 0.95
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.8 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_notch",
+        "slope_notch" : 5e-10
+      },
+      "parameter_4" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 0.95
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.8 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_ER",
+        "slope_ER" : 0.5
+      },
+      "parameter_5" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.95
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.8 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Ppi",
+        "slope_Ppi_thermal" : 0.005
+      }
+    },
+    "QA":
+    {
+      "N_trials" : 10.0,
+      "enable_qa" : 1.0,
+      "reference_data_available" : 1.0,
+      "absolute_tolerances" : 
+      {
+        "ER" : 0.1,
+        "FSR" :1e-12,
+        "IL" : 0.01,
+        "Ppi_thermal" : 0.01,
+        "notch_wavelength" : 1e-11
+      }
+    } 
+  }
+}

@@ -1,0 +1,580 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry photodetector pcell - C band",
+    "prefix" : "PD",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_voltage",
+          "value" : "bias_voltage = V_anode - V_cathode"
+        },
+        {
+          "property" : "bias_range",
+          "value" : "[-2 V, 0 V]"
+        },
+        {
+          "property" : "electrical_ports",
+          "value" : "Input = voltage in units of Volt; Output = current in units of Amp"
+        },
+        {
+          "property" : "temperature_range",
+          "value" : "[300K, 320K]"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "ele_an" : 
+    {
+      "name" : "ele_an",
+      "dir" : "Bidirectional",
+      "loc" : 0.8,
+      "pos" : "Right",
+      "order" : 2
+    },
+    "ele_cat" : 
+    {
+      "name" : "ele_cat",
+      "dir" : "Bidirectional",
+      "loc" : 0.2,
+      "pos" : "Right",
+      "order" : 3
+    }
+  },
+  "parameters" : 
+  {
+    "temperature":
+    {
+      "default" : "%temperature%"
+    },
+    "thermal_noise":
+    {
+      "name" : "thermal_noise",
+      "min":0,
+      "max": 1,
+      "unit" : "A/Hz^0.5",
+      "default" : 0,
+      "visible_to_user" : 1,
+      "annotate":0
+    },
+    "length" : 
+    {
+      "default" : 5.0e-05,
+      "max" : 0.0001,
+      "min" : 1.0e-05,
+      "unit" : "m",
+      "name" : "pd_length",
+      "visible_to_user" : 1.0,
+      "annotate":0
+    },
+    "width" : 
+    {
+      "default" : 7.0e-06,
+      "max" : 1.0e-05,
+      "min" : 5.0e-06,
+      "unit" : "m",
+      "name" : "pd_width",
+      "visible_to_user" : 1.0,
+      "annotate":0
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "photodetector_pcell",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "bandwidth_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : [ -2.0, -1.5, -1.0, -0.5, 0.0 ],
+        "_size" : [ 5, 1 ],
+        "_type" : "matrix"
+      },
+      "width":
+      {
+        "_complex" : false,
+        "_data" : [ 5.0e-06, 1.0e-05 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "length":
+      {
+        "_complex" : false,
+        "_data" : [ 1.0e-05, 0.0001 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "temperature":
+      {
+        "_complex" : false,
+        "_data" : [ 300.0, 320.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "bandwidth":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          40000000000.0,
+          40000000000.0,
+          39000000000.0,
+          38000000000.0,
+          37000000000.0,
+          38000000000.0,
+          38000000000.0,
+          37050000000.0,
+          36100000000.0,
+          35150000000.0,
+          36000000000.0,
+          36000000000.0,
+          35100000000.0,
+          34200000000.0,
+          33300000000.0,
+          34200000000.0,
+          34200000000.0,
+          33345000000.0,
+          32490000000.0,
+          31635000000.0,
+          36000000000.0,
+          36000000000.0,
+          35200000000.0,
+          34100000000.0,
+          33300000000.0,
+          34100000000.0,
+          34100000000.0,
+          33250000000.0,
+          32500000000.0,
+          31600000000.0,
+          32400000000.0,
+          32400000000.0,
+          31600000000.0,
+          30900000000.0,
+          30000000000.0,
+          30800000000.0,
+          30800000000.0,
+          30000000000.0,
+          29250000000.0,
+          28400000000.0
+        ],
+        "_size" : [ 5, 2, 2, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "Idark_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : [ -2.0, -1.5, -1.0, -0.5, 0.0 ],
+        "_size" : [ 5, 1 ],
+        "_type" : "matrix"
+      },
+      "width":
+      {
+        "_complex" : false,
+        "_data" : [ 5.0e-06, 1.0e-05 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "length":
+      {
+        "_complex" : false,
+        "_data" : [ 1.0e-05, 0.0001 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "temperature":
+      {
+        "_complex" : false,
+        "_data" : [ 300.0, 320.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          1.2e-09,
+          1.0e-09,
+          5.0e-10,
+          3e-11,
+          0.0,
+          1.44e-09,
+          1.2e-09,
+          6e-10,
+          3.6e-11,
+          0.0,
+          1.2e-08,
+          1e-08,
+          5.0e-09,
+          3e-10,
+          0.0,
+          1.44e-08,
+          1.2e-08,
+          6e-09,
+          3.6e-10,
+          0.0,
+          4.8e-09,
+          4.0e-09,
+          2.0e-09,
+          1.2e-10,
+          0.0,
+          5.2e-09,
+          4.8e-09,
+          2.4e-09,
+          1.44e-10,
+          0.0,
+          4.8e-08,
+          4.0e-08,
+          2e-08,
+          1.2e-09,
+          0.0,
+          5.2e-08,
+          4.8e-08,
+          2.4e-08,
+          1.44e-09,
+          0.0
+        ],
+        "_size" : [ 5, 2, 2, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "resp_data":
+    {
+      "frequency":
+      {
+        "_complex" : false,
+        "_data" : [ 191561000000000.0, 195943000000000.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : [ -2.0, -1.5, -1.0, -0.5, 0.0 ],
+        "_size" : [ 5, 1 ],
+        "_type" : "matrix"
+      },
+      "width":
+      {
+        "_complex" : false,
+        "_data" : [ 5.0e-06, 1.0e-05 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "length":
+      {
+        "_complex" : false,
+        "_data" : [ 1.0e-05, 0.0001 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "temperature":
+      {
+        "_complex" : false,
+        "_data" : [ 300.0, 320.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "responsivity":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          1.1,
+          1.1,
+          1.14,
+          1.14,
+          1.19,
+          1.19,
+          1.27,
+          1.27,
+          1.32,
+          1.32,
+          1.32,
+          1.32,
+          1.37,
+          1.37,
+          1.45,
+          1.45,
+          1.52,
+          1.52,
+          1.584,
+          1.584,
+          1.65,
+          1.65,
+          1.72,
+          1.72,
+          1.85,
+          1.85,
+          1.93,
+          1.93,
+          1.98,
+          1.98,
+          1.98,
+          1.98,
+          2.07,
+          2.07,
+          2.2,
+          2.2,
+          2.32,
+          2.32,
+          2.376,
+          2.376,
+          1.15,
+          1.15,
+          1.19,
+          1.19,
+          1.25,
+          1.25,
+          1.33,
+          1.33,
+          1.38,
+          1.38,
+          1.38,
+          1.38,
+          1.43,
+          1.43,
+          1.52,
+          1.52,
+          1.59,
+          1.59,
+          1.64,
+          1.64,
+          1.73,
+          1.73,
+          1.8,
+          1.8,
+          1.94,
+          1.94,
+          2.02,
+          2.02,
+          2.08,
+          2.08,
+          2.08,
+          2.08,
+          2.18,
+          2.18,
+          2.31,
+          2.31,
+          2.44,
+          2.44,
+          2.5,
+          2.5
+        ],
+        "_size" : [ 2, 5, 2, 2, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "saturation_power_data" : {  
+      "width":
+      {
+        "_complex" : false,
+        "_data" : [ 5.0e-06, 1.0e-05 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },    
+      "length":
+      {
+        "_complex" : false,
+        "_data" : [ 1.0e-05, 0.0001 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "temperature":
+      {
+        "_complex" : false,
+        "_data" : [ 300.0, 320.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "power":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0044,
+          0.00528,
+          0.0066,
+          0.00792,
+          0.0046,
+          0.00552,
+          0.00692,
+          0.00832
+        ],
+        "_size" : [ 2, 2, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "enable_shot_noise" : 0.0,
+    "DC_operation_only" : 0.0
+  },
+  "QA" : 
+  { 
+    "parameters":{
+      "wavelength" : 1.55e-06,
+      "temperature" : 310.0,
+      "voltage" :-2.0,
+      "length":{
+        "_complex" : false,
+        "_data" : [ 1.0e-05, 0.0001 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "width":{
+        "_complex" : false,
+        "_data" : [ 5.0e-06, 1.0e-05 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "relative_tolerances" : 
+    {
+      "BW" : 0.02,
+      "Idark" : 0.01,
+      "Iph" : 0.01
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.80
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -0.7, 0.90 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Resp",
+        "slope_Resp" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.005, 0.007 ],
+          "_size" : [ 1, 1, 1, 1, 2 ],
+          "_type" : "matrix"
+        }
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.7
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.9, -1.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_BW",
+        "slope_BW" : 
+        {
+          "_complex" : false,
+          "_data" : [ 500000000.0, 520000000.0 ],
+          "_size" : [ 1, 1, 1, 2 ],
+          "_type" : "matrix"
+        }
+      },
+      "parameter_3" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.7
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -0.9, 0.9 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Idark",
+        "slope_Idark" : 
+        {
+          "_complex" : false,
+          "_data" : [ 1e-08, 1.5e-08 ],
+          "_size" : [ 1, 1, 1, 2 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "QA":{
+      "N_trials" : 50.0,
+      "VA_N_trials" : 5.0,
+      "enable_qa" : 1.0,
+      "reference_data_available" : 1.0,
+      "VA_reference_data_available" : 1.0,
+      "parameters":{
+        "temperature" : 300.0,
+        "voltage" :-2.0,
+        "length":1.0e-05,
+        "width":5.0e-06
+      },
+      "absolute_tolerances" : 
+      {
+        "BW" : 10000000.0,
+        "Idark" : 1.0e-09,
+        "Resp" : 0.001
+      }
+    }
+  }
+}

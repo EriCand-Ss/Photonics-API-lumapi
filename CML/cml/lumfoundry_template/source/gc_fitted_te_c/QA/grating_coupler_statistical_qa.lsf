@@ -1,0 +1,267 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/grating_coupler_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+
+    new;
+    set("monitor data","save to memory");
+    addelement(design_kit_name + model);
+    DUT_name = get("name");
+    local_path=get("local path");
+    select(DUT_name);    
+    set("x position", 0);
+    set("y position", 200);    
+    
+    ONA_name = "ONA_1" ;
+    addelement("Optical Network Analyzer");
+    set("name", ONA_name);
+    set("x position", 0);
+    set("y position", 50);
+    set("plot kind", "wavelength");
+    set("sensitivity",0);
+    
+    setnamed(ONA_name,"analysis type", "scattering data");
+    
+    set("input parameter", "center and range");
+    set("center frequency", c/stat_qa_wavelength);
+    set("frequency range", 10000e9);
+    set("number of points", 10000);
+    
+    set("orthogonal identifier", mainpol_ID);
+    set("number of input ports", 1);
+    set("peak analysis","multiple");
+   
+
+    connect(ONA_name,'output',DUT_name,ports{opt_1_RELAY}.name);
+    connect(ONA_name, "input 1", DUT_name, ports{opt_2_RELAY}.name);
+    
+    
+    ############################
+    
+    # get .lib filename
+    dotlib_filename = importlib;     
+    if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+        libname=splitstring(library_name,"::");
+        if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+        }else{
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+        }
+    }
+    
+    # create MC sweep
+    addsweep(2);
+    MC_name = "mc_sweep";
+    setsweep("Monte Carlo analysis", "name", MC_name);
+    setsweep(MC_name, "number of trials", N_trials);
+    setsweep(MC_name, "batch size", 10);
+    setsweep(MC_name, "enable seed", 1);
+    setsweep(MC_name, "seed", 1);
+    # define the parameter mc_lib
+    mc_lib = struct;
+    mc_lib.Name = "mc_lib";
+    mc_lib.library = dotlib_filename;
+    mc_lib.Variant = "statistical";
+    addsweepparameter(MC_name,mc_lib);
+    
+    mc_result_spectrum = struct;
+    mc_result_spectrum.Name = "spectrum";
+    mc_result_spectrum.Result = "::Root Element::spectrum";
+    mc_result_spectrum.Estimation = false;
+    addsweepresult(MC_name,mc_result_spectrum);    
+    
+    mc_result_peak_IL = struct;
+    mc_result_peak_IL.Name = "peak_IL";
+    mc_result_peak_IL.Result = "::Root Element::peak_IL";
+    mc_result_peak_IL.Estimation = false;
+    addsweepresult(MC_name,mc_result_peak_IL); 
+    
+    mc_result_peak_wl = struct;
+    mc_result_peak_wl.Name = "peak_wl";
+    mc_result_peak_wl.Result = "::Root Element::peak_wl";
+    mc_result_peak_wl.Estimation = false;
+    addsweepresult(MC_name,mc_result_peak_wl);     
+    
+    mc_result_1dB_BW = struct;
+    mc_result_1dB_BW.Name = "BW";
+    mc_result_1dB_BW.Result = "::Root Element::BW";
+    mc_result_1dB_BW.Estimation = false;
+    addsweepresult(MC_name,mc_result_1dB_BW);     
+    
+    mc_result_skew = struct;
+    mc_result_skew.Name = "skew";
+    mc_result_skew.Result = "::Root Element::skew";
+    mc_result_skew.Estimation = false;
+    addsweepresult(MC_name,mc_result_skew);     
+
+    # add results to the Root Element
+    groupscope("::Root Element");
+
+    analysis_script = '
+    # Transmission 
+    S21 = getresult("' + ONA_name + '","input 1/mode 1/gain");
+    IL21 = S21.getattribute("' + mode_data{mainpol_ID}.name + ' gain (dB)");
+    setresult("spectrum",IL21);
+    setresult("peak_IL",max(IL21));
+    BW_dB=1;
+    wavelength = S21.wavelength;
+    P_1dB=max(IL21)-BW_dB;
+    peak_wl=getresult("' + ONA_name + '","input 1/mode 1/peak/frequency");
+    setresult("peak_wl",peak_wl);
+    out=find(IL21 > P_1dB);
+    W1=min(out); W2=max(out);
+    WL1=wavelength(W1);
+    WL2=wavelength(W2);
+    BW=abs(WL2-WL1);
+    setresult("BW",BW);
+    skew=(WL2+WL1)/2 - peak_wl;
+    setresult("skew",skew);
+    ';    
+
+    set("analysis script",analysis_script);
+    run;
+    runanalysis;
+    switchtodesign;
+    save("statistical_temp");
+    
+    runsweep(MC_name);
+
+    stat_peak_IL = getsweepdata(MC_name,"peak_IL");
+    stat_peak_wl = getsweepdata(MC_name,"peak_wl");
+    stat_BW = getsweepdata(MC_name,"BW");
+    stat_skew = getsweepdata(MC_name,"skew");
+    
+    # Plot the results
+    if(create_plots){
+        histc(stat_peak_IL);
+        setplot("x label","peak_IL (dB)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(mode_data{mainpol_ID}.name + " mode");            
+        histc(stat_peak_wl*1e6);
+        setplot("x label","peak_wavelength (um)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(mode_data{mainpol_ID}.name + " mode");
+        histc(stat_BW*1e9);
+        setplot("x label","1dB BW (nm)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(mode_data{mainpol_ID}.name + " mode");
+        histc(stat_skew*1e9);
+        setplot("x label","skew (nm)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+        legend(mode_data{mainpol_ID}.name + " mode");
+    }
+    
+    # delete temporary project file
+    try{
+        del("statistical_temp.icp");
+    }catch(ErrMsg);
+
+    if(length(ErrMsg)!=0){
+        ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+    }
+    
+    
+    ### Reference data comparison
+    
+    # Check reference data for testing:
+    if(!stat_reference_data_available){
+        msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+        assert(msg,false);
+        error_count = error_count+1;
+        stat_peak_IL_ref = stat_peak_IL;
+        stat_peak_wl_ref = stat_peak_wl;
+        stat_BW_ref = stat_BW;
+        stat_skew_ref = stat_skew;
+        
+        current_directory = pwd;
+        cd(foldername_ref);
+        matlabsave(filename_ref_stat, stat_peak_IL_ref, stat_peak_wl_ref, stat_BW_ref, stat_skew_ref);
+        cd(current_directory);
+        
+        ?"******* Saved statistical reference data";
+    }else{
+        # Compare with reference data
+        ?"Testing Monte-Carlo sweep results against reference data";
+    
+    
+    current_directory = pwd;
+    cd(foldername_ref);
+    try{
+        matlabload(filename_ref_stat);
+    }  catch(errMsg);
+    cd(current_directory);
+    
+    if (errMsg !=''){
+        msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+        assert(msg,0);
+        error_count = error_count+1;
+        
+    }else{
+        change_peak_IL = max(abs(stat_peak_IL_ref-stat_peak_IL));
+        msg = "Peak IL (dB) from MC analysis has a maximum variation of " + num2str(change_peak_IL) + " compared to reference. Variation should be less than " + num2str(stat_peak_IL_tolerance);
+        pass = change_peak_IL <= stat_peak_IL_tolerance;
+        if(!pass) {
+            ? "ERROR - peak insertion loss (IL) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+
+        change_peak_wl = max(abs(stat_peak_wl_ref-stat_peak_wl));
+        msg = "Wavelength (m) at peak IL from MC analysis has a maximum variation of " + num2str(change_peak_wl) + " compared to reference. Variation should be less than " + num2str(stat_peak_wl_tolerance);
+        pass = change_peak_wl <= stat_peak_wl_tolerance;
+        if(!pass) {
+            ? "ERROR - wavelength (m) at peak IL in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+
+        change_BW = max(abs(stat_BW_ref-stat_BW));
+        msg = "1dB bandwidth (m) from MC analysis has a maximum variation of " + num2str(change_BW) + " compared to reference. Variation should be less than " + num2str(stat_BW_tolerance);
+        pass = change_BW <= stat_BW_tolerance;
+        if(!pass) {
+            ? "ERROR - 1dB bandwidth (m) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }    
+        
+        change_skew = max(abs(stat_skew_ref-stat_skew));
+        msg = "Skew (m) from MC analysis has a maximum variation of " + num2str(change_skew) + " compared to reference. Variation should be less than " + num2str(stat_skew_tolerance);
+        pass = change_skew <= stat_skew_tolerance;
+        if(!pass) {
+            ? "ERROR - skew (m) in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; } 
+
+        if (err==error_count){
+            ?filebasename(currentscriptname)+" test passed.";
+        }
+    }
+    }
+    
+}
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}
+

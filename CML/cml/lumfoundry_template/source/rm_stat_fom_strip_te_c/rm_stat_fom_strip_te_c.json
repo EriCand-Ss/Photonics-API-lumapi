@@ -1,0 +1,512 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry strip ring modulator - C band TE",
+    "prefix" : "RM",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_range_phase_shifter",
+          "value" : "[-2 V, 0.5 V]"
+        },
+        {
+          "property" : "bias_range_thermal_tuner",
+          "value" : "[0 V, 5 V]"
+        },
+        {
+          "property" : "polarization",
+          "value" : "TE"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "time_domain_req_note" : 1.0
+  },  
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.25,
+      "pos" : "Left",
+      "order":1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.25,
+      "pos" : "Right",
+      "order":2
+    },
+    "ele_an" : 
+    {
+      "name" : "ele_an_top",
+      "dir" : "Bidirectional",
+      "loc" : 0.15,
+      "pos" : "Top",
+      "order":3
+    },
+    "ele_cat" : 
+    {
+      "name" : "ele_cat_top",
+      "dir" : "Bidirectional",
+      "loc" : 0.85,
+      "pos" : "Top",
+      "order":4
+    },
+    "th_neg" : 
+    {
+      "name" : "ele_th_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.85,
+      "pos" : "Bottom",
+      "order":5
+    },
+    "th_pos" : 
+    {
+      "name" : "ele_th_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.15,
+      "pos" : "Bottom",
+      "order":6
+    }
+  },
+  "parameters" : 
+  {
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "ring_modulator",
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "radius" : 1e-05,
+      "high_loss_waveguide_fill_factor" : 1.0,
+      "waveguide_ring_undoped":
+      {
+        "loss" : 436.19443890316307,
+        "neff" : 2.5497439245946349,
+        "ng" :  3.7231229617700019,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_ring_doped":
+      {
+        "loss" : 492.65222859094769,
+        "neff" : 2.5496812533388131,
+        "ng" :  3.7232034161532752,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_hangover":
+      {
+        "length" : 1e-05,
+        "loss" : 200.0,
+        "neff" : 2.5462383063490819,
+        "ng" :  3.7285329269836591,
+        "dneff_dT": 0.000188
+      }
+    }, 
+    "electrical_tuner_data":
+    {      
+      "fill_factor" : 0.95,
+      "bandwidth_data":
+      {
+        "bandwidth":
+        {
+          "_complex" : false,
+          "_data" : [ 
+            5000000000.0,
+            5500000000.0,
+            6000000000.0,
+            6000000000.0
+          ],
+          "_size" : [ 4, 1 ],
+          "_type" : "matrix"
+        },
+        "voltage":
+        {
+          "_complex" : false,
+          "_data" : [
+            0.0,
+            -1.0,
+            -2.0,
+            -3.0
+          ],
+          "_size" : [ 4, 1 ],
+          "_type" : "matrix"
+        }
+      },
+      "phase_shifter_data":
+      {
+        "voltage":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            0.0,
+            -1.0,
+            -2.0,
+            -3.0,
+            -4.0,
+            -5.0,
+            -6.0,
+            -7.0,
+            -8.0,
+            -9.0,
+            -10.0
+          ],
+          "_size" : [ 11, 1],
+          "_type" : "matrix"
+        },
+        "delta_n":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            0.0,
+            3.5725923521745528e-05,
+            6.2035081623612598e-05,
+            8.3437630589155987e-05,
+            0.00010160054124197521,
+            0.0001173532031595315,
+            0.00013126397960894209,
+            0.00014375399889088311,
+            0.00015505545862293249,
+            0.00016539333056364569,
+            0.00017492612025593601
+          ],
+          "_size" : [11, 1],
+          "_type" : "matrix"
+        },
+        "delta_k":
+        {
+          "_complex" : false,
+          "_data" :
+          [
+            0.0,
+            -1.54575304359564e-06,
+            -2.6976142408540301e-06,
+            -3.6348342666826479e-06,
+            -4.4283660993183486e-06,
+            -5.1157987764050944e-06,
+            -5.7196849120505068e-06,
+            -6.258689237520847e-06,
+            -6.7438920597823959e-06,
+            -7.1835541192051059e-06,
+            -7.5837396084538339e-06
+          ],
+          "_size" : [ 11, 1],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "thermal_tuner_data":
+    {
+      "bandwidth_data" : 100000.0,
+      "fill_factor" : 1.0,
+      "data_format" : 2.0,
+      "phase_shifter_data":
+      {
+        "power":
+        {
+          "_complex" : false,
+          "_data" : 
+          [ 
+            0.0,
+            0.01,
+            0.04,
+            0.09
+          ],
+          "_size" : [ 4, 1 ],
+          "_type" : "matrix"
+        },
+        "delta_phase":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            0.0,
+            4.167e-09,
+            1.67e-08,
+            3.75e-08
+          ],
+          "_size" : [ 4, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "th_eq_ckt_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          0.5,
+          1.0,
+          1.5,
+          2.0,
+          2.5,
+          3.0,
+          3.5,
+          4.0,
+          4.5,
+          5.0
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          0.00491667,
+          0.00966667,
+          0.01425,
+          0.0186667,
+          0.0229167,
+          0.027,
+          0.0309167,
+          0.0346667,
+          0.03825,
+          0.0416667
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "coupler_data":
+    {
+      "wavelength":{
+        "min" : 1.5e-6,
+        "max" : 1.6e-6
+      },
+      "Lc" : 0.0,
+      "couplercoeff_data" : 
+      {
+        "through" : 
+        {
+          "_complex" : false,
+          "_data" : [ -0.80342505420052968, 0.0, 635195.79378214863, 0.0 ],
+          "_size" : [ 2, 2 ],
+          "_type" : "matrix"
+        }
+      }
+    }
+  },
+  "FOMs":
+  {
+    "IL":
+    {
+      "value":20.4,
+      "tuning":1,
+      "visible_to_user":0,
+      "max" : 30.0,
+      "min" : 10.0     
+    },
+    "FSR":
+    {
+      "value":1.025e-08,
+      "tuning":1,
+      "visible_to_user":0,
+      "min":1e-08,
+      "max":2e-08      
+    },
+    "mod_eff":
+    {
+      "value":1.2e-11,
+      "tuning":1,
+      "ref1":0,
+      "ref2":-2,
+      "visible_to_user":0,
+      "max" : 5e-11,
+      "min" : 1e-12
+    },
+    "mod_eff_thermal":
+    {
+      "value":4.167e-07,
+      "ref1":0,
+      "ref2":0.01,
+      "tuning":1,
+      "visible_to_user":0,
+      "max" : 1e-05,
+      "min" : 1e-08
+    },
+    "Q":
+    {
+      "value":12500.0,
+      "tuning":1,
+      "visible_to_user":0,
+      "max" : 20000.0,
+      "min" : 10000.0
+    },
+    "resonant_wavelength" : 
+    {
+      "value" : 1.55e-06,
+      "max" : 1.7e-06,
+      "min" : 1.3e-06,
+      "tuning":1,
+      "visible_to_user" : 0.0
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "BW_bias" : -2.0,
+      "thermal_BW_bias" : 4,
+      "imp_amplitude" : 0.1,
+      "sample_rate" : 8000000000000.0
+    },
+    "relative_tolerances" : 
+    {
+      "FSR" : 0.0125,
+      "IL" : 0.01,
+      "Q" : 0.015,
+      "dneff_dT" : 0.02,
+      "BW_electrical" : 0.1,
+      "mod_eff" : 0.07,
+      "mod_eff_thermal" : 0.02,
+      "resonant_wavelength" : 1e-05,
+      "BW_thermal" : 0.3
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : -5.3,
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : -5.3,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -1.0, 1.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_FSR",
+        "slope_FSR" : 1e-10
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -1.0, 1.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Q",
+        "slope_Q" : 500.0
+      },
+      "parameter_3" :
+      {
+        "GLOBAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "beta2" : 1000.0,
+          "distribution" : "pearson4",
+          "gamma1" : 4.9,
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -1.0, 1.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_mod_eff",
+        "slope_mod_eff" : 2e-12
+      },
+      "parameter_4" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.9
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -3.0, 3.0 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_electrical_BW",
+        "slope_electrical_bandwidth" : 2000000000.0
+      }
+    },
+    "QA":{
+      "N_trials" : 10.0,
+      "enable_qa" : 1.0,
+      "reference_data_available" : 1.0,
+      "absolute_tolerances" : 
+      {
+        "FSR" : 1e-12,
+        "IL" : 0.01,
+        "Q" : 1e-12,
+        "BW_electrical" : 1000.0,
+        "mod_eff" : 1e-11,
+        "resonant_wavelength" : 1e-11
+      }
+    } 
+  }
+}

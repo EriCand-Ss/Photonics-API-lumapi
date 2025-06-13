@@ -1,0 +1,162 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("parameters")){
+
+pcell_resonant_wavelength_test = matrix(length(pcell_radius));
+pcell_FSR_test = matrix(length(pcell_radius));
+pcell_Q_test = matrix(length(pcell_radius));
+pcell_IL_test = matrix(length(pcell_radius));
+pcell_ER_test = matrix(length(pcell_radius));
+
+pcell_resonant_wavelength_ref = matrix(length(pcell_radius));
+pcell_FSR_ref = matrix(length(pcell_radius));
+pcell_Q_ref = matrix(length(pcell_radius));
+pcell_IL_ref = matrix(length(pcell_radius));
+pcell_ER_ref = matrix(length(pcell_radius));
+    
+if (NOP==4){
+    pcell_IL_drop_test = matrix(length(pcell_radius));
+    
+    pcell_IL_drop_ref = matrix(length(pcell_radius));
+}
+
+for(c1 = 1:length(test_radius)){
+    pcell_resonant_wavelength_ref(c1) = pinch(interp(pcell_resonant_wavelength, pcell_radius, pcell_Lc, test_radius(c1), test_Lc(c1)));
+    pcell_FSR_ref(c1) = pinch(interp(pcell_FSR, pcell_radius, pcell_Lc, test_radius(c1), test_Lc(c1)));
+    
+    if(NOP==4){
+        pcell_Q_ref(c1) = pinch(interp(pcell_Q, pcell_radius, pcell_Lc, pcell_gap_1, pcell_gap_2, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1), test_coupling_gap_drop(c1)));
+        pcell_IL_ref(c1) = pinch(interp(pcell_IL, pcell_radius, pcell_Lc, pcell_gap_1, pcell_gap_2, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1), test_coupling_gap_drop(c1)));
+        if(exist("ER")){
+        pcell_ER_ref(c1) = pinch(interp(pcell_ER, pcell_radius, pcell_Lc, pcell_gap_1, pcell_gap_2, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1), test_coupling_gap_drop(c1)));
+        }
+        if(exist("IL_drop")){
+        pcell_IL_drop_ref(c1) = pinch(interp(pcell_IL_drop, pcell_radius, pcell_Lc, pcell_gap_1, pcell_gap_2, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1), test_coupling_gap_drop(c1)));
+        }
+    }
+    else{
+        pcell_Q_ref(c1) = pinch(interp(pcell_Q, pcell_radius, pcell_Lc, pcell_gap_1, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1)));
+        pcell_IL_ref(c1) = pinch(interp(pcell_IL, pcell_radius, pcell_Lc, pcell_gap_1, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1)));
+        if(exist("ER")){
+        pcell_ER_ref(c1) = pinch(interp(pcell_ER, pcell_radius, pcell_Lc, pcell_gap_1, test_radius(c1), test_Lc(c1), test_coupling_gap_through(c1)));
+        }
+    }
+}
+
+for(c1 = 1:length(test_radius)){
+    
+    lambda_c = pinch(interp(pcell_resonant_wavelength, pcell_radius, pcell_Lc, test_radius(c1), test_Lc(c1)));
+    feval("/aux_scripts/ring_modulator_parameterized_resonant_wl_IL_FSR_Q_IL_drop_ER_qa_subscript.lsf");
+    
+    pcell_resonant_wavelength_test(c1) = notch_test;
+    pcell_IL_test(c1) = IL_test;
+    pcell_FSR_test(c1) = FSR_test;
+    pcell_ER_test(c1) = ER_test;
+    pcell_Q_test(c1) = Q_test;
+    
+    if (NOP==4){
+        pcell_IL_drop_test(c1) = IL_drop_test;
+    }
+    
+}
+
+
+## Assert test results
+# Test result 1a: resonant wavelength, FSR, IL, Q
+notch_error = abs(pcell_resonant_wavelength_test-pcell_resonant_wavelength_ref)/pcell_resonant_wavelength_ref;
+msg = "resonant wavelength deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(notch_error));
+pass = max(notch_error) < resonant_wavelength_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+FSR_error = abs(pcell_FSR_test-pcell_FSR_ref)/pcell_FSR_ref;
+msg = "FSR deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(FSR_error));
+pass = max(FSR_error) < FSR_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+Q_error = abs(pcell_Q_test-pcell_Q_ref)/pcell_Q_ref;
+msg = "Q deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(Q_error));
+pass = max(Q_error) < Q_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+IL_error = abs(pcell_IL_test-pcell_IL_ref)/pcell_IL_ref;
+msg = "IL deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(IL_error));
+pass = max(IL_error) < IL_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+if(exist("ER")){
+    ER_error = abs(pcell_ER_test-pcell_ER_ref)/pcell_ER_ref;
+    msg = "ER deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(ER_error));
+    pass = max(ER_error) < ER_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+}
+
+if (NOP==4){ 
+
+    if (exist("IL_drop")){
+        IL_drop_error = abs(pcell_IL_drop_test-pcell_IL_drop_ref)/pcell_IL_drop_ref;
+        msg = "IL_drop deviates from source data by more than allowed tolerance. Maximum relative error is " + num2str(max(IL_drop_error));
+        pass = max(IL_drop_error) < IL_drop_rel_tolerance;
+        if(!pass) {
+            ?msg;
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+    }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

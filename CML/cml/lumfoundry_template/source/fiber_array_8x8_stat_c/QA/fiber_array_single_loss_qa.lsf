@@ -1,0 +1,59 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/fiber_array_init_qa.lsf");     
+}
+err=error_count;
+
+central_frequency = c/QA.wavelength;
+central_wavelength = QA.wavelength;
+
+
+### 1. Run Singular Parameter Test
+
+if (isfield(QA.single_test,"enable_single_test")) {
+		? "Running Singular Test:";
+		?"Test wavelength =" +num2str(QA.wavelength) + "m";
+        ?"-------------------------------------";
+        
+		### 1.1 Setup test circuits
+		feval("/aux_scripts/fiber_array_setup_circuit.lsf");
+		
+
+		#### 1.1.2 Set Parameters
+		used_parameters = matrix(length(parameters), 1);
+        parameters_test_val=matrix(length(parameters));
+		for (pid = 1:length(parameters)) {
+			setexpression(DUT_name, parameters{pid}.name, "");
+			eval("parameters_test_val("+num2str(pid)+")=QA.single_test.parameters.parameter_"+num2str(pid)+";");
+			setnamed(DUT_name, parameters{pid}.name, parameters_test_val(pid));            
+			eval("%" + parameters{pid}.name + "% = getnamed(DUT_name, parameters{pid}.name);");
+		}
+        eval("used_parameters(pid) = %" + parameters{pid}.name + "%;");
+		#### 1.2 Simulate the circuits
+		run;            
+		
+		#### 1.3 Compare/Evaluate fiber array loss test results.
+				
+		feval("/aux_scripts/fiber_array_compare_loss_data.lsf");
+
+}
+cd(filedirectory(which(currentscriptname)));
+		
+

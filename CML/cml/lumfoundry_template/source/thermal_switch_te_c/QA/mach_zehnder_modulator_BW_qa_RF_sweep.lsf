@@ -1,0 +1,169 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+# Test circuit 8: BW
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if(mzm_electrical) {
+    new;
+    nominal_BW = interp(electrical_bandwidth_data(:,2),  electrical_bandwidth_data(:,1), BW_bias);
+
+    sample_rate = 5e12; 		# sample rate for root
+    delay =1e-9;                                     # skip the initial transient
+
+    groupscope("::Root Element"); #return to root
+    set("sample rate", sample_rate);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT1_name = get("name");
+    set("x position", 466);
+    set("y position", 110);
+
+    addelement("Sine Wave");
+    SINE1_name = get("name");
+    set("x position", 400);
+    set("y position", -185);
+    set("amplitude", 0.5);  #hardcoded (we might want to estimate this)
+    set("bias", BW_bias);
+    if(bias_node == "cathode"){
+        set("bias", -BW_bias);
+    }
+
+    addelement("DC Source");
+    DC1_name = get("name");
+    set("x position", 300);
+    set("y position", -79);
+    set("amplitude",0);
+
+    addelement("CW Laser");
+    CWL1_name = get("name");
+    set("x position", 300);
+    set("y position", 73);
+    set("power", 0.001);
+    set("frequency", c/lambda0);
+
+    addelement("PIN Photodetector");
+    PIN1_name = get("name");
+    set("x position", 647);
+    set("y position", 86);
+    set("enable shot noise",false);
+
+    addelement("Oscilloscope");
+    OSC1_name = get("name");
+    set("x position", 800);
+    set("y position", 110);
+    
+    addelement("Power Meter");
+    PM1_name = get("name");
+    set("x position", 800);
+    set("y position", 226);
+    set("limit time range", true);
+    set("start time", delay);
+
+    connect(CWL1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+    connect(PIN1_name,"input",DUT1_name,ports{opt_2_RELAY}.name);
+    connect(PIN1_name,"output",OSC1_name,"input");
+    connect(PIN1_name,"output",PM1_name,"input");
+
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_cat_2_RELAY}.name);}catch(blank);
+    if(bias_node == "anode"){ 
+    try{connect(SINE1_name,"output",DUT1_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    }
+    if(bias_node == "cathode"){ 
+    try{connect(DC1_name,"output",DUT1_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(SINE1_name,"output",DUT1_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    }
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    
+    addsweep(0);
+    setsweep("sweep","name", "RF_sweep");
+    setsweep("RF_sweep","Number of points",11);
+    
+    para = struct;
+    para.Name = "freq";
+    para.Parameter = "::Root Element::" + SINE1_name + "::frequency";
+    para.Type = "Frequency";
+    para.Start = 1e9;
+    para.Stop = 1.5*nominal_BW;
+    para.Units = "Hz";    
+    addsweepparameter("RF_sweep",para);
+    
+    result_1 = struct;
+    result_1.Name = "Pout";
+    result_1.Result = "::Root Element::" + PM1_name + "::ac power";
+    addsweepresult("RF_sweep", result_1);
+    
+    save("mzm_bw_qa_temp");
+   
+    runsweep;
+
+    # Test result 8: BW
+    S21 = getsweepresult("RF_sweep", "Pout");
+    f = S21.freq;
+    S21 = getattribute(S21, "power (dBm)");
+    S21 = S21-S21(1);
+
+    if(create_plots){
+        # plot impulse response in frequency domain
+        plot(1e-9*f, S21,"Frequency (GHz)", " Normalized response (dB)","");
+        legend("","");
+        setplot("title", model+" BW test");
+    }
+
+    # delete temporary project file
+    try{
+        del("mzm_bw_qa_temp.icp");
+    }catch(ErrMsg);
+
+    if(length(ErrMsg)!=0){
+        ?"Failed to remove temporary project file for MZM bandwidth QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+    }
+    
+    # find -3dB point
+    tempx = linspace(min(f),max(f),5000);
+    tempy = interp(S21,f,tempx);
+    f3dB = tempx(find(tempy,-3));
+
+    msg = "3dB BW is "+num2str(f3dB*1e-9)+" GHz and it should be "+num2str(nominal_BW*1e-9)+" GHz";
+    change = abs((f3dB - nominal_BW)/nominal_BW);
+    pass = change < BW_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

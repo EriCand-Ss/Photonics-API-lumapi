@@ -1,0 +1,137 @@
+`include "constants.vams"
+`include "disciplines.vams"
+
+//pragma protect
+//pragma protect begin
+
+module eps_custom_core(port_1, port_2, Anode, Cathode); // 0:in_RE_m1 1:in_Im_m1 2:out_Re_m1 3:out_Im_m1 4:in_RE_m2 5:in_Im_m2 6:out_Re_m2 7:out_Im_m2
+	inout [0:7]		port_1,	port_2;	
+	electrical	[0:7]	port_1, port_2;
+
+	inout		Anode, Cathode;
+	electrical	Anode, Cathode;
+
+
+	parameter	real	lambda=1.55u;
+	parameter   real	temperature = 300;
+	parameter	real	wg_length = 0.0005;
+
+	//statistical parameters
+	parameter   real	delta_neff = 0;
+	parameter	real	delta_ng = 0;
+
+	
+
+	real	lambda_data=1.55u;	
+	real	temperature_data = 300;
+	real	dneff_voltage_data[1:9] = {0.0, -0.5, -1.0, -1.5, -2.0, -2.5, -3.0, -3.5, -4.0};
+	real 	dneff_n_data[1:9] = {0.0, 2.137027640225497e-05, 3.85018379596147e-05, 5.296966103029988e-05, 6.562857916136977e-05, 7.691298662626522e-05, 8.705490498739366e-05, 9.626644137972207e-05, 0.0001047109702003723};
+	real	dneff_k_data[1:9] = {0.0, -8.397100296960159e-07, -1.507781418011893e-06, -2.074133604001995e-06, -2.566059967894856e-06, -2.998617631503852e-06, -3.38513697083849e-06, -3.734938267619027e-06, -4.05403772708256e-06};
+    real    neff = 2.939503 + delta_neff;
+    real    ng = 3.950309 + delta_ng;
+    real    loss = 270.85756523374152;
+    real    dneff_dT =  0.00018;
+	real	neff_lambda, V_drive, ps_Re, ps_Im, ps_amp, ps_phase, dneff_Im_result, dneff_Re_result;
+	real	in11_Re, in11_Im, in21_Re, in21_Im, inp11_Re, inp21_Re, inp11_Im, inp21_Im, out11_Re, out11_Im, out21_Re, out21_Im;
+	real	in12_Re, in12_Im, in22_Re, in22_Im, inp12_Re, inp22_Re, inp12_Im, inp22_Im, out12_Re, out12_Im, out22_Re, out22_Im;
+	analog begin
+	
+		//mode 1
+		in11_Re = V(port_1[0]);
+		in11_Im = V(port_1[1]);
+		in21_Re = V(port_2[0]);
+		in21_Im = V(port_2[1]);
+
+		//mode 2
+		in12_Re = V(port_1[4]);
+		in12_Im = V(port_1[5]);
+		in22_Re = V(port_2[4]);
+		in22_Im = V(port_2[5]);
+		
+
+		//calculate and apply waveguide  phase-shift and amplitude change
+		// taylor expansion
+		neff_lambda = neff + (lambda-lambda_data)*(neff-ng)/lambda_data + dneff_dT*(temperature-temperature_data);   
+		ps_phase= (wg_length * neff_lambda*2*`M_PI/ lambda);	// phase change; 
+		ps_amp= exp(-loss/2/(10*log(exp(1)))*wg_length);	//amplitude change
+		ps_Re = ps_amp *cos(ps_phase);
+		ps_Im = ps_amp *sin(ps_phase);
+		//mode1
+		inp21_Re= ps_Re*in11_Re - ps_Im*in11_Im;
+		inp21_Im= ps_Re*in11_Im + ps_Im*in11_Re;
+		inp11_Re= ps_Re*in21_Re - ps_Im*in21_Im;
+		inp11_Im= ps_Re*in21_Im + ps_Im*in21_Re;
+		//mode2
+		inp22_Re= ps_Re*in12_Re - ps_Im*in12_Im;
+		inp22_Im= ps_Re*in12_Im + ps_Im*in12_Re;
+		inp12_Re= ps_Re*in22_Re - ps_Im*in22_Im;
+		inp12_Im= ps_Re*in22_Im + ps_Im*in22_Re;
+
+		//calculate and apply active phase-shift and amplitude change
+		//active phase shift
+		V_drive = V(Anode) -  V(Cathode);
+		dneff_Re_result = $table_model(V_drive, dneff_voltage_data, dneff_n_data);
+		dneff_Im_result = $table_model(V_drive, dneff_voltage_data, dneff_k_data);
+		ps_phase= (wg_length * dneff_Re_result *2*`M_PI/lambda_data);	// phase change; 
+		ps_amp= exp(-2*dneff_Im_result*`M_PI*wg_length /lambda_data);	//amplitude change
+		ps_Re = ps_amp *cos(ps_phase);
+		ps_Im = ps_amp *sin(ps_phase);
+		//mode1
+		out21_Re= ps_Re*inp21_Re - ps_Im*inp21_Im;
+		out21_Im= ps_Re*inp21_Im + ps_Im*inp21_Re;
+		out11_Re= ps_Re*inp11_Re - ps_Im*inp11_Im;
+		out11_Im= ps_Re*inp21_Im + ps_Im*inp11_Re;
+		//mode2
+		out22_Re= ps_Re*inp22_Re - ps_Im*inp22_Im;
+		out22_Im= ps_Re*inp22_Im + ps_Im*inp22_Re;
+		out12_Re= ps_Re*inp12_Re - ps_Im*inp12_Im;
+		out12_Im= ps_Re*inp22_Im + ps_Im*inp12_Re;
+
+		// assign to outputs
+		//mode1
+		V(port_1[2]) <+ out11_Re;
+		V(port_1[3]) <+ out11_Im;
+		V(port_2[2]) <+ out21_Re;
+		V(port_2[3]) <+ out21_Im;
+		//mode2
+		V(port_1[6]) <+ out11_Re;
+		V(port_1[7]) <+ out11_Im;
+		V(port_2[6]) <+ out21_Re;
+		V(port_2[7]) <+ out21_Im;
+
+	end
+endmodule
+
+
+module eps_custom_electrical_equivalent(Anode, Cathode, interfaceNode);
+	inout Anode, Cathode, interfaceNode;
+	electrical Anode, Cathode, interfaceNode;
+	parameter   real	temperature = 300;
+	parameter real Rj = 0.019;
+	parameter real Cj_bias[1:8] = {-0.25, -0.75, -1.25, -1.75, -2.25, -2.75, -3.25, -3.75};
+	parameter real Cj_capacitance[1:8] = {7.931987174444315e-10, 6.909878999110374e-10, 6.324978912347108e-10, 5.88873250741244e-10, 5.534565141951687e-10, 5.2595431962e-10, 5.028813080371378e-10, 4.812995574926546e-10};
+	parameter real Cp = 0;
+	parameter real Rp = 0;
+	parameter real wg_length = 0.0005;
+
+	electrical node1;
+	real    V_bias, Cj_interpolated, VCjunct;
+
+
+	// instantiate 2nd order RC filter except for the bias dependent Cj
+	resistor #(.r(Rp)) Rp_component (Anode, node1);
+	resistor #(.r(Rj/wg_length)) Rj_component (node1, interfaceNode);
+	capacitor #(.c(Cp)) Cp_component (node1, Cathode);
+	
+ 	analog begin
+
+		// interpolate capacitance based on bias voltage
+		V_bias = V(interfaceNode) - V(Cathode);
+		Cj_interpolated = $table_model(V_bias, Cj_bias, Cj_capacitance);
+		// bias dependent Cj is implemented by using a bias dependent current source
+		I(interfaceNode, Cathode) <+ wg_length*Cj_interpolated*ddt(V(interfaceNode, Cathode));
+	end
+
+endmodule
+
+//pragma protect end

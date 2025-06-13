@@ -1,0 +1,48 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="eam_te_c";
+library_name="lumfoundry_template::Modulators";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\eam_te_c\eam_te_c.json');
+feval('/aux_scripts/electro_absorption_modulator_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'eam_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+####  Initializing variables [ DO NOT EDIT THIS SECTION ]
+
+design_kit_name = '::design kits::' + library_name + "::";
+
+# Inputs:
+new;
+set("monitor data","save to memory");
+error_count = 0;
+create_plots = true;
+break_at_failure = false;
+fspan = 8e12;  # large value for BW test
+
+
+# QA tolerances
+if (!exist("IL_rel_tolerance")){
+    IL_rel_tolerance = 1e-2;
+}
+if(!exist("ER_rel_tolerance")){
+    ER_rel_tolerance = 5e-3;
+}
+if(!exist("BW_rel_tolerance")){
+    BW_rel_tolerance = 5e-2;
+}

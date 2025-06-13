@@ -1,0 +1,293 @@
+{
+  "general" : 
+  {
+    "description" : "Thermo-Optic Switch 2x2 - C band TE",
+    "prefix" : "TOS",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1560 nm)"
+        },
+        {
+          "property" : "bias_voltage_range",
+          "value" : "[0 V, 10 V]"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "in_0",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Left",
+      "order":1
+    },
+    "opt_2" : 
+    {
+      "name" : "in_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Left",
+      "order":2
+    },
+    "opt_3" : 
+    {
+      "name" : "bar",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Right",
+      "order":3
+    },
+    "opt_4" : 
+    {
+      "name" : "cross",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Right",
+      "order":4
+    },
+    "th_neg_top" : 
+    {
+      "name" : "ele_g1",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Top",
+      "order":5
+    },
+    "th_neg_bot" : 
+    {
+      "name" : "ele_g2",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Bottom",
+      "order":6
+    },
+    "th_pos_top" : 
+    {
+      "name" : "ele_th1",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Top",
+      "order":7
+    },
+    "th_pos_bot" : 
+    {
+      "name" : "ele_th2",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Bottom",
+      "order":8
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "switch_length",
+      "min":0.0001,
+      "max":1,
+      "unit" : "um",
+      "default" : 0.0005,
+      "visible_to_user" : 0,
+      "annotate":0
+    },
+    "imbalance_length":
+    {
+      "name" : "imbalance_length",
+      "max" : 1.0,
+      "min" : 0.0,
+      "unit" : "um",
+      "default" : 0.0,
+      "visible_to_user" : 0,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "mach_zehnder_modulator_2x2",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide_hangover_left":
+      {
+        "D" : 0,
+        "length" : 5e-05,
+        "loss" : 140.0,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_thermal_tuner":
+      {
+        "D" : 0,
+        "loss" : 120,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      },
+      "waveguide_hangover_right":
+      {
+        "D" : 0,
+        "length" : 5e-05,
+        "loss" : 140,
+        "neff" : 2.2,
+        "ng" :  4.1,
+        "dneff_dT": 0.000188
+      }
+    },   
+    "thermal_tuner_data":
+    {
+      "bandwidth_data" : 100000.0,
+      "phase_shifter_data":
+      {
+        "power":
+        {
+          "_complex" : false,
+          "_data" : 
+          [ 
+            0.0,
+            0.04,
+            0.16,
+            0.36,
+            0.64,
+            1.0
+          ],
+          "_size" : [ 6, 1 ],
+          "_type" : "matrix"
+        },
+        "delta_phase":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            0.0,
+            0.1621467176046345,
+            0.64858687041853791,
+            1.4593204584417101,
+            2.5943474816741521,
+            4.0536679401158624
+          ],
+          "_size" : [ 6, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "th_eq_ckt_data":
+    {
+      "R_thermal_tuner" : 100.0,
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+        0.0,
+        0.5,
+        1.0,
+        1.5,
+        2.0,
+        2.5,
+        3.0,
+        3.5,
+        4.0,
+        4.5,
+        5.0
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0,
+          0.00491667,
+          0.00966667,
+          0.01425,
+          0.0186667,
+          0.0229167,
+          0.027,
+          0.0309167,
+          0.0346667,
+          0.03825,
+          0.0416667
+        ],
+        "_size" : [ 11, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "splitter_data" : 
+    {
+      "input1" : "port 1",
+      "input2" : "port 2",
+      "output1" : "port 3",
+      "output2" : "port 4",
+      "spar_filename" : "thermo_optic_switch_MMI_S_params.txt",
+      "flip_2nd_MMI" : 1.0,
+      "splitter_loss" : 0.0,
+      "number_of_taps_estimation" : "group delay"
+    },
+    "enable_thermal_time_constant" : 1.0
+  },
+  "FOMs":
+  {
+    "Ppi_thermal":
+    {
+      "value":0.08,
+      "ref1":0,
+      "ref2":0.102,
+      "tuning":1,
+      "visible_to_user":0,
+      "max" : 1.0,
+      "min" : 0
+    },
+    "S13":
+    {
+      "value":-61.71
+    },
+    "S14":
+    {
+      "value":-2.28,
+      "tuning":1,
+      "visible_to_user":0
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "wavelength":1.55e-6,
+      "thermal_BW_bias" : 1.5
+    },
+    "relative_tolerances" : 
+    {
+      "BW_thermal" : 0.01,
+      "dneff_dT" : 0.02,
+      "Ppi_thermal" : 0.05,
+      "S13" : 0.02,
+      "S14" : 0.08
+    }
+  }
+}

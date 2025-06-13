@@ -1,0 +1,114 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="pd_stat_c";
+library_name="lumfoundry_template::Photodetectors";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\pd_stat_c\pd_stat_c.json');
+feval('/aux_scripts/photodetector_simple_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'pd_stat_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+####  Initializing variables [ DO NOT EDIT THIS SECTION ]
+design_kit_name = '::design kits::' + library_name + "::";
+error_count = 0;
+#test_count = 0; # count how many tests have been run
+break_at_failure = false;
+create_plots = true;
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+# if a second anode does not exist (in the source .lsf file)
+if(!exist("ele_an_2_RELAY")) {ele_an_2_RELAY = 0;}
+
+# if a second optical port does not exist (in the source .lsf file)
+if(!exist("opt_2_RELAY")) {opt_2_RELAY = 0;}
+
+# If user-defined test sample rate is unavailable (in the source .lsf file)
+if(!exist("sample_rate_test")){
+    sample_rate_test = 5e12; # Default value
+}
+
+if(!exist("DC_operation_only")){
+    DC_operation_only =false;
+}
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+if(!exist("bias_voltage_test")){
+    bias_voltage_test = [-1];
+}
+if(!exist("wavelength_test")){
+    wavelength_test = 1.55e-6;
+}
+if (exist("Resp_filename")) {Resp_data = readdata(source_directory+"/"+Resp_filename);}
+if (exist("Idark_filename")) {Idark_data = readdata(source_directory+"/"+Idark_filename);}
+if (exist("BW_filename")) {BW_data = readdata(source_directory+"/"+BW_filename);}
+
+####
+
+# QA tolerances
+
+if(!exist("Idark_rel_tolerance")){
+    Idark_rel_tolerance = 1e-2; # Default value
+}
+
+if(!exist("Iph_rel_tolerance")){
+    Iph_rel_tolerance = 1e-2; # Default value
+}
+
+if(!exist("BW_rel_tolerance")){
+    BW_rel_tolerance = 2e-2; # Default value
+}
+
+if(enable_stat_qa){
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 50.";
+        N_trials = 50;
+    }
+    if(!exist("stat_qa_bias")){
+        ?"No user provided value for stat_qa_bias. Using default value of stat_qa_bias = 0 V.";
+        stat_qa_bias = 0;
+    }    
+    if(!exist('stat_Resp_tolerance')){
+        ?"No user provided value for stat_Resp_tolerance. Using default value of stat_Resp_tolerance = 1e-3 A/W.";
+        stat_Resp_tolerance = 1e-3; 
+    }
+    
+    if(!exist('stat_BW_tolerance')){
+        ?"No user provided value for stat_BW_tolerance. Using default value of stat_BW_tolerance = 0.01 GHz.";
+        stat_BW_tolerance = 0.01e9; 
+    }
+}

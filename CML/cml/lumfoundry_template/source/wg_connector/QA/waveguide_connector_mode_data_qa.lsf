@@ -1,0 +1,184 @@
+# Copyright (c) 2003-2021, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+# loss, neff and ng test
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_connector_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_connector_init_qa.lsf");      
+}
+err=error_count;
+expressioncheckoff();
+new; switchtodesign;
+
+# Test circuit 1: neff, ng
+addelement(design_kit_name + model);
+DUT1_name = get("name");
+set("x position", 200);
+set("y position", 500);
+set("neff", QA.parameters.neff);
+set("ng", QA.parameters.ng);
+set("loss", QA.parameters.loss);
+set("num_of_modes", QA.parameters.num_of_modes);
+set("wavelength", QA.parameters.wavelength);
+
+addelement("Waveguide Y Branch");
+Y1_name = get("name");
+set("x position", 0);
+set("y position", 500);
+setnamed(Y1_name, "orthogonal identifier 2", 99);
+setnamed(Y1_name, "label 2", "disabled");
+
+addelement("Waveguide Y Branch");
+Y2_name = get("name");
+set("horizontal flipped",1);
+set("x position", 400);
+set("y position", 600);
+setnamed(Y2_name, "orthogonal identifier 2", 99);
+setnamed(Y2_name, "label 2", "disabled");
+
+addelement("Optical Network Analyzer");
+ONA1_name = get("name");
+set("x position", 0);
+set("y position", 400);
+set("input parameter", "center and range");
+set("plot kind", "frequency");
+set("frequency range", 10000e9);
+set("number of points", 10000);
+set("number of input ports", 1);
+set("peak analysis","multiple");
+central_wavelength= QA.parameters.wavelength;
+central_frequency = c/central_wavelength;
+setnamed(ONA1_name, "center frequency", central_frequency);       
+        
+
+connect(ONA1_name,"output",Y1_name,"port 1");
+connect(Y1_name,"port 2", DUT1_name, ports{1}.name);
+connect(Y2_name,"port 2", DUT1_name, ports{2}.name);
+connect(Y1_name,"port 3", Y2_name, "port 3");
+connect(ONA1_name,"input 1",Y2_name,"port 1");
+
+# Test circuit 2: loss
+addelement(design_kit_name + model);
+if(exist("container_selection_code")) { eval(container_selection_code); }
+DUT2_name = get("name");
+set("x position", 0);
+set("y position", 200);
+set("neff", QA.parameters.neff);
+set("ng", QA.parameters.ng);
+set("loss", QA.parameters.loss);
+set("num_of_modes", QA.parameters.num_of_modes);
+set("wavelength", QA.parameters.wavelength);
+
+addelement("Optical Network Analyzer");
+ONA2_name = get("name");
+set("input parameter", "center and range");
+set("plot kind", "wavelength");
+set("frequency range", 1e14);
+set("number of input ports", 1);
+set("peak analysis","center");
+
+connect(ONA2_name,"output",DUT2_name,ports{1}.name);
+connect(ONA2_name,"input 1",DUT2_name,ports{2}.name);
+
+mode_no=QA.parameters.num_of_modes;
+
+for (m=1:mode_no) {
+    ? "Testing mode " + num2str(m);
+
+        switchtodesign;
+
+        # always use orthogonal 1 for test
+        setnamed(Y1_name, "orthogonal identifier 1", m);
+        setnamed(Y1_name, "label 1", "mode "+num2str(m));
+        setnamed(Y2_name, "orthogonal identifier 1", m);
+        setnamed(Y2_name, "label 1", "mode "+num2str(m));
+
+        setnamed(ONA1_name, "orthogonal identifier", m);
+        setnamed(ONA1_name, "label", "mode "+num2str(m));
+
+        neff = QA.parameters.neff(m);
+        L = 100*central_wavelength/neff;
+        setnamed(DUT1_name, "waveguide_length",L);
+
+        setnamed(DUT2_name, "waveguide_length",L);
+        setnamed(ONA2_name, "center frequency", central_frequency);
+        setnamed(ONA2_name, "orthogonal identifier", m);
+        setnamed(ONA2_name, "label", "mode "+num2str(m));
+
+        run;
+
+        # 2.1. Get test result: neff
+        ?"* effective index";
+        frequencies = getresult(ONA1_name,"input 1/mode 1/peak/frequency");     # get data from orthogonal 1
+        peak_wavelength = c/frequencies(find(frequencies,central_frequency));
+
+        neff_test = peak_wavelength*100/L;
+
+        ?"neff is "+ num2str(neff_test) + ". Expected value is "+ num2str(neff)+".";
+        msg = "Neff has been changed by: " + num2str(max(abs(neff_test-neff)));
+        diff1 = max(abs(neff_test-neff));
+        ?msg1 = "relative max neff diff = " + num2str(diff1) + " and should be less than " + num2str(QA.relative_tolerances.neff);
+        pass1 = diff1 < QA.relative_tolerances.neff;
+        assert(msg1,pass1);
+
+        # 2.2. Get test result: ng
+        ?"* group index";
+        FSR = getresult(ONA1_name,"input 1/mode 1/peak/free spectral range");   # get data from orthogonal 1
+        data_type = "mode "+num2str(m) + " free spectral range (Hz)";
+        fsr = FSR.getattribute(data_type);
+
+        if (sqrt(var(fsr))*1e-9>1) {
+            ?"FSR std= " + num2str(sqrt(var(fsr))*1e-9) + " GHz";
+            ? "ONA resolution = 1 GHz";
+        }
+        fsr = mean(fsr);
+        ng_test = c/fsr/L;
+        ng = QA.parameters.ng(m);
+
+        ?"ng is "+ num2str(ng_test) + ". Expected value is "+ num2str(ng)+".";
+        msg = "Ng has been changed by: " + num2str(max(abs(ng_test-ng)));
+        diff2 = max(abs(ng_test-ng));
+        ?msg2 = "relative max ng diff = " + num2str(diff2) + " and should be less than " + num2str(QA.relative_tolerances.ng);
+        pass2 = diff2 < QA.relative_tolerances.ng;
+        assert(msg2,pass2);
+
+        # 2.3. Get test result: loss
+        ?"* loss";
+        S21 = getresult(ONA2_name,"input 1/mode 1/peak/gain");          # get data from orthogonal 1
+        frequencies = getresult(ONA2_name,"input 1/mode 1/peak/frequency");     # get data from orthogonal 1
+
+        gain_type = "mode " + num2str(m) + " gain (dB)";
+        loss_dB_m = S21.getattribute(gain_type) / getnamed(DUT1_name, "waveguide_length");
+
+        loss = QA.parameters.loss(m);
+
+        ?"Loss is "+ num2str(-loss_dB_m)+" dB/m. Expected value is "+ num2str(loss)+" dB/m.";
+        msg = "Loss has been changed by: " + num2str(max(abs(-loss_dB_m-loss)));
+        diff3 = max(abs(-loss_dB_m-loss));
+        ?msg3 = "relative max loss diff = " + num2str(diff3) + " and should be less than " + num2str(QA.relative_tolerances.loss);
+        pass3 = diff3 < QA.relative_tolerances.loss;
+        assert(msg3,pass3);
+
+        error_count = error_count + !( pass1 & pass2 & pass3 );
+        if(break_at_failure & !( pass1 & pass2 & pass3 )) { break; }
+}
+
+
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+} 

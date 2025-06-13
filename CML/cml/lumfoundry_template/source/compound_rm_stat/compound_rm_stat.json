@@ -1,0 +1,262 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry Ring Modulator, C-band, supports TE and TM mode",
+    "prefix" : "RM",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band"
+        },
+        {
+          "property" : "polarizations",
+          "value" : "TE & TM modes"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "port_1" : 
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.85,
+      "name" : "ele_cat",
+      "pos" : "Top",
+      "type" : "Electrical Signal", 
+      "order":1
+    },
+    "port_2" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.15,
+      "name" : "ele_an",
+      "pos" : "Top",
+      "type" : "Electrical Signal", 
+      "order":2      
+    },
+    "port_3" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.25,
+      "name" : "opt_1",
+      "pos" : "Left",
+      "type" : "Optical Signal", 
+      "order":3
+    },
+    "port_4" :
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.25,
+      "name" : "opt_2",
+      "pos" : "Right",
+      "type" : "Optical Signal", 
+      "order":4
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1" : 
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : 0.0001,
+      "kind" : "Distance",
+      "max" : 0.0005,
+      "min" : 5e-05,
+      "name" : "radius",
+      "unit" : "um",
+      "visible_to_user" : 1.0
+    }
+  },
+  "model_data":{
+    "photonic_model" : "compound_element",
+    "get_compound" : "script",
+    "debug_mode" : 0.0,
+    "elements" : 
+    {
+      "_data" : 
+      [
+        {
+          "element" : "lum_dc_strip_te_c",
+          "name" : "coupler"
+        },
+        {
+          "element" : "lum_ps_pn_te_c",
+          "name" : "ps"
+        },
+        {
+          "element" : "lum_wg_strip_straight_parameterized",
+          "name" : "wg",
+          "property" : 
+          {
+            "_data" : 
+            [
+              {
+                "name" : "wg_length",
+                "value" : 1e-05
+              },
+              {
+                "name" : "width",
+                "value" : 5e-07
+              }
+            ],
+            "_type" : "cell"
+          }
+        },
+        {
+          "element" : "Straight Waveguide",
+          "name" : "wg_hangover1",
+          "property" : 
+          {
+            "_data" : 
+            [
+              {
+                "name" : "effective index 1",
+                "value" : 2.5462383063490819
+              },
+              {
+                "name" : "group index 1",
+                "value" : 3.7285329269836591
+              },
+              {
+                "name" : "length",
+                "value" : 1e-05
+              }
+            ],
+            "_type" : "cell"
+          }
+        },
+        {
+          "element" : "Straight Waveguide",
+          "name" : "wg_hangover2",
+          "property" : 
+          {
+            "_data" : 
+            [
+              {
+                "name" : "effective index 1",
+                "value" : 2.5462383063490819
+              },
+              {
+                "name" : "group index 1",
+                "value" : 3.7285329269836591
+              },
+              {
+                "name" : "length",
+                "value" : 1e-05
+              }
+            ],
+            "_type" : "cell"
+          }
+        }
+      ],
+      "_type" : "cell"
+    },
+    "connection" : 
+    {
+      "_data" : 
+      [
+        {
+          "e1_name" : "coupler",
+          "e1_port" : "opt_2",
+          "e2_name" : "wg",
+          "e2_port" : "opt_1"
+        },
+        {
+          "e1_name" : "wg",
+          "e1_port" : "opt_2",
+          "e2_name" : "ps",
+          "e2_port" : "opt_1"
+        },
+        {
+          "e1_name" : "ps",
+          "e1_port" : "opt_2",
+          "e2_name" : "coupler",
+          "e2_port" : "opt_4"
+        },
+        {
+          "e1_name" : "coupler",
+          "e1_port" : "opt_1",
+          "e2_name" : "wg_hangover1",
+          "e2_port" : "port 2"
+        },
+        {
+          "e1_name" : "coupler",
+          "e1_port" : "opt_3",
+          "e2_name" : "wg_hangover2",
+          "e2_port" : "port 2"
+        },
+        {
+          "e1_name" : "wg_hangover2",
+          "e1_port" : "port 1",
+          "e2_name" : "RM",
+          "e2_port" : "opt_2"
+        },
+        {
+          "e1_name" : "wg_hangover1",
+          "e1_port" : "port 1",
+          "e2_name" : "RM",
+          "e2_port" : "opt_1"
+        },
+        {
+          "e1_name" : "ps",
+          "e1_port" : "ele_cat",
+          "e2_name" : "RM",
+          "e2_port" : "ele_cat"
+        },
+        {
+          "e1_name" : "ps",
+          "e1_port" : "ele_an",
+          "e2_name" : "RM",
+          "e2_port" : "ele_an"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "data":{
+      "width" : 0.5e-6
+    },
+    "setup_script_file" : "compound_rm_stat_setup_script.lsf"
+  }, 
+  "QA":{
+    "custom_qa_filenames" : 
+      {
+        "_data" : [ "compound_rm_stat_custom_qa.lsf" ],
+        "_type" : "cell"
+      }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_width"
+        },
+        "LOCAL" : 
+        {
+          "CORRGROUP" : "corr_delta_width",
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.4, 2.4 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_width",
+        "slope_width" : 3e-08
+      }
+    }
+  }
+}

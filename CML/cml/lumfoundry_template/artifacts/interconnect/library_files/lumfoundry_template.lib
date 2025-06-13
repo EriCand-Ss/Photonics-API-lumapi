@@ -1,0 +1,232 @@
+.LIB nominal
+.MODEL lum_apd_c library="lumfoundry_template::Photodetectors"
+.MODEL lum_apd_stat_c delta_Resp=0 delta_BW=0 delta_Idark=0 delta_M=0 library="lumfoundry_template::Photodetectors"
+.MODEL lum_dc_strip_te_c library="lumfoundry_template::Couplers"
+.MODEL lum_eam_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_fiber_array_8x8_stat_c delta_x_1=0 delta_x_2=0 delta_x_3=0 delta_x_4=0 delta_x_5=0 delta_x_6=0 delta_x_7=0 delta_x_8=0 delta_y_1=0 delta_y_2=0 delta_y_3=0 delta_y_4=0 delta_y_5=0 delta_y_6=0 delta_y_7=0 delta_y_8=0 delta_theta_1=0 delta_theta_2=0 delta_theta_3=0 delta_theta_4=0 delta_theta_5=0 delta_theta_6=0 delta_theta_7=0 delta_theta_8=0 delta_phi_1=0 delta_phi_2=0 delta_phi_3=0 delta_phi_4=0 delta_phi_5=0 delta_phi_6=0 delta_phi_7=0 delta_phi_8=0 library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_fitted_stat_te_c delta_peak_IL_dB=0 delta_peak_wavelength_mainpol=0 delta_bandwidth_1dB_mainpol=0 delta_skew_mainpol=0 library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_fitted_te_c library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_raw_spar_stat_te_c wafer_no=1 device_no=4 library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_strip_te_c library="lumfoundry_template::Optical IO"
+.MODEL lum_mmi_1x2_stat_strip_te_c delta_height=0 delta_width=0 library="lumfoundry_template::Couplers"
+.MODEL lum_mmi_1x2_strip_te_c library="lumfoundry_template::Couplers"
+.MODEL lum_mmi_1x2_strip_te_c_thermal library="lumfoundry_template::Couplers"
+.MODEL lum_mzi_thermal_2x2_te_c library="lumfoundry_template::Interferometers"
+.MODEL lum_mzi_thermal_unbalanced_te_c library="lumfoundry_template::Interferometers"
+.MODEL lum_mzm_2x2_stat_fom_te_c delta_Vpi=-0.506551 delta_electrical_BW=0 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_2x2_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_balanced_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_fom_unbalanced_te_c delta_FSR=0.551555 delta_IL=-0.506551 delta_notch=-0.506551 delta_Vpi=-0.506551 delta_electrical_BW=0 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_unbalanced_te_c delta_height=0 delta_width=0 delta_ridge_height=0 delta_electrical_BW=0 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_unbalanced_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_unbalanced_tw_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_pd_c library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_harmonic library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_pcell_c library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_pcell_stat_c delta_Resp=0 delta_BW=0 delta_Idark=0 library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_stat_c delta_Resp=0 delta_BW=0 delta_Idark=0 library="lumfoundry_template::Photodetectors"
+.MODEL lum_pdc_strip_c library="lumfoundry_template::Couplers"
+.MODEL lum_ps_pin_te_c library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_pn_stat_te_c delta_height=0 delta_width=0 delta_ridge_height=0 delta_Vpi_Lpi=0 delta_IL=0 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_pn_te_c library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_pn_tw_te_c library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_thermal_stat_te_c delta_height=0 delta_width=0 delta_ridge_height=0 delta_Ppi=0 delta_IL=0 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_thermal_te_c library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ptaper_pr_c library="lumfoundry_template::Couplers"
+.MODEL lum_ptaper_strip_c library="lumfoundry_template::Couplers"
+.MODEL lum_rm_db_pcell_strip_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_rm_db_stat_fom_strip_te_c delta_FSR=0.551555 delta_Q=-0.506551 delta_mod_eff=-0.506551 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_db_strip_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_fom_strip_te_c delta_FSR=0.551555 delta_Q=-0.506551 delta_mod_eff=-0.506551 delta_electrical_BW=0 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_strip_te_c delta_height=0 delta_width=0 delta_ridge_height=0 delta_electrical_BW=0 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_strip_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_rr_stat_strip_te_c delta_height=0 delta_width=0 library="lumfoundry_template::Resonators"
+.MODEL lum_rr_strip_te_c library="lumfoundry_template::Resonators"
+.MODEL lum_rs_strip_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_scripted_grating_stat delta_peak_IL_dB=0 delta_peak_wavelength=0 delta_bandwidth_1dB=0 library="lumfoundry_template"
+.MODEL lum_scripted_wg library="lumfoundry_template"
+.MODEL lum_thermal_switch_2x2_stat_te_c delta_FSR=0.551555 delta_IL=-0.506551 delta_notch=-0.506551 delta_ER=-0.506551 delta_Ppi=0 library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_2x2_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_stat_te_c delta_FSR=0.551555 delta_IL=-0.506551 delta_notch=-0.506551 delta_ER=-0.506551 delta_Ppi=0 library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_te_c library="lumfoundry_template::Modulators"
+.MODEL lum_voa_stat_te_c delta_height=0 delta_width=0 delta_ridge_height=0 delta_Attn_eff=0 delta_IL=0 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_wg_back_annotation library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_backscatter library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_bend_90 library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_connector library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_stat_strip_straight_c delta_height=0 delta_width=0 delta_loss=-6.14311 library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_stat_strip_straight_parameterized delta_width=0 delta_height=0 delta_loss=-6.14311 library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_strip_arc_parameterized library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_strip_sbend_parameterized library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_strip_straight_c library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_strip_straight_parameterized library="lumfoundry_template::Waveguides"
+.MODEL lum_container_example library="lumfoundry_template"
+.MODEL lum_compound_rm_stat delta_width=0 library="lumfoundry_template"
+.ENDL
+
+.LIB statistical
+.GLOBALGROUP global_delta_width=(normal,1.0)
+.GLOBALGROUP global_delta_height=(normal,1.0)
+.GLOBALGROUP global_delta_ridge_height=(normal,1.0)
+.GLOBALGROUP global_lum_apd_stat_c_delta_Resp=(normal,1)
+.GLOBALGROUP global_lum_apd_stat_c_delta_BW=(normal,1)
+.GLOBALGROUP global_lum_apd_stat_c_delta_Idark=(normal,1)
+.GLOBALGROUP global_lum_apd_stat_c_delta_M=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_1=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_2=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_3=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_4=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_5=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_6=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_7=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_x_8=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_1=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_2=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_3=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_4=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_5=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_6=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_7=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_y_8=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_1=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_2=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_3=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_4=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_5=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_6=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_7=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_theta_8=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_1=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_2=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_3=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_4=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_5=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_6=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_7=(normal,1)
+.GLOBALGROUP global_lum_fiber_array_8x8_stat_c_delta_phi_8=(normal,1)
+.GLOBALGROUP global_lum_gc_fitted_stat_te_c_delta_peak_IL_dB=(normal,1.1)
+.GLOBALGROUP global_lum_gc_fitted_stat_te_c_delta_peak_wavelength_mainpol=(normal,1.1)
+.GLOBALGROUP global_lum_gc_fitted_stat_te_c_delta_bandwidth_1dB_mainpol=(normal,1.1)
+.GLOBALGROUP global_lum_gc_fitted_stat_te_c_delta_skew_mainpol=(normal,1.1)
+.GLOBALGROUP global_lum_gc_raw_spar_stat_te_c_wafer_no=(random,0,1,2)
+.GLOBALGROUP global_lum_mmi_1x2_stat_strip_te_c_delta_height=(normal,1)
+.GLOBALGROUP global_lum_mmi_1x2_stat_strip_te_c_delta_width=(normal,1)
+.GLOBALGROUP global_lum_mzm_2x2_stat_fom_te_c_delta_Vpi=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_mzm_2x2_stat_fom_te_c_delta_electrical_BW=(normal,1)
+.GLOBALGROUP global_lum_mzm_stat_fom_unbalanced_te_c_delta_FSR=(pearson4,0.95,-5.3,1000)
+.GLOBALGROUP global_lum_mzm_stat_fom_unbalanced_te_c_delta_IL=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_mzm_stat_fom_unbalanced_te_c_delta_notch=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_mzm_stat_fom_unbalanced_te_c_delta_Vpi=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_mzm_stat_fom_unbalanced_te_c_delta_electrical_BW=(normal,1)
+.GLOBALGROUP global_lum_mzm_stat_unbalanced_te_c_delta_electrical_BW=(normal,1)
+.GLOBALGROUP global_lum_pd_pcell_stat_c_delta_Resp=(normal,1)
+.GLOBALGROUP global_lum_pd_pcell_stat_c_delta_BW=(normal,1)
+.GLOBALGROUP global_lum_pd_pcell_stat_c_delta_Idark=(normal,1)
+.GLOBALGROUP global_lum_pd_stat_c_delta_Resp=(normal,1)
+.GLOBALGROUP global_lum_pd_stat_c_delta_BW=(normal,1)
+.GLOBALGROUP global_lum_pd_stat_c_delta_Idark=(normal,1)
+.GLOBALGROUP global_lum_ps_pn_stat_te_c_delta_Vpi_Lpi=(normal,1)
+.GLOBALGROUP global_lum_ps_pn_stat_te_c_delta_IL=(normal,1)
+.GLOBALGROUP global_lum_ps_thermal_stat_te_c_delta_Ppi=(normal,1)
+.GLOBALGROUP global_lum_ps_thermal_stat_te_c_delta_IL=(normal,1)
+.GLOBALGROUP global_lum_rm_db_stat_fom_strip_te_c_delta_FSR=(pearson4,1,-5.3,1000)
+.GLOBALGROUP global_lum_rm_db_stat_fom_strip_te_c_delta_Q=(pearson4,1,4.9,1000)
+.GLOBALGROUP global_lum_rm_db_stat_fom_strip_te_c_delta_mod_eff=(pearson4,1,4.9,1000)
+.GLOBALGROUP global_lum_rm_stat_fom_strip_te_c_delta_FSR=(pearson4,1,-5.3,1000)
+.GLOBALGROUP global_lum_rm_stat_fom_strip_te_c_delta_Q=(pearson4,1,4.9,1000)
+.GLOBALGROUP global_lum_rm_stat_fom_strip_te_c_delta_mod_eff=(pearson4,1,4.9,1000)
+.GLOBALGROUP global_lum_rm_stat_fom_strip_te_c_delta_electrical_BW=(normal,1)
+.GLOBALGROUP global_lum_rm_stat_strip_te_c_delta_electrical_BW=(normal,1)
+
+.GLOBALGROUP global_lum_scripted_grating_stat_delta_peak_IL_dB=(normal,1.1)
+.GLOBALGROUP global_lum_scripted_grating_stat_delta_peak_wavelength=(normal,1.1)
+.GLOBALGROUP global_lum_scripted_grating_stat_delta_bandwidth_1dB=(normal,1.1)
+.GLOBALGROUP global_lum_thermal_switch_2x2_stat_te_c_delta_FSR=(pearson4,0.95,-5.3,1000)
+.GLOBALGROUP global_lum_thermal_switch_2x2_stat_te_c_delta_IL=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_2x2_stat_te_c_delta_notch=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_2x2_stat_te_c_delta_ER=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_2x2_stat_te_c_delta_Ppi=(normal,1)
+.GLOBALGROUP global_lum_thermal_switch_stat_te_c_delta_FSR=(pearson4,0.95,-5.3,1000)
+.GLOBALGROUP global_lum_thermal_switch_stat_te_c_delta_IL=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_stat_te_c_delta_notch=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_stat_te_c_delta_ER=(pearson4,0.95,4.9,1000)
+.GLOBALGROUP global_lum_thermal_switch_stat_te_c_delta_Ppi=(normal,0.95)
+.GLOBALGROUP global_lum_voa_stat_te_c_delta_Attn_eff=(normal,1)
+.GLOBALGROUP global_lum_voa_stat_te_c_delta_IL=(normal,1)
+.GLOBALGROUP global_lum_wg_stat_strip_straight_c_delta_loss=(pearson4,20,4,1000)
+.GLOBALGROUP global_lum_wg_stat_strip_straight_parameterized_delta_loss=(pearson4,20,4,1000)
+
+.CORRGROUP corr_delta_width=0.003
+.CORRGROUP corr_delta_height=0.01
+.CORRGROUP corr_delta_ridge_height=0.003
+
+.MODEL lum_apd_stat_c delta_Resp=0 LOCAL=(normal,0.8) GLOBALGROUP=global_lum_apd_stat_c_delta_Resp delta_BW=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_apd_stat_c_delta_BW delta_Idark=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_apd_stat_c_delta_Idark delta_M=0 LOCAL=(normal,0.8) GLOBALGROUP=global_lum_apd_stat_c_delta_M library="lumfoundry_template::Photodetectors"
+.MODEL lum_fiber_array_8x8_stat_c delta_x_1=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_1 delta_x_2=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_2 delta_x_3=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_3 delta_x_4=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_4 delta_x_5=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_5 delta_x_6=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_6 delta_x_7=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_7 delta_x_8=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_x_8 delta_y_1=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_1 delta_y_2=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_2 delta_y_3=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_3 delta_y_4=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_4 delta_y_5=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_5 delta_y_6=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_6 delta_y_7=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_7 delta_y_8=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_y_8 delta_theta_1=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_1 delta_theta_2=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_2 delta_theta_3=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_3 delta_theta_4=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_4 delta_theta_5=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_5 delta_theta_6=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_6 delta_theta_7=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_7 delta_theta_8=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_theta_8 delta_phi_1=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_1 delta_phi_2=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_2 delta_phi_3=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_3 delta_phi_4=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_4 delta_phi_5=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_5 delta_phi_6=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_6 delta_phi_7=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_7 delta_phi_8=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_fiber_array_8x8_stat_c_delta_phi_8 library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_fitted_stat_te_c delta_peak_IL_dB=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_gc_fitted_stat_te_c_delta_peak_IL_dB delta_peak_wavelength_mainpol=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_gc_fitted_stat_te_c_delta_peak_wavelength_mainpol delta_bandwidth_1dB_mainpol=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_gc_fitted_stat_te_c_delta_bandwidth_1dB_mainpol delta_skew_mainpol=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_gc_fitted_stat_te_c_delta_skew_mainpol library="lumfoundry_template::Optical IO"
+.MODEL lum_gc_raw_spar_stat_te_c wafer_no=1 LOCAL=(random,0,0,2) GLOBALGROUP=global_lum_gc_raw_spar_stat_te_c_wafer_no device_no=4 LOCAL=(random,-3,96,2) library="lumfoundry_template::Optical IO"
+.MODEL lum_mmi_1x2_stat_strip_te_c delta_height=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_mmi_1x2_stat_strip_te_c_delta_height delta_width=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_mmi_1x2_stat_strip_te_c_delta_width library="lumfoundry_template::Couplers"
+.MODEL lum_mzm_2x2_stat_fom_te_c delta_Vpi=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_mzm_2x2_stat_fom_te_c_delta_Vpi delta_electrical_BW=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_mzm_2x2_stat_fom_te_c_delta_electrical_BW library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_fom_unbalanced_te_c delta_FSR=0 LOCAL=(pearson4,1,-5.3,1000) GLOBALGROUP=global_lum_mzm_stat_fom_unbalanced_te_c_delta_FSR delta_IL=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_mzm_stat_fom_unbalanced_te_c_delta_IL delta_notch=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_mzm_stat_fom_unbalanced_te_c_delta_notch delta_Vpi=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_mzm_stat_fom_unbalanced_te_c_delta_Vpi delta_electrical_BW=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_mzm_stat_fom_unbalanced_te_c_delta_electrical_BW library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_unbalanced_te_c delta_height=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_height GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width delta_ridge_height=0 LOCAL=(normal,0.85) CORRGROUP=corr_delta_ridge_height GLOBALGROUP=global_delta_ridge_height delta_electrical_BW=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_mzm_stat_unbalanced_te_c_delta_electrical_BW library="lumfoundry_template::Modulators"
+.MODEL lum_pd_pcell_stat_c delta_Resp=0 LOCAL=(normal,0.8) GLOBALGROUP=global_lum_pd_pcell_stat_c_delta_Resp delta_BW=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_pd_pcell_stat_c_delta_BW delta_Idark=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_pd_pcell_stat_c_delta_Idark library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_stat_c delta_Resp=0 LOCAL=(normal,0.8) GLOBALGROUP=global_lum_pd_stat_c_delta_Resp delta_BW=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_pd_stat_c_delta_BW delta_Idark=0 LOCAL=(normal,0.7) GLOBALGROUP=global_lum_pd_stat_c_delta_Idark library="lumfoundry_template::Photodetectors"
+.MODEL lum_ps_pn_stat_te_c delta_height=0 LOCAL=(normal,0.8) GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) GLOBALGROUP=global_delta_width delta_ridge_height=0 LOCAL=(normal,0.85) GLOBALGROUP=global_delta_ridge_height delta_Vpi_Lpi=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_ps_pn_stat_te_c_delta_Vpi_Lpi delta_IL=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_ps_pn_stat_te_c_delta_IL library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_thermal_stat_te_c delta_height=0 LOCAL=(normal,0.8) GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) GLOBALGROUP=global_delta_width delta_ridge_height=0 LOCAL=(normal,0.85) GLOBALGROUP=global_delta_ridge_height delta_Ppi=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_ps_thermal_stat_te_c_delta_Ppi delta_IL=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_ps_thermal_stat_te_c_delta_IL library="lumfoundry_template::Phase Shifters"
+.MODEL lum_rm_db_stat_fom_strip_te_c delta_FSR=0 LOCAL=(pearson4,1,-5.3,1000) GLOBALGROUP=global_lum_rm_db_stat_fom_strip_te_c_delta_FSR delta_Q=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_rm_db_stat_fom_strip_te_c_delta_Q delta_mod_eff=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_rm_db_stat_fom_strip_te_c_delta_mod_eff library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_fom_strip_te_c delta_FSR=0 LOCAL=(pearson4,1,-5.3,1000) GLOBALGROUP=global_lum_rm_stat_fom_strip_te_c_delta_FSR delta_Q=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_rm_stat_fom_strip_te_c_delta_Q delta_mod_eff=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_rm_stat_fom_strip_te_c_delta_mod_eff delta_electrical_BW=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_rm_stat_fom_strip_te_c_delta_electrical_BW library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_strip_te_c delta_height=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_height GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width delta_ridge_height=0 LOCAL=(normal,0.85) CORRGROUP=corr_delta_ridge_height GLOBALGROUP=global_delta_ridge_height delta_electrical_BW=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_rm_stat_strip_te_c_delta_electrical_BW library="lumfoundry_template::Modulators"
+.MODEL lum_rr_stat_strip_te_c delta_height=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_height GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width library="lumfoundry_template::Resonators"
+.MODEL lum_scripted_grating_stat delta_peak_IL_dB=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_scripted_grating_stat_delta_peak_IL_dB delta_peak_wavelength=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_scripted_grating_stat_delta_peak_wavelength delta_bandwidth_1dB=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_scripted_grating_stat_delta_bandwidth_1dB library="lumfoundry_template"
+.MODEL lum_thermal_switch_2x2_stat_te_c delta_FSR=0 LOCAL=(pearson4,1,-5.3,1000) GLOBALGROUP=global_lum_thermal_switch_2x2_stat_te_c_delta_FSR delta_IL=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_2x2_stat_te_c_delta_IL delta_notch=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_2x2_stat_te_c_delta_notch delta_ER=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_2x2_stat_te_c_delta_ER delta_Ppi=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_thermal_switch_2x2_stat_te_c_delta_Ppi library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_stat_te_c delta_FSR=0 LOCAL=(pearson4,1,-5.3,1000) GLOBALGROUP=global_lum_thermal_switch_stat_te_c_delta_FSR delta_IL=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_stat_te_c_delta_IL delta_notch=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_stat_te_c_delta_notch delta_ER=0 LOCAL=(pearson4,1,4.9,1000) GLOBALGROUP=global_lum_thermal_switch_stat_te_c_delta_ER delta_Ppi=0 LOCAL=(normal,1) GLOBALGROUP=global_lum_thermal_switch_stat_te_c_delta_Ppi library="lumfoundry_template::Modulators"
+.MODEL lum_voa_stat_te_c delta_height=0 LOCAL=(normal,0.8) GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.7) GLOBALGROUP=global_delta_width delta_ridge_height=0 LOCAL=(normal,0.85) GLOBALGROUP=global_delta_ridge_height delta_Attn_eff=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_voa_stat_te_c_delta_Attn_eff delta_IL=0 LOCAL=(normal,0.9) GLOBALGROUP=global_lum_voa_stat_te_c_delta_IL library="lumfoundry_template::Phase Shifters"
+.MODEL lum_wg_stat_strip_straight_c delta_height=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_height GLOBALGROUP=global_delta_height delta_width=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width delta_loss=0 LOCAL=(pearson4,15,4,1000) GLOBALGROUP=global_lum_wg_stat_strip_straight_c_delta_loss library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_stat_strip_straight_parameterized delta_width=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width delta_height=0 LOCAL=(normal,0.8) CORRGROUP=corr_delta_height GLOBALGROUP=global_delta_height delta_loss=0 LOCAL=(pearson4,15,4,1000) GLOBALGROUP=global_lum_wg_stat_strip_straight_parameterized_delta_loss library="lumfoundry_template::Waveguides"
+.MODEL lum_compound_rm_stat delta_width=0 LOCAL=(normal,1) CORRGROUP=corr_delta_width GLOBALGROUP=global_delta_width library="lumfoundry_template"
+.ENDL
+
+.LIB corner_1
+.MODEL lum_apd_stat_c delta_Resp=-0.7 delta_BW=0.9 delta_Idark=-0.9 delta_M=-0.5 library="lumfoundry_template::Photodetectors"
+.MODEL lum_fiber_array_8x8_stat_c delta_x_1=-3 delta_x_2=-3 delta_x_3=-3 delta_x_4=-3 delta_x_5=-3 delta_x_6=-3 delta_x_7=-3 delta_x_8=-3 delta_y_1=-3 delta_y_2=-3 delta_y_3=-3 delta_y_4=-3 delta_y_5=-3 delta_y_6=-3 delta_y_7=-3 delta_y_8=-3 delta_theta_1=-3 delta_theta_2=-3 delta_theta_3=-3 delta_theta_4=-3 delta_theta_5=-3 delta_theta_6=-3 delta_theta_7=-3 delta_theta_8=-3 delta_phi_1=-3 delta_phi_2=-3 delta_phi_3=-3 delta_phi_4=-3 delta_phi_5=-3 delta_phi_6=-3 delta_phi_7=-3 delta_phi_8=-3 library="lumfoundry_template::Optical IO"
+.MODEL lum_mmi_1x2_stat_strip_te_c delta_height=-3 delta_width=-3 library="lumfoundry_template::Couplers"
+.MODEL lum_mzm_2x2_stat_fom_te_c delta_Vpi=0.5 delta_electrical_BW=-3 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_fom_unbalanced_te_c delta_FSR=-1 delta_IL=0.5 delta_notch=0.5 delta_Vpi=0.5 delta_electrical_BW=-3 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_unbalanced_te_c delta_height=-2.4 delta_width=-2.1 delta_ridge_height=-2.55 delta_electrical_BW=-3 library="lumfoundry_template::Modulators"
+.MODEL lum_pd_pcell_stat_c delta_Resp=-0.7 delta_BW=0.9 delta_Idark=-0.9 library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_stat_c delta_Resp=-0.7 delta_BW=0.9 delta_Idark=-0.9 library="lumfoundry_template::Photodetectors"
+.MODEL lum_ps_pn_stat_te_c delta_height=-2.4 delta_width=-2.1 delta_ridge_height=-2.55 delta_Vpi_Lpi=0.5 delta_IL=0.8 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_thermal_stat_te_c delta_height=-2.4 delta_width=-2.1 delta_ridge_height=-2.55 delta_Ppi=0.5 delta_IL=0.8 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_rm_db_stat_fom_strip_te_c delta_FSR=-1 delta_Q=-1 delta_mod_eff=-1 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_fom_strip_te_c delta_FSR=-1 delta_Q=-1 delta_mod_eff=-1 delta_electrical_BW=-3 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_strip_te_c delta_height=-2.4 delta_width=-2.1 delta_ridge_height=-2.55 delta_electrical_BW=-3 library="lumfoundry_template::Modulators"
+.MODEL lum_rr_stat_strip_te_c delta_height=-2.4 delta_width=-2.1 library="lumfoundry_template::Resonators"
+.MODEL lum_thermal_switch_2x2_stat_te_c delta_FSR=-1 delta_IL=0.5 delta_notch=0.5 delta_ER=0.5 delta_Ppi=0.5 library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_stat_te_c delta_FSR=-1 delta_IL=0.5 delta_notch=0.5 delta_ER=0.5 delta_Ppi=0.5 library="lumfoundry_template::Modulators"
+.MODEL lum_voa_stat_te_c delta_height=-2.4 delta_width=-2.1 delta_ridge_height=-2.55 delta_Attn_eff=0.5 delta_IL=0.8 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_wg_stat_strip_straight_c delta_height=-2.4 delta_width=-2.4 delta_loss=60 library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_stat_strip_straight_parameterized delta_width=-2.4 delta_height=-2.4 delta_loss=60 library="lumfoundry_template::Waveguides"
+.MODEL lum_compound_rm_stat delta_width=-2.4 library="lumfoundry_template"
+.ENDL
+
+.LIB corner_2
+.MODEL lum_apd_stat_c delta_Resp=0.9 delta_BW=-1.5 delta_Idark=0.9 delta_M=0.5 library="lumfoundry_template::Photodetectors"
+.MODEL lum_fiber_array_8x8_stat_c delta_x_1=3 delta_x_2=3 delta_x_3=3 delta_x_4=3 delta_x_5=3 delta_x_6=3 delta_x_7=3 delta_x_8=3 delta_y_1=3 delta_y_2=3 delta_y_3=3 delta_y_4=3 delta_y_5=3 delta_y_6=3 delta_y_7=3 delta_y_8=3 delta_theta_1=3 delta_theta_2=3 delta_theta_3=3 delta_theta_4=3 delta_theta_5=3 delta_theta_6=3 delta_theta_7=3 delta_theta_8=3 delta_phi_1=3 delta_phi_2=3 delta_phi_3=3 delta_phi_4=3 delta_phi_5=3 delta_phi_6=3 delta_phi_7=3 delta_phi_8=3 library="lumfoundry_template::Optical IO"
+.MODEL lum_mmi_1x2_stat_strip_te_c delta_height=3 delta_width=3 library="lumfoundry_template::Couplers"
+.MODEL lum_mzm_2x2_stat_fom_te_c delta_Vpi=-0.8 delta_electrical_BW=3 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_fom_unbalanced_te_c delta_FSR=1.5 delta_IL=-0.8 delta_notch=-0.8 delta_Vpi=-0.8 delta_electrical_BW=3 library="lumfoundry_template::Modulators"
+.MODEL lum_mzm_stat_unbalanced_te_c delta_height=2.4 delta_width=2.1 delta_ridge_height=2.55 delta_electrical_BW=3 library="lumfoundry_template::Modulators"
+.MODEL lum_pd_pcell_stat_c delta_Resp=0.9 delta_BW=-1.5 delta_Idark=0.9 library="lumfoundry_template::Photodetectors"
+.MODEL lum_pd_stat_c delta_Resp=0.9 delta_BW=-1.5 delta_Idark=0.9 library="lumfoundry_template::Photodetectors"
+.MODEL lum_ps_pn_stat_te_c delta_height=2.4 delta_width=2.1 delta_ridge_height=2.55 delta_Vpi_Lpi=-0.3 delta_IL=-0.5 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_ps_thermal_stat_te_c delta_height=2.4 delta_width=2.1 delta_ridge_height=2.55 delta_Ppi=-0.3 delta_IL=-0.5 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_rm_db_stat_fom_strip_te_c delta_FSR=1.5 delta_Q=1.5 delta_mod_eff=1.5 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_fom_strip_te_c delta_FSR=1.5 delta_Q=1.5 delta_mod_eff=1.5 delta_electrical_BW=3 library="lumfoundry_template::Modulators"
+.MODEL lum_rm_stat_strip_te_c delta_height=2.4 delta_width=2.1 delta_ridge_height=2.55 delta_electrical_BW=3 library="lumfoundry_template::Modulators"
+.MODEL lum_rr_stat_strip_te_c delta_height=2.4 delta_width=2.1 library="lumfoundry_template::Resonators"
+.MODEL lum_thermal_switch_2x2_stat_te_c delta_FSR=1.5 delta_IL=-0.8 delta_notch=-0.8 delta_ER=-0.8 delta_Ppi=-0.8 library="lumfoundry_template::Modulators"
+.MODEL lum_thermal_switch_stat_te_c delta_FSR=1.5 delta_IL=-0.8 delta_notch=-0.8 delta_ER=-0.8 delta_Ppi=-0.8 library="lumfoundry_template::Modulators"
+.MODEL lum_voa_stat_te_c delta_height=2.4 delta_width=2.1 delta_ridge_height=2.55 delta_Attn_eff=-0.3 delta_IL=-0.5 library="lumfoundry_template::Phase Shifters"
+.MODEL lum_wg_stat_strip_straight_c delta_height=2.4 delta_width=2.4 delta_loss=-35 library="lumfoundry_template::Waveguides"
+.MODEL lum_wg_stat_strip_straight_parameterized delta_width=2.4 delta_height=2.4 delta_loss=-35 library="lumfoundry_template::Waveguides"
+.MODEL lum_compound_rm_stat delta_width=2.4 library="lumfoundry_template"
+.ENDL

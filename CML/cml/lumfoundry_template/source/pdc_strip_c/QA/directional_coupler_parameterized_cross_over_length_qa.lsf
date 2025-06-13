@@ -1,0 +1,186 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/directional_coupler_parameterized_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/directional_coupler_parameterized_init_qa.lsf"); 
+}
+err=error_count;
+switchtolayout;
+feval("/aux_scripts/dc_parameterized_setup_circuit.lsf");
+
+### 1. Change configuration to test cross-over length in time domain:
+
+Lx_TE = (pi/2. - k_0_TE)/k_L_TE;
+if (Lx_TE < 0){
+    Lx_TE = (-pi/2. - k_0_TE)/k_L_TE;
+    if (Lx_TE <0){
+        Lx_TE = (-3*pi/2. - k_0_TE)/k_L_TE;
+        if (Lx_TE < 0){
+             Lx_TE = (3*pi/2. - k_0_TE)/k_L_TE;
+        }  
+    }
+}
+delta_Lc_TE = Lx_TE/2;
+
+if(length(mode_data)==2){
+    Lx_TM = (pi/2. - k_0_TM)/k_L_TM;
+    if (Lx_TM < 0){
+        Lx_TM = (-pi/2. - k_0_TM)/k_L_TM;
+        if (Lx_TM <0){
+            Lx_TM = (-3*pi/2. - k_0_TM)/k_L_TM;
+            if (Lx_TM <0){
+                Lx_TM = (3*pi/2. - k_0_TM)/k_L_TM;
+            }
+        }         
+    }
+    delta_Lc_TM = Lx_TM/2;
+}
+
+npts=21;
+Lc_TE = linspace(Lx_TE-delta_Lc_TE, Lx_TE+delta_Lc_TE, npts);
+if(length(mode_data)==2){
+Lc_TM = linspace(Lx_TM-delta_Lc_TM, Lx_TM+delta_Lc_TM, npts);
+}
+
+select(ONA_name_TE);
+set("analysis type","impulse response"); # time domain
+
+if(length(mode_data)==2){
+select(ONA_name_TM);
+set("analysis type","impulse response");
+}
+
+setnamed("::Root Element","sample rate",100e9);
+
+couple_Lc_TE = matrix(npts);
+
+if(length(mode_data)==2){
+couple_Lc_TM = matrix(npts);
+through_Lc_TM = matrix(npts);
+}
+
+### 2. Run the loop to simulate different coupling lengths
+for (ii=1:npts)
+{
+    switchtolayout;
+    select(DUT_name_TE);
+    set(coupling_length_par.name, Lc_TE(ii));
+
+    if(length(mode_data)==2){
+    select(DUT_name_TM);
+    set(coupling_length_par.name, Lc_TM(ii));
+    }
+
+    run;
+    select(ONA_name_TE);
+
+    try{
+        S41_TE_linear = getresult(ONA_name_TE,"input 4/mode 1/transmission");
+        transmission_type = mode_data{1}.name + " transmission";
+        S41_TE_all_linear = S41_TE_linear.getattribute(transmission_type);
+    }
+    catch(errMsg);
+    if(errMsg != "") {
+        ?errMsg;
+        switchtodesign;
+        run;
+        select(ONA_name_TE);
+        S41_TE_linear = getresult(ONA_name_TE,"input 4/mode 1/transmission");
+        transmission_type = mode_data{1}.name + " transmission";
+        S41_TE_all_linear = S41_TE_linear.getattribute(transmission_type);
+        #msg = "Error happened in cross-over lenght time-domain test for TE in step ii = " +num2str(ii);
+        #?msg = msg + endl + "S41_TE_all_linear = " + num2str(S41_TE_all_linear);
+        #assert(msg,true);
+        #break;
+    }
+
+    S41_lambda = S41_TE_linear.wavelength;
+
+    couple_Lc_TE(ii) = S41_TE_all_linear(find(S41_lambda, wavelength_data));
+
+    if(length(mode_data)==2){
+    select(ONA_name_TM);
+
+    try{
+        S41_TM_linear = getresult(ONA_name_TM,"input 4/mode 1/transmission");
+        transmission_type = mode_data{2}.name + " transmission";
+        S41_TM_all_linear = S41_TM_linear.getattribute(transmission_type);
+    }
+    catch(errMsg);
+    if(errMsg != "") {
+        ?errMsg;
+        switchtodesign;
+        run;
+        select(ONA_name_TM);
+        S41_TM_linear = getresult(ONA_name_TM,"input 4/mode 1/transmission");
+        transmission_type = mode_data{2}.name + " transmission";
+        S41_TM_all_linear = S41_TM_linear.getattribute(transmission_type);
+        #msg = "Error happened in cross-over lenght time-domain test for TM in step ii = " +num2str(ii);
+        #?msg = msg + endl+ "S41_TM_all_linear = " + num2str(S41_TM_all_linear);
+        #assert(msg,true);
+        #break;
+    }
+
+    S41_lambda = S41_TM_linear.wavelength;
+
+    couple_Lc_TM(ii) = S41_TM_all_linear(find(S41_lambda, wavelength_data));
+    }
+}
+
+
+### 3. Compare and display results
+if(create_plots){
+    plot(Lc_TE*1e6, abs(couple_Lc_TE)^2, "Lc_TE [um]", "transmission", "S41 transmission");
+    legend("TE");
+    if(length(mode_data)==2){
+    plot(Lc_TM*1e6, abs(couple_Lc_TM)^2, "Lc_TM [um]", "transmission", "S41 transmission");
+    legend("TM");
+    }
+}
+
+
+Lx_sim_TE = Lc_TE(findpeaks(abs(couple_Lc_TE)^2));
+if(length(mode_data)==2){
+Lx_sim_TM = Lc_TM(findpeaks(abs(couple_Lc_TM)^2));
+}
+
+change = abs( Lx_sim_TE - Lx_TE )*1e9;
+msg = "Lx for TE has been changed by: " + num2str(change);
+pass = change <= (length_tolerance_nm);
+if(!pass) {
+    ? "ERROR - Lx for TE problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+if(length(mode_data)==2){
+change = abs( Lx_sim_TM - Lx_TM )*1e9;
+msg = "Lx for TM has been changed by: " + num2str(change);
+pass = change <= (length_tolerance_nm);
+if(!pass) {
+    ? "ERROR - Lx for TM problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

@@ -1,0 +1,360 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry parameterized directional coupler - C band",
+    "prefix" : "PDC",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.33,
+      "pos" : "Left",
+      "order":1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.66,
+      "pos" : "Left",
+      "order":2
+    },
+    "opt_3" : 
+    {
+      "name" : "opt_3",
+      "dir" : "Bidirectional",
+      "loc" : 0.33,
+      "pos" : "Right",
+      "order":3
+    },
+    "opt_4" : 
+    {
+      "name" : "opt_4",
+      "dir" : "Bidirectional",
+      "loc" : 0.66,
+      "pos" : "Right",
+      "order":4
+    }
+  },
+  "parameters" : 
+  {
+    "temperature":
+    {
+      "default" : "%temperature%"
+    },
+    "coupling_length":
+    {
+      "name" : "coupling_length",
+      "min":0,
+      "max": 6e-05,
+      "unit" : "um",
+      "default" : 1e-06,
+      "visible_to_user" : 1,
+      "annotate":1
+    },
+    "coupling_gap" : 
+    {
+      "default" : 2e-07,
+      "max" : 3.5e-07,
+      "min" : 1.5e-07,
+      "unit" : "um",
+      "name" : "coupling_gap",
+      "visible_to_user" : 1,
+      "annotate":1
+    },
+    "length_parameter_1" : 
+      {
+        "annotate" : 1,
+        "default" : 1.72207e-05,
+        "kind" : "Distance",
+        "max" : 1,
+        "min" : 0,
+        "name" : "wg_length",
+        "unit" : "um",
+        "visible_to_user" : 0
+      }
+  },
+  "model_data":
+  {
+    "photonic_model" : "directional_coupler_parameterized",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        },
+        {
+          "ID" : 2.0,
+          "name" : "TM"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide":
+      {
+        "D" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.0, 0.0 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "loss" : 
+        {
+          "_complex" : false,
+          "_data" : [ 300.0, 200.0 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "neff" : 
+        {
+          "_complex" : false,
+          "_data" : [ 2.5, 1.8 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "ng" : 
+        {
+          "_complex" : false,
+          "_data" : [ 4.0, 3.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "length_formula" : "bend_length = wg_length;"
+      }
+    },
+    "addloss_data" : 
+    {
+      "wavelength" : 
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          1.52964e-06,
+          1.53061e-06,
+          1.53159e-06,
+          1.53257e-06,
+          1.53355e-06,
+          1.53453e-06,
+          1.53551e-06,
+          1.53649e-06,
+          1.53748e-06,
+          1.53846e-06,
+          1.53945e-06,
+          1.54044e-06,
+          1.54143e-06,
+          1.54242e-06,
+          1.54341e-06,
+          1.5444e-06,
+          1.5454e-06,
+          1.54639e-06,
+          1.54739e-06,
+          1.54839e-06,
+          1.54939e-06,
+          1.55039e-06,
+          1.55139e-06,
+          1.55239e-06,
+          1.5534e-06,
+          1.5544e-06,
+          1.55541e-06,
+          1.55642e-06,
+          1.55743e-06,
+          1.55844e-06,
+          1.55945e-06,
+          1.56047e-06,
+          1.56148e-06,
+          1.5625e-06,
+          1.56352e-06,
+          1.56454e-06
+        ],
+        "_size" : [ 36, 1 ],
+        "_type" : "matrix"
+      },
+      "addloss" : {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          0.0,
+          -0.617703,
+          -0.623843,
+          -0.634174,
+          -0.640348,
+          -0.643282,
+          -0.646707,
+          -0.650638,
+          -0.655078,
+          -0.660043,
+          -0.665537,
+          -0.671571,
+          -0.678154,
+          -0.685293,
+          -0.692999,
+          -0.701274,
+          -0.710130,
+          -0.719571,
+          -0.729604,
+          -0.740234,
+          -0.751467,
+          -0.763395,
+          -0.775923,
+          -0.789054,
+          -0.80279,
+          -0.817131,
+          -0.832083,
+          -0.847646,
+          -0.863820,
+          -0.880607,
+          -0.898009,
+          -0.916027,
+          -0.934659,
+          -0.953902,
+          -0.973759,
+          -0.994226,
+          -1.01530
+        ],
+        "_size" : [ 36, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "coupler_data":
+    {
+      "wavelength" :{
+        "min": 1.53e-06, 
+        "max": 1.565e-06 
+      },
+      "couplercoeff_data" : 
+      {
+        "coupling_gap" : 
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            1.5e-07,
+            2e-07,
+            2.5e-07,
+            3e-07,
+            3.5e-07
+          ],
+          "_size" : [ 5, 1 ],
+          "_type" : "matrix"
+        },
+        "couplercoeff" :
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            -0.727388,
+            -1.45478,
+            -0.425819,
+            -0.851638,
+            -0.263149,
+            -0.526298,
+            -0.161947,
+            -0.323894,
+            -0.0743330,
+            -0.148665,
+            -247677.0,
+            -123838.0,
+            -222271.0,
+            -111136.0,
+            -187466.0,
+            -93733.0,
+            -150778.0,
+            -75389.0,
+            -120401.0,
+            -60200.0,
+            547248.0,
+            547248.0,
+            325759.0,
+            325759.0,
+            204030.0,
+            204030.0,
+            127473.0,
+            127473.0,
+            63113.0,
+            63113.0,
+            203565000000.0,
+            203565000000.0,
+            171750000000.0,
+            171750000000.0,
+            139692000000.0,
+            139692000000.0,
+            109649000000.0,
+            109649000000.0,
+            85379600000.0,
+            85379600000.0
+          ],
+          "_size" : [ 2, 5, 2, 2 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "debug_mode" : 0.0,
+    "fir_taps" : 1.0,
+    "number_of_taps_estimation" : "group delay"
+  },
+  "QA" : 
+  {
+    "relative_tolerances" : 
+    {
+      "angle" : 1e-05,
+      "length" : 1e-05,
+      "loss" : 2e-05
+    }  
+  }
+}

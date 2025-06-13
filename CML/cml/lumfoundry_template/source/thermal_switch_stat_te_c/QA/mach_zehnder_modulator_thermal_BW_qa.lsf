@@ -1,0 +1,131 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+# Test circuit 8: BW
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/mach_zehnder_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+if(mzm_thermal) {
+    new;
+    if(!exist("thermal_BW_bias")){
+        thermal_BW_bias = 1;    		# default test bias
+    }
+    # Settings to simulate low 3dB bandwidth
+    time_window = 10/thermal_bandwidth_data;
+    sample_rate = 1e4*thermal_bandwidth_data; 		#sample rate of root
+    delay = 1e-8;
+    fmax = 5*thermal_bandwidth_data;
+
+    groupscope("::Root Element"); #return to root
+    set("time window",time_window);
+    set("sample rate", sample_rate);
+
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT4_name = get("name");
+    set("x position", 466);
+    set("y position", 110);
+
+    addelement("Impulse");
+    IMP1_name = get("name");
+    set("x position", 395);
+    set("y position", -166);
+    set("delay",delay);
+    set("amplitude",0.5);
+    set("bias",thermal_BW_bias);
+
+    addelement("DC Source");
+    DC5_name = get("name");
+    set("x position", 300);
+    set("y position", -79);
+    set("amplitude",0);
+
+    addelement("CW Laser");
+    CWL2_name = get("name");
+    set("x position", 300);
+    set("y position", 73);
+    set("power", 0.001);
+    set("frequency", c/lambda0);
+
+    addelement("Optical Oscilloscope");
+    OSC1_name = get("name");
+    set("x position", 700);
+    set("y position", -90);
+
+    connect(CWL2_name,"output",DUT4_name,ports{opt_1_RELAY}.name);
+    connect(OSC1_name,"input",DUT4_name,ports{opt_2_RELAY}.name);
+
+    try{connect(IMP1_name,"output",DUT4_name,ports{ele_th_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_3_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_th_4_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_an_2_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_1_RELAY}.name);}catch(blank);
+    try{connect(DC5_name,"output",DUT4_name,ports{ele_cat_2_RELAY}.name);}catch(blank);    
+    if(exist("stat_parameters")){
+        selectpartial(prefix);
+        set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+    }
+    run;
+
+    # Test result 8: BW
+
+    ## Calculate the 3dB bandwidth by using FFT to get the frequency response
+    s_out = getresult(OSC1_name,"sum/signal");
+    t_out = s_out.time;
+    s_out = s_out.getattribute(getattribute(s_out));
+    p2 = (find(t_out,delay)-1):length(t_out);
+    t_out = t_out(p2);
+    s_out = s_out(p2);
+    sf_out = fft(s_out,2,0);
+    f_out = fftw(t_out,2,0)/(2*pi);
+    p2 = 2:find(f_out,fmax);
+    f_out = f_out(p2);
+    sf_out = sf_out(p2);
+
+    sf_out = sf_out/abs(sf_out(1));
+
+    tempx = linspace(min(f_out),max(f_out),5000);
+    tempy = interp(20*log10(abs(sf_out)),f_out,tempx);
+    f3dB = tempx(find(tempy,-3));
+
+    if(create_plots){
+        # plot impulse response in frequency domain
+        plot(1e-9*f_out, 20*log10(abs(sf_out)/max(abs(sf_out))),"Frequency (GHz)", " Normalized response (dB)","","log10x");
+        legend("","");
+        setplot("title", model+" thermal BW test");
+    }
+
+    msg = "3dB thermal BW is "+num2str(f3dB*1e-3)+" kHz and it should be "+num2str(thermal_bandwidth_data*1e-3)+" kHz";
+    change = abs(abs(f3dB)-abs(thermal_bandwidth_data))/abs(thermal_bandwidth_data);
+    pass = change < thermal_BW_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

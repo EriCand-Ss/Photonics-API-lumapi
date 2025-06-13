@@ -1,0 +1,16 @@
+function interpolate_Nmatrix(mat, dim, values, value) {
+    original_size = size(mat);
+    
+    N1 = prod(original_size(1:dim-1));
+    N2 = original_size(dim);
+    N3 = prod(original_size(dim+1:end));
+    interp_size = [N1; N2; N3];
+    
+    final_size = [original_size(1:dim-1); original_size(dim+1:end)];
+    
+    mat = reshape(mat, interp_size);
+    mat = interp(mat, 1:N1, values, 1:N3, 1:N1, value, 1:N3);
+    mat = reshape(mat, final_size);
+    
+    return mat;
+}

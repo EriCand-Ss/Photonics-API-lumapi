@@ -1,0 +1,109 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'mach_zehnder_modulator' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Frequency domain tests:
+
+Unbalanced MZM:
+1. FSR, ER, IL, notch_wavelength
+2. Vpi (modulator)
+3. dneff_dT
+4. Vpi_thermal (thermal tuner)
+5. Statistical IL, notch_wavelength, FSR, ER
+Balanced MZM:
+1. IL
+2. Vpi (modulator)
+3. Vpi_thermal (thermal tuner)
+Time domain tests (both unbalanced and balanced):
+1. electrical BW (modulator)";
+
+
+### Initialise QA environment
+if(exist("ele_cat_1_RELAY")){
+    mzm_electrical = 1;
+} else {
+    mzm_electrical = 0;
+}
+if(exist("ele_th_1_RELAY")) {
+    mzm_thermal = 1;
+}else{
+    mzm_thermal = 0;
+}
+
+if(exist('thermal_tuner')){
+    if(!thermal_tuner){
+        mzm_thermal = 0;
+    }
+}
+
+
+### Run individual tests
+#-----------------------------------------------------------
+# Unbalanced MZI
+#-----------------------------------------------------------
+# 1. FSR, ER, IL , notch test
+feval("mach_zehnder_modulator_unbalanced_notch_wl_FSR_ER_IL_qa.lsf");
+
+# 2. Vpi test
+feval("mach_zehnder_modulator_unbalanced_Vpi_qa.lsf");
+
+# 3. dneff_dT test
+feval("mach_zehnder_modulator_unbalanced_dneff_dT_qa.lsf");
+
+# 4. Ppi_thermal test
+feval("mach_zehnder_modulator_unbalanced_Ppi_thermal_qa.lsf");
+
+# 5. statistical QA
+feval("mach_zehnder_modulator_unbalanced_statistical_qa.lsf");
+
+
+#-----------------------------------------------------------
+# Balanced MZI
+#-----------------------------------------------------------
+# 1. IL and Vpi test
+feval("mach_zehnder_modulator_balanced_IL_Vpi_qa.lsf");
+
+# 2. Vpi_thermal test
+feval("mach_zehnder_modulator_balanced_Ppi_thermal_qa.lsf");
+
+# 3. statistical QA
+feval("mach_zehnder_modulator_balanced_statistical_qa.lsf");        
+
+
+#-----------------------------------------------------------
+# Both
+#-----------------------------------------------------------
+if(BW_qa_type == 1){
+    feval("mach_zehnder_modulator_BW_qa.lsf");
+}
+else if(BW_qa_type == 2){
+    feval("mach_zehnder_modulator_BW_qa_RF_sweep.lsf");
+}
+feval("mach_zehnder_modulator_thermal_BW_qa.lsf");
+
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+pause(2);

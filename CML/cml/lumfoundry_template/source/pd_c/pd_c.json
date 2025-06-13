@@ -1,0 +1,218 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry photodetector - C band",
+    "prefix" : "PD",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_voltage",
+          "value" : "bias_voltage = V_anode - V_cathode"
+        },
+        {
+          "property" : "bias_range",
+          "value" : "[-2 V, 0 V]"
+        },
+        {
+          "property" : "electrical_ports",
+          "value" : "Input = voltage in units of Volt; Output = current in units of Amp"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "ele_an" : 
+    {
+      "name" : "ele_an",
+      "dir" : "Bidirectional",
+      "loc" : 0.8,
+      "pos" : "Right",
+      "order" : 2
+    },
+    "ele_cat" : 
+    {
+      "name" : "ele_cat",
+      "dir" : "Bidirectional",
+      "loc" : 0.2,
+      "pos" : "Right",
+      "order" : 3
+    }
+  },
+  "parameters" : 
+  {
+    "temperature":
+    {
+      "default" : "%temperature%"
+    },
+    "thermal_noise":
+    {
+      "name" : "thermal_noise",
+      "min":0,
+      "max": 1,
+      "unit" : "A/Hz^0.5",
+      "default" : 0,
+      "visible_to_user" : 1,
+      "annotate":0
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "photodetector_simple",
+    "bandwidth_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : [ 0, -0.5, -1],
+        "_size" : [ 1, 3 ],
+        "_type" : "matrix"
+      },
+      "bandwidth":
+      {
+        "_complex" : false,
+        "_data" : [ 2.49e9, 3.29e9, 3.79e9],
+        "_size" : [ 1, 3 ],
+        "_type" : "matrix"
+      }
+    },
+    "Idark_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" :[
+          0.25,
+          0.1,
+          -0.05,
+          -0.2,
+          -0.35,
+          -0.5,
+          -0.65,
+          -0.8,
+          -0.95,
+          -1.1,
+          -1.25,
+          -1.4,
+          -1.55,
+          -1.7,
+          -1.85,
+          -2.0
+        ],
+        "_size" : [ 1, 16 ],
+        "_type" : "matrix"
+      },
+      "current":
+      {
+        "_complex" : false,
+        "_data" : [
+          -4.3900804111809958e-05,
+          -9.0816545402977404e-07,
+          4.7938665276254448e-08,
+          9.0083781660324334e-08,
+          1.11966194149135e-07,
+          1.2869546275888279e-07,
+          1.4277805368823469e-07,
+          1.5551538115840221e-07,
+          1.6568181711935601e-07,
+          1.739528416571856e-07,
+          1.812200478954887e-07,
+          1.8782574188816711e-07,
+          1.939345192396095e-07,
+          1.9963938090312091e-07,
+          2.0498549771690331e-07,
+          2.100177197974796e-07
+        ],
+        "_size" : [ 1, 16 ],
+        "_type" : "matrix"
+      }
+    },
+    "resp_data":
+    {
+      "frequency":
+      {
+        "_complex" : false,
+        "_data" :[ 193414489032258.09, 193424489032258.09],
+        "_size" : [ 1, 2 ],
+        "_type" : "matrix"
+      },
+      "responsivity":
+      {
+        "_complex" : false,
+        "_data" : [ 0.47929117070249883, 0.47929117070249883],
+        "_size" : [ 1, 2 ],
+        "_type" : "matrix"
+      }
+    },
+    "elec_eq_ckt_data":{
+      "Cp" : 0,
+      "Rj" : 2.0,
+      "Rp" : 0.0,
+      "Cj_data":{
+        "voltage":
+        {
+          "_complex" : false,
+          "_data" : 
+          [ 
+             0,
+            -0.5,
+            -1
+          ],
+          "_size" : [ 3, 1 ],
+          "_type" : "matrix"
+        },
+        "cap":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            31.83e-12,
+            24.114e-12,
+            20.94e-12
+          ],
+          "_size" : [ 3, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    },
+    "saturation_power_data" : 0.1,
+    "enable_power_saturation" : 1.0,
+    "enable_shot_noise" : 1.0,
+    "DC_operation_only" : 0.0
+  },
+  "QA" : 
+  {
+    "parameters" : 
+    {
+      "wavelength" : 1.55e-06,
+      "voltage" : 
+      {
+        "_complex" : false,
+        "_data" : [ -0.5, -1.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "relative_tolerances" : 
+    {
+      "BW" : 0.02,
+      "Idark" : 0.01,
+      "Iph" : 0.01
+    }  
+  }
+}

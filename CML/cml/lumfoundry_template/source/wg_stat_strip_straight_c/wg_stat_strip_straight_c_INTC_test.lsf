@@ -1,0 +1,49 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+#{
+#     % timeout = 1h %
+#}
+
+# QA description:  This script performs the following tests
+?QA_description = "
+This QA performs the following tests:
+1. loss, group delay(s)
+2. neff, ng
+Conditions:
+* Frequency and time domain simulations
+* All supported modes
+";
+
+### Run inidividual subtests
+# 1. loss and group delay(frequency and time domain) test 
+feval("waveguide_simple_loss_group_delay_qa.lsf");
+
+# 2. neff and ng test
+feval("waveguide_simple_neff_ng_qa.lsf");
+
+# 3. statistical qa
+feval("waveguide_simple_statistical_qa.lsf");
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+pause(2);

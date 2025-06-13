@@ -1,0 +1,110 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry waveguide, C-band, supports TE and TM mode",
+    "prefix" : "WG",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band"
+        },
+        {
+          "property" : "polarizations",
+          "value" : "TE & TM modes"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "port_1":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_1",
+      "pos" : "Left",
+      "type" : "Optical Signal", 
+      "order":1
+    },
+    "port_2":
+    {
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "name" : "opt_2",
+      "pos" : "Right",
+      "type" : "Optical Signal", 
+      "order":2
+    }
+  },
+  "parameters" : 
+  {
+    "parameter_1" : 
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : 1e-05,
+      "kind" : "Distance",
+      "max" : 0.0001,
+      "min" : 5e-06,
+      "name" : "wg_length",
+      "unit" : "um",
+      "visible_to_user" : 1.0
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "scripted_element",
+    "data" : 
+    {
+      "frequency" : 193414489032258.09,
+      "D" : 
+      {
+        "_complex" : false,
+        "_data" : [ 0.0, 0.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "loss" : 
+      {
+        "_complex" : false,
+        "_data" : [ 300.0, 200.0 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "mode_data" : 
+      {
+        "_data" : 
+        [
+          {
+            "ID" : 1.0,
+            "name" : "TE"
+          },
+          {
+            "ID" : 2.0,
+            "name" : "TM"
+          }
+        ],
+        "_type" : "cell"
+      },
+      "neff" : 
+      {
+        "_complex" : false,
+        "_data" : [ 2.5, 1.8 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      },
+      "ng" : 
+      {
+        "_complex" : false,
+        "_data" : [ 4.0, 3.5 ],
+        "_size" : [ 2, 1 ],
+        "_type" : "matrix"
+      }
+    },
+  "setup_script_filename" : "scripted_wg_setup_script.lsf"
+  }
+}

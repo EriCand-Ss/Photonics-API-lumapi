@@ -1,0 +1,135 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/electro_absorption_modulator_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/electro_absorption_modulator_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+set("monitor data","save to memory");
+
+# Test circuit 2: Bandwidth
+groupscope("::Root Element");
+set("sample rate",fspan);
+set("time window",5e-9);  # making the simulation long enough for the system to reach steady-state
+
+delay = 3e-10; # adding a delay to the impulse
+
+addelement(design_kit_name + model);
+DUT3_name = get("name");
+set("x position", -400);
+set("y position", 230);
+
+addelement("CW Laser");
+CWL3_name = get("name");
+set("x position", -675);
+set("y position", 145);
+set("power",0.001);
+
+addelement("Network Analyzer");
+ENA1_name = get("name");
+set("x position", -440);
+set("y position", -165);
+set("analysis type","impulse response");
+set("number of points",4000);
+set("include delays",true);
+set("delay",delay);
+set("source kind","amplitude");
+set("amplitude",0.1);
+set("bias",0);
+
+addelement("PIN Photodetector");
+PIN1_name = get("name");
+set("x position", -180);
+set("y position", 180);
+set("enable thermal noise",false);
+set("enable shot noise",false);
+
+addelement("DC Source");
+DC3_name = get("name");
+set("x position", 94);
+set("y position", -150);
+
+addelement("Oscilloscope");
+OSC1_name = get("name");
+set("x position", 72);
+set("y position", 154);
+
+select("::Root Element");
+set("sample rate",2*fspan);  # make the sampling rate same as in the ENA (2*freq. range)
+
+connect(CWL3_name,"output",DUT3_name,ports{opt_1_RELAY}.name);
+connect(ENA1_name,"output",DUT3_name,ports{ele_cat_RELAY}.name);
+connect(DC3_name,"output",DUT3_name,ports{ele_an_RELAY}.name);
+connect(DUT3_name,ports{opt_2_RELAY}.name,PIN1_name,"input");
+connect(PIN1_name,"output",OSC1_name,"input");
+connect(PIN1_name,"output",ENA1_name,"input 1");
+
+run;
+
+# Test result 2: Bandwidth
+s_out = getresult(OSC1_name,"signal");
+t_out = s_out.time;
+s_out = s_out.getattribute("amplitude (a.u.)");
+p2 = (find(t_out,delay)-1):length(t_out);
+t_out = t_out(p2);
+t_out = t_out - t_out(1);
+s_out = -s_out(p2);
+p22 = find(s_out,max(s_out))-1:length(s_out);
+t_out = t_out(p22);
+t_out = t_out - t_out(1);
+s_out = s_out(p22);
+
+#plot(t_out,s_out);
+
+sf_out = fft(s_out,2,0);
+f_out = fftw(t_out,2,0)/(2*pi);
+p2 = 2:find(f_out,500e9);
+f_out = f_out(p2);
+sf_out = sf_out(p2);
+
+sf_out = sf_out/abs(sf_out(1));
+
+if(create_plots){
+    # plot impulse response in frequency domain
+    plot(1e-9*f_out, 20*log10(abs(sf_out)/max(abs(sf_out))),"Frequency (GHz)", " Normalized response (dB)","","log10x");
+    legend("","");
+    setplot("x min",2); 
+    setplot("y max",0.1); 
+    setplot("x max",200);
+    setplot("y min",-5);
+    setplot("title", model+" BW test");
+}
+
+tempx = linspace(min(f_out),max(f_out),5000);
+tempy = interp(20*log10(abs(sf_out)),f_out,tempx);
+f3dB_test = tempx(find(tempy,-3));
+f3dB_model = bandwidth_data;
+
+msg = "3dB cutoff freq deviates by " + num2str(abs(f3dB_test-f3dB_model)) + " Hz";
+pass = abs((f3dB_test-f3dB_model)/f3dB_model) < BW_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

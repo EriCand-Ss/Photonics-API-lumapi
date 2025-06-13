@@ -1,0 +1,130 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="wg_bend_90";
+library_name="lumfoundry_template::Waveguides";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\wg_bend_90\wg_bend_90.json');
+feval('/aux_scripts/wg_parameterized_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'wg_bend_90';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 1. QA options and settings
+break_at_failure = false; # if true, stop the QA when an error is encountered
+write_log = false;
+create_plots = false; # if true, automatically generate plots
+N_plots_per_mode = 2; # the number of plots to create for each mode
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+test_empty_ONA = false;
+
+if (!exist("rand_seed")) {
+	rand_seed = 12345;
+}
+
+if (exist("backscatter_loss")){
+    enable_backscatter = true;
+}else { 
+    enable_backscatter = false;
+}
+
+if(write_log){
+    write (log_filename,QA_description);
+}
+
+### 2. Initialize Helper Functions and data [!!!DO NOT MODIFY!!!]
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+# 2.1 Performs interpolation on the desired dimension of an N-dimensional matrix.
+feval("/aux_scripts/wg_parameterized_interpolation_function.lsf");
+
+### 3. Initialise enviroment and workspace [!!!DO NOT MODIFY!!!]
+new;
+set("monitor data","save to memory");
+
+design_kit_name = '::design kits::' + library_name + "::";
+
+error_count = 0;
+error_flag = 0;
+
+if(exist("mode_data")){
+    mode_no = length(mode_data);
+    mode_ID = matrix(1,2);
+    mode_label = cell(mode_no);
+
+    for(i=1:mode_no){
+        mode_ID(i) = mode_data{i}.ID;
+        mode_label{i} = mode_data{i}.name;
+    }
+}
+
+# 3.1 Remove Unused/Invisible Parameters
+
+# Detemine which parameters to keep, interpolate the others
+params_removed = 0;
+for (pid = 1:length(parameters)) {
+    if (parameters{pid}.visible_to_user) {
+        if (exist("keep_parameters")) {
+            keep_parameters = [keep_parameters, pid]; 
+        } else { keep_parameters = pid; }
+    } else {
+        neff = interpolate_Nmatrix(neff, pid+1-params_removed, parameters{pid}.value, parameters{pid}.default_value);
+        ng   = interpolate_Nmatrix(ng  , pid+1-params_removed, parameters{pid}.value, parameters{pid}.default_value);
+        D    = interpolate_Nmatrix(D   , pid+1-params_removed, parameters{pid}.value, parameters{pid}.default_value);
+        loss = interpolate_Nmatrix(loss, pid+1-params_removed, parameters{pid}.value, parameters{pid}.default_value);      
+        params_removed = params_removed + 1;
+    }
+}
+
+# Eliminate unseen parameters
+old_parameters = parameters;
+parameters = cell(length(keep_parameters));
+if(exist("parameters_test_val")) {
+	old_parameters_test_val = parameters_test_val;
+	parameters_test_val = cell(length(keep_parameters));
+}
+for (pid = 1:length(keep_parameters)) {
+    parameters{pid} = old_parameters{keep_parameters(pid)};   
+	if (exist("parameters_test_val")) {
+		parameters_test_val{pid} = old_parameters_test_val{keep_parameters(pid)};
+	}
+}
+clear(old_parameters, keep_parameters);
+if (exist("old_parameters_test_val")) {
+	clear(old_parameters_test_val);
+}

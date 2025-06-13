@@ -1,0 +1,50 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This quality assurance (QA) script file tests the photonic elements
+## generated using cml-compiler's 'phase_shifter_electrical' photonic model
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+### QA description
+?QA_description = "Frequency domain tests:
+1. VpiLpi (Phase Shifter) or Attn_eff (Optical Attenuator)
+2. IL 
+3. dneffdT
+Time domain tests:
+1. electrical BW";
+
+
+### Run individual subtests
+# 1. Vpi_Lpi test
+feval("phase_shifter_electrical_Vpi_Lpi_qa.lsf");
+
+# 1. Attn_eff test
+feval("phase_shifter_electrical_Attn_eff_qa.lsf");
+
+# 2. dneff_dT and IL test
+feval("phase_shifter_electrical_dneff_dT_IL_qa.lsf");
+
+# 3. Electrical bandwidth test
+feval("phase_shifter_electrical_BW_qa.lsf");
+
+# 4. statistical QA
+feval("phase_shifter_electrical_statistical_qa.lsf");
+
+
+### Display QA result
+if (error_count>0) { 
+    ?"error_count = " + num2str(error_count);
+}
+else {?"All tests completed";}pause(2);

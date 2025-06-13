@@ -1,0 +1,203 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/sparsweep_pcell_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+    
+    
+    new;
+    set("monitor data","save to memory");
+    addelement(design_kit_name + model);
+    local_path=get("local path");
+    DUT_name = get("name");
+    select(DUT_name);    
+    set("x position", 0);
+    set("y position", 200);    
+    
+    ONA_name = "ONA_1" ;
+    addelement("Optical Network Analyzer");
+    set("name", ONA_name);
+    set("x position", 0);
+    set("y position", 50);
+    set("plot kind", "wavelength");
+    set("sensitivity",0);
+    
+    setnamed(ONA_name,"analysis type", "scattering data");
+    if(exist("stat_qa_wavelength")){
+        set("input parameter", "center and range");
+        set("center frequency", c/stat_qa_wavelength);
+        set("frequency range", 100e9);
+        set("number of points", 3);
+    }
+    else{
+        set("input parameter", "start and stop");
+        set("start frequency", c/stat_qa_wavelength_stop);
+        set("stop frequency", c/stat_qa_wavelength_start);
+        set("number of points", stat_qa_number_of_points);
+    }        
+    set("orthogonal identifier", stat_qa_mode_ID);
+    set("number of input ports", 1);
+    set("peak analysis","center");
+    
+    eval("input_port_name = "+"'"+port_names{stat_qa_input_port}+"'"+";"); #Find name of element's port where input will be connected
+    connect(ONA_name,'output',DUT_name,input_port_name);
+    
+    
+    eval("output_port_name="+"'"+ port_names{stat_qa_output_port}+"'"+";"); #Find name of element's output port
+    connect(ONA_name, "input 1", DUT_name, output_port_name);
+    
+    
+    ############################
+    
+    # get .lib filename
+    dotlib_filename = importlib;     
+    if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+        libname=splitstring(library_name,"::");
+        if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+        }else{
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+        }
+    }
+    
+    # create MC sweep
+    addsweep(2);
+    MC_name = "mc_sweep";
+    setsweep("Monte Carlo analysis", "name", MC_name);
+    setsweep(MC_name, "number of trials", N_trials);
+    setsweep(MC_name, "batch size", 10);
+    setsweep(MC_name, "enable seed", 1);
+    setsweep(MC_name, "seed", 1);
+    setsweep(MC_name, "enable spatial correlations", 0);
+    
+    # define the parameter mc_lib
+    mc_lib = struct;
+    mc_lib.Name = "mc_lib";
+    mc_lib.library = dotlib_filename;
+    mc_lib.Variant = "statistical";
+    addsweepparameter(MC_name,mc_lib);
+    
+    mc_result_transmission = struct;
+    mc_result_transmission.Name = "transmission";
+    mc_result_transmission.Result = "::Root Element::transmission";
+    mc_result_transmission.Estimation = false;
+    addsweepresult(MC_name,mc_result_transmission); 
+
+    # add results to the Root Element
+    groupscope("::Root Element");
+    if(exist("stat_qa_wavelength")){
+        analysis_script = '
+        # Transmission 
+        transmission_test = getresult("' + ONA_name + '","input 1/mode 1/peak/transmission");
+        ';
+    }
+    else{
+        analysis_script = '
+        # Transmission 
+        transmission_test = getresult("' + ONA_name + '","input 1/mode 1/transmission");
+        ';
+    }
+    analysis_script = analysis_script + '        
+    transmission_test = transmission_test.getattribute("' + mode_label{(stat_qa_mode_ID)} + ' transmission");
+    T = abs(transmission_test)^2;
+    setresult("transmission",T);
+    ';    
+
+    set("analysis script",analysis_script);
+    run;
+    runanalysis;
+    switchtodesign;
+    save("statistical_temp");
+    
+    runsweep(MC_name);
+    ?"Running Monte-Carlo sweep using default pcell parameter values";
+    
+    
+    stat_transmission = getsweepdata(MC_name,"transmission");
+    
+    # Plot the results
+    if(create_plots){
+        histc(stat_transmission);
+        setplot("x label","transmission"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials));
+    }
+
+    ### Reference data comparison
+    
+    # Check reference data for testing:
+    if(!stat_reference_data_available){
+        msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+        assert(msg,false);
+        error_count = error_count+1;
+        stat_transmission_ref = stat_transmission;
+        current_directory = pwd;
+        cd(foldername_ref);
+        matlabsave(filename_ref_stat, stat_transmission_ref);
+        cd(current_directory);
+        
+        ?"******* Saved statistical reference data";
+    }else{
+        # Compare with reference data
+        ?"Testing Monte-Carlo sweep results against reference data";
+    
+    current_directory = pwd;
+    cd(foldername_ref);
+    try{
+        matlabload(filename_ref_stat);
+    }  catch(errMsg);
+    cd(current_directory);
+
+    if (errMsg !=''){
+        msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+        assert(msg,0);
+        error_count = error_count+1;
+        
+    }else{
+        
+        change_stat_transmission = max(abs(stat_transmission_ref-stat_transmission));
+        msg = "Transmission from MC analysis has a maximum variation of " + num2str(change_stat_transmission) + " compared to reference. Variation should be less than " + num2str(stat_transmission_tolerance);
+        pass = change_stat_transmission <= stat_transmission_tolerance;
+        if(!pass) {
+            ? "ERROR - transmission in statistical QA";
+            error_count = error_count+1;
+        }
+        assert(msg,pass);
+        if(break_at_failure & !pass) { break; }
+        
+        # delete temporary project file
+        try{
+            del("statistical_temp.icp");
+        }catch(ErrMsg);
+
+        if(length(ErrMsg)!=0){
+            ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+        }
+        if (err==error_count){
+            ?filebasename(currentscriptname)+" test passed.";
+        }
+    }
+}
+}
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

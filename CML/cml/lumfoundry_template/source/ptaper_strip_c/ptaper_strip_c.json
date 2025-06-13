@@ -1,0 +1,137 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry parameterized taper for strip waveguide- C band",
+    "prefix" : "T",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "Pcell",
+          "value" : "This is a parameterized model based on S-parameters."
+        },
+        {
+          "property" : "polarizations",
+          "value" : "TE & TM supported"
+        },
+        {
+          "property" : "temperature_range",
+          "value" : "Best accuracy around 300 K"
+        },
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "width_opt_1",
+          "value" : "The taper width at the position of port opt_1 is fixed to 0.5 um."
+        },
+        {
+          "property" : "width_opt_2_range",
+          "value" : "Best accuracy between 0.5 and 4 um"
+        },
+        {
+          "property" : "wg_length_range",
+          "value" : "Best accuracy between 10 and 20 um"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order" : 2
+    }   
+  },  
+  "parameters" : 
+  {
+    "parameter_1":
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : 2.25e-06,
+      "kind" : "Distance",
+      "max" : 4e-06,
+      "min" : 5e-07,
+      "name" : "width_opt_2",
+      "unit" : "um",
+      "type" : "Number",
+      "visible_to_user" : 1.0
+    },    
+    "parameter_2":
+    {
+      "annotate" : 1.0,
+      "category" : "CML",
+      "default" : 1.6e-05,
+      "kind" : "Distance",
+      "max" : 2e-05,
+      "min" : 1e-05,
+      "name" : "wg_length",
+      "unit" : "um",
+      "type" : "Number",
+      "visible_to_user" : 1.0
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "sparsweep_pcell",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        },
+        {
+          "ID" : 2.0,
+          "name" : "TM"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "number_of_taps_estimation" : "group delay",
+    "digital_filter_type" : "FIR",
+    "fir_taps" : 1.0,
+    "spar_filename" : "ptaper_strip_c_S_params.txt",
+    "passivity_enforcement" : "ignore",
+    "reciprocity_enforcement" : "ignore"
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "wavelength":{
+        "min" : 1.53e-6,
+        "max" : 1.565e-6
+      }
+    },
+    "N_test" : 5.0,
+    "number_wavelength_points" : 100,
+    "test_all_combo" : 1.0,
+    "reference_data_available" : 1.0,
+    "time_domain_test" : 1.0,
+    "absolute_tolerances" : 
+    {
+      "S_regression" : 1e-05,
+      "S_time" : 0.2,
+      "power_dB" : 2e-05,
+      "passivity" : 0.005,
+      "reciprocity" : 0.01   
+    }
+  }  
+}

@@ -1,0 +1,56 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/ring_modulator_parameterized_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("parameters") & !ring_resonator){
+    
+    pcell_mod_eff_test = matrix(length(test_radius));
+    pcell_mod_eff_ref = matrix(length(test_radius));
+
+    for(c1 = 1:length(test_radius)){       
+            lambda_c = pinch(interp(pcell_resonant_wavelength,pcell_radius,pcell_Lc,test_radius(c1),test_Lc(c1)));
+            feval("/aux_scripts/ring_modulator_parameterized_modulation_efficiency_qa_subscript.lsf");
+        
+            pcell_mod_eff_test(c1) = mod_eff_test;
+            
+    }
+
+    # Test result: BW_test
+    for(c1 = 1:length(test_radius)){ 
+    pcell_mod_eff_ref(c1) = pinch(interp(pcell_mod_eff,pcell_radius,pcell_Lc,test_radius(c1),test_Lc(c1)));
+    }
+    mod_eff_error = abs(pcell_mod_eff_test-pcell_mod_eff_ref)/pcell_mod_eff_ref;
+    msg = "Electrical modulation efficiency from simulation deviates from source data by more than provided relative error tolerance. Maximum relative error is "+num2str(max(mod_eff_error));
+    pass = max(mod_eff_error) < mod_eff_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

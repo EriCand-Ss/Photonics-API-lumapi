@@ -1,0 +1,297 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/waveguide_simple_init_qa.lsf");      
+}
+err=error_count;
+
+if(exist("stat_parameters") and enable_stat_qa){
+    
+    # neff, ng, and loss statistical qa
+    
+    new;
+    
+    # 1. Build test circuit 1: loss + frequency domain group delay
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT1_name = get("name");
+    set("x position", 0);
+    set("y position", 200);
+    if(wg_length_visible_to_user){
+        set(wg_length_name, wg_length); # set to default value specified in data file
+    }
+    
+    
+    
+    addelement("Optical Network Analyzer");
+    ONA1a_name = get("name");
+    set("input parameter", "center and range");
+    set("plot kind", "wavelength");
+    set("center frequency", central_frequency);
+    set("frequency range", 1e14);
+    set("orthogonal identifier", mode_data{1}.ID);
+    set("number of input ports", 1);
+    set("peak analysis","center");
+    
+    connect(ONA1a_name,"output",DUT1_name,ports{1}.name);
+    connect(ONA1a_name,"input 1",DUT1_name,ports{2}.name);
+    
+    # neff and ng test
+    if(!wg_length_visible_to_user){
+        ?endl+ "WARNING: "+ wg_length_name+" is a fixed property. It's only changed for testing purposes.";
+    }
+    
+    # 1. Build test circuit 2: neff, ng frequency domain
+    addelement(design_kit_name + model);
+    if(exist("container_selection_code")) { eval(container_selection_code); }
+    DUT2_name = get("name");
+    local_path=get("local path");
+    set("x position", 200);
+    set("y position", 500);
+    
+    
+    addelement("Waveguide Y Branch");
+    Y1_name = get("name");
+    set("x position", 0);
+    set("y position", 600);
+    set("orthogonal identifier 1", mode_data{1}.ID);
+    set("label 1",mode_data{1}.name);
+    addelement("Waveguide Y Branch");
+    Y2_name = get("name");
+    set("horizontal flipped",1);
+    set("x position", 400);
+    set("y position", 600);
+    set("orthogonal identifier 1", mode_data{1}.ID);
+    set("label 1",mode_data{1}.name);
+    
+    addelement("Optical Network Analyzer");
+    ONA2_name = get("name");
+    set("x position", 0);
+    set("y position", 400);
+    set("input parameter", "center and range");
+    set("plot kind", "frequency");
+    set("center frequency", central_frequency);
+    set("frequency range", 10000e9);
+    set("number of points", 10000);
+    set("orthogonal identifier", mode_data{1}.ID);
+    set("number of input ports", 1);
+    set("peak analysis","multiple");
+    
+    connect(ONA2_name,"output",Y1_name,"port 1");
+    connect(Y1_name,"port 2", DUT2_name, ports{1}.name);
+    connect(Y2_name,"port 2", DUT2_name, ports{2}.name);
+    connect(Y1_name,"port 3", Y2_name, "port 3");
+    connect(ONA2_name,"input 1",Y2_name,"port 1");
+    
+    # get .lib filename
+    dotlib_filename = importlib;     
+    if (length(dotlib_filename)==0){ #in case the element is in the subfolder
+        libname=splitstring(library_name,"::");
+        if (fileexists(filedirectory(local_path)+"/"+libname{1}+'.lib')){
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib";
+        }else{
+            dotlib_filename=filedirectory(local_path)+"/"+libname{1}+".lib.x";   
+        }
+    }
+    
+    # create MC sweep
+    addsweep(2);
+    MC_name = "mc_sweep";
+    setsweep("Monte Carlo analysis", "name", MC_name);
+    setsweep(MC_name, "number of trials", N_trials);
+    setsweep(MC_name, "batch size", 10);
+    setsweep(MC_name, "enable seed", 1);
+    setsweep(MC_name, "seed", 1);
+    setsweep(MC_name, "enable spatial correlations", 0);
+    
+    # define the parameter mc_lib
+    mc_lib = struct;
+    mc_lib.Name = "mc_lib";
+    mc_lib.library = dotlib_filename;
+    mc_lib.Variant = "statistical";
+    addsweepparameter(MC_name,mc_lib);
+    
+    mc_result_neff = struct;
+    mc_result_neff.Name = "neff";
+    mc_result_neff.Result = "::Root Element::neff";
+    mc_result_neff.Estimation = false;
+    
+    mc_result_ng = struct;
+    mc_result_ng.Name = "ng";
+    mc_result_ng.Result = "::Root Element::ng";
+    mc_result_ng.Estimation = false;
+    
+    mc_result_loss = struct;
+    mc_result_loss.Name = "loss";
+    mc_result_loss.Result = "::Root Element::loss";
+    mc_result_loss.Estimation = false;
+    
+    addsweepresult(MC_name,mc_result_neff);
+    addsweepresult(MC_name,mc_result_ng);
+    addsweepresult(MC_name,mc_result_loss);
+    
+    stat_neff = matrix(2,N_trials);
+    stat_ng = matrix(2,N_trials);
+    stat_loss = matrix(2,N_trials);
+    
+    # sweep for modes
+    for (m=1:length(mode_data)) {
+        ? endl + "Testing statistical behavior for mode " + num2str(m) + ": " + mode_data{m}.name;
+        switchtodesign;
+        setnamed(ONA1a_name,"orthogonal identifier",mode_data{m}.ID);
+        setnamed(ONA1a_name,"label", mode_data{m}.name);
+        
+        setnamed(ONA2_name,"orthogonal identifier",mode_data{m}.ID);
+        setnamed(ONA2_name,"label", mode_data{m}.name);
+        neff_ref = neff(m);
+        L = 30*central_wavelength/neff_ref;
+        setnamed(DUT2_name, wg_length_name, L);
+        
+        # add results to the Root Element
+        groupscope("::Root Element");
+        analysis_script = '
+        S21 = getresult("' + ONA1a_name + '","input 1/mode 1/peak/gain");
+        gain_type = "' + mode_data{m}.name + ' gain (dB)";
+        loss = S21.getattribute(gain_type) / ' + num2str(wg_length) + ';
+        setresult("loss",abs(loss));
+
+        FSR = getresult("' + ONA2_name + '","input 1/mode 1/peak/free spectral range");
+        data_type = "' + mode_data{m}.name + '"+ " free spectral range (Hz)";
+        fsr = FSR.getattribute(data_type);
+        fsr = mean(fsr);
+        ng = c/fsr/' + num2str(L) + ';
+        setresult("ng",ng);
+        
+        central_frequency = ' + num2str(central_frequency) + ';
+        peak_frequencies = getresult("' + ONA2_name + '","input 1/mode 1/peak/frequency");
+        peak_wavelength = c/peak_frequencies(find(peak_frequencies,central_frequency));  # rough location of notch
+        neff = peak_wavelength*30/' + num2str(L) + ';
+        setresult("neff",neff);
+        ';
+        set("analysis script",analysis_script);
+        run;
+        runanalysis;
+        switchtodesign;
+        save("statistical_temp");
+        #switchtolayout;
+        #save("statistical_temp");
+        
+        
+        runsweep(MC_name);
+        stat_neff(m,:) = getsweepdata(MC_name,"neff");
+        stat_ng(m,:) = getsweepdata(MC_name,"ng");
+        stat_loss(m,:) = getsweepdata(MC_name,"loss");
+        
+        # Plot the results
+        if(create_plots){
+            histc(stat_neff(m,:));
+            setplot("x label","neff"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(mode_data{m}.name + " mode"); 
+            histc(stat_ng(m,:));
+            setplot("x label","ng"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(mode_data{m}.name + " mode");
+            histc(stat_loss(m,:));
+            setplot("x label","loss (dB/m)"); setplot("y label","count"); setplot("title","N_trials = " + num2str(N_trials)); 
+            legend(mode_data{m}.name + " mode");            
+        }
+    }
+    
+    ### Reference data comparison
+    
+    # Check reference data for testing:
+    if(!stat_reference_data_available){
+        msg = "Statistical regression QA test is skipped. Saving statistical reference data in " + foldername_ref;
+        assert(msg,false);
+        error_count = error_count+1;
+        stat_neff_ref = stat_neff;
+        stat_ng_ref = stat_ng;
+        stat_loss_ref = stat_loss;
+        
+        current_directory = pwd;
+        cd(foldername_ref);
+        matlabsave(filename_ref_stat, stat_neff_ref, stat_ng_ref, stat_loss_ref);
+        cd(current_directory);
+        
+        ?"******* Saved statistical reference data";
+    }else{
+        # Compare with reference data
+        ?"Testing Monte-Carlo sweep results against reference data";
+    
+    current_directory = pwd;
+    cd(foldername_ref);
+    try{
+        matlabload(filename_ref_stat);
+    }  catch(errMsg);
+    cd(current_directory);
+    if (errMsg !=''){
+        msg=filename_ref_stat+".mat does not exist in "+foldername_ref;
+        assert(msg,0);
+        error_count = error_count+1;
+        
+    }else{
+
+    change_neff = max(abs(stat_neff_ref-stat_neff));
+    msg = "neff from MC analysis has a maximum variation of " + num2str(change_neff) + " compared to reference. Variation should be less than " + num2str(stat_neff_tolerance);
+    pass = change_neff <= stat_neff_tolerance;
+    if(!pass) {
+        ? "ERROR - neff in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    
+    change_ng = max(abs(stat_ng_ref-stat_ng));
+    msg = "ng from MC analysis has a maximum variation of " + num2str(change_ng) + " compared to reference. Variation should be less than " + num2str(stat_ng_tolerance);    
+    pass = change_ng <= stat_ng_tolerance;
+    if(!pass) {
+        ? "ERROR - ng in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    
+    change_loss = max(abs(stat_loss_ref-stat_loss));
+    msg = "loss (dB/m) from MC analysis has a maximum variation of " + num2str(change_loss) + " compared to reference. Variation should be less than " + num2str(stat_loss_tolerance);
+    pass = change_loss <= stat_loss_tolerance;
+    if(!pass) {
+        ? "ERROR - loss in statistical QA";
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    
+    # delete temporary project file
+    try{
+        del("statistical_temp.icp");
+    }catch(ErrMsg);
+
+    if(length(ErrMsg)!=0){
+        ?"Failed to remove temporary project file for statistical QA due to 'Safe Mode' operation in Interconnect. For more information check online documentation on 'Safe Mode'.";
+    }
+    if (err==error_count){
+        ?filebasename(currentscriptname)+" test passed.";
+    }
+    }
+}
+}
+else if(enable_stat_qa){
+    ?"No statistical data. Skipped statistical QA.";
+}else{
+    ?"Test-bench is not applicable to this element. "+ filebasename(currentscriptname)+" did not run!";
+}

@@ -1,0 +1,149 @@
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+## CML information 
+foundry_element="ps_thermal_te_c";
+library_name="lumfoundry_template::Phase Shifters";
+jsonload('C:\Users\gson5\Downloads\Photonics-API-lumapi\CML\cml\lumfoundry_template/source\ps_thermal_te_c\ps_thermal_te_c.json');
+feval('/aux_scripts/phase_shifter_thermal_backward.lsf');
+process_prefix="lum_";
+model = process_prefix + 'ps_thermal_te_c';
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+### 1. Initilizing variables and environment [DO NOT EDIT THIS SECTION]
+new;
+set("monitor data","save to memory");
+design_kit_name = '::design kits::' + library_name + "::";
+
+if(exist("container_selection_code")){
+    foldername_ref = source_directory;
+    filename_ref = child_model+"_refdata";
+}else{
+    foldername_ref = foundry_directory+"/source/"+foundry_element;
+    filename_ref = foundry_element+"_refdata";
+}
+
+if(exist("stat_parameters")) {
+    if(exist("container_selection_code")){
+        filename_ref_stat = child_model+"_stat_refdata";
+    }else{
+        filename_ref_stat = foundry_element+"_stat_refdata";
+    }
+}
+
+error_count = 0;
+sample_rate = 100e9; # sample rate of root
+V_num = 20; # number of voltage points
+central_frequency = c/wavelength_data;
+central_wavelength = wavelength_data;
+
+# Provide default QA settings if not specified in source file
+if(!exist('Ppi_rel_tolerance')){
+    Ppi_rel_tolerance = 3e-2;
+}
+if(!exist('IL_rel_tolerance')){
+    IL_rel_tolerance = 2e-2;
+}
+if(!exist('dneff_dT_tolerance')){
+    dneff_dT_tolerance = 1e-2;
+}
+if(!exist('BW_rel_tolerance')){
+    BW_rel_tolerance = 5e-2;
+}
+
+#backwards compatibility
+temp = cell(4);
+temp{1} = "Ppi"; temp{2} = "IL"; temp{3} = "thermal_bandwidth"; temp{4} = "dneff_dT";
+
+for(i=1:length(temp)){
+    eval("exist_temp = exist('"+temp{i}+"');");
+if(exist_temp){
+        eval("FOM_name = " + temp{i} + ";");
+        if(isfield(FOM_name, 'default_value')){
+            if(length(FOM_name.default_value)==1){
+                temp_save = num2str(FOM_name.default_value);
+                eval(temp{i}+"="+temp_save+";");
+            }else{
+                temp_save1 = num2str(FOM_name.default_value(1));
+                temp_save2 = num2str(FOM_name.default_value(2));
+                eval(temp{i}+"=["+temp_save1+ ","+temp_save2+"];");
+            }
+        }
+    }
+}
+
+groupscope("::Root Element"); #return to root
+set("sample rate", sample_rate);
+
+# create/update IV & R
+if(!exist("IV")){
+    voltages = linspace(0,100,100);
+    IV = zeros(100,2);
+    for (i=1:length(voltages)){
+        IV(i,1) = voltages(i);
+        IV(i,2) = voltages(i)/R;
+    }
+}
+
+#Find voltage points for DC bias
+if(exist("Ppi_power1")){
+    Ppi_voltage1 = interp(IV(:,1),IV(:,1)*IV(:,2),Ppi_power1);
+    Ppi_voltage2 = interp(IV(:,1),IV(:,1)*IV(:,2),Ppi_power2);
+}
+
+# account for double heaters
+isDoubleHeater = false; 
+if(exist('ele_h2_RELAY')){
+    if(ele_h2_RELAY!=0){
+        isDoubleHeater = true;
+    }
+}
+
+Operating_Wavelength = wavelength_data;
+BW = thermal_bandwidth;
+N_modes = length(mode_data);
+
+### 2. QA options and settings
+create_plots = true; # automatically generate plots if set to true
+break_at_failure = false; # stop the QA when an error is encountered if set to true
+
+if(!exist("stat_reference_data_available")){
+    stat_reference_data_available = false;
+}
+if(!exist("enable_stat_qa")){
+    enable_stat_qa = false;
+}
+
+if(enable_stat_qa){
+    if(!exist("enable_stat_Ppi_qa")){
+        enable_stat_Ppi_qa = false;
+    }
+    
+    if(!exist("N_trials")){
+        ?"No user provided value for N_trials. Using default value of N_trials = 100.";
+        N_trials = 100;
+    }
+
+    if(!exist('stat_IL_tolerance')){
+        ?"No user provided value for stat_IL_tolerance. Using default value of stat_IL_tolerance = 0.001 dB.";
+        stat_IL_tolerance = 0.001; 
+    }
+
+    if(!exist('stat_Ppi_tolerance')){
+        ?"No user provided value for stat_Ppi_tolerance. Using default value of stat_Ppi_tolerance = 1e-5 W.";
+        stat_Ppi_tolerance = 1e-5; 
+    }    
+}

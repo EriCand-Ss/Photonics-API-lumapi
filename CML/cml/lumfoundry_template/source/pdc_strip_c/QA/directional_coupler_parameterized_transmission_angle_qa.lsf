@@ -1,0 +1,172 @@
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+#Complex S-parameters (this should be modified to use the peak analysis)#
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/directional_coupler_parameterized_init_qa.lsf");
+    }
+}else{
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/directional_coupler_parameterized_init_qa.lsf"); 
+}
+
+err=error_count;
+switchtolayout;
+feval("/aux_scripts/dc_parameterized_setup_circuit.lsf");
+set("analysis type","scattering data");
+run;
+
+### 1. TE transmission
+S31_TE_result = getresult(ONA_name_TE,"input 3/mode 1/transmission");
+result_type = mode_data{1}.name + " transmission";
+S31_TE_all = S31_TE_result.getattribute(result_type);
+
+S41_TE_result = getresult(ONA_name_TE,"input 4/mode 1/transmission");
+result_type = mode_data{1}.name + " transmission";
+S41_TE_all = S41_TE_result.getattribute(result_type);
+
+S31_TE_dB = 20.*log10(abs(S31_TE_all(find(S31_TE_result.wavelength, wavelength_data))));
+S41_TE_dB = 20.*log10(abs(S41_TE_all(find(S41_TE_result.wavelength, wavelength_data))));
+
+#### 2. TE angle
+S31_TE_result = getresult(ONA_name_TE,"input 3/mode 1/angle");
+result_type = mode_data{1}.name + " angle (rad)";
+S31_TE_angle_all = S31_TE_result.getattribute(result_type);
+
+S41_TE_result = getresult(ONA_name_TE,"input 4/mode 1/angle");
+result_type = mode_data{1}.name + " angle (rad)";
+S41_TE_angle_all = S41_TE_result.getattribute(result_type);
+
+S31_TE_angle = mod(S31_TE_angle_all(find(S31_TE_result.wavelength, wavelength_data)),2*pi);
+S41_TE_angle = mod(S41_TE_angle_all(find(S41_TE_result.wavelength, wavelength_data)),2*pi);
+
+angle_diff_TE = abs(S41_TE_angle-S31_TE_angle);
+
+### 3. TM transmission
+if(length(mode_data)==2){
+S31_TM_result = getresult(ONA_name_TM,"input 3/mode 1/transmission");
+result_type = mode_data{2}.name + " transmission";
+S31_TM_all = S31_TM_result.getattribute(result_type);
+
+S41_TM_result = getresult(ONA_name_TM,"input 4/mode 1/transmission");
+result_type = mode_data{2}.name + " transmission";
+S41_TM_all = S41_TM_result.getattribute(result_type);
+
+S31_TM_dB = 20.*log10(abs(S31_TM_all(find(S31_TM_result.wavelength, wavelength_data))));
+S41_TM_dB = 20.*log10(abs(S41_TM_all(find(S41_TM_result.wavelength, wavelength_data))));
+
+### 4. TM angle
+S31_TM_result = getresult(ONA_name_TM,"input 3/mode 1/angle");
+result_type = mode_data{2}.name + " angle (rad)";
+S31_TM_angle_all = S31_TM_result.getattribute(result_type);
+
+S41_TM_result = getresult(ONA_name_TM,"input 4/mode 1/angle");
+result_type = mode_data{2}.name + " angle (rad)";
+S41_TM_angle_all = S41_TM_result.getattribute(result_type);
+
+S31_TM_angle = mod(S31_TM_angle_all(find(S31_TM_result.wavelength, wavelength_data)),2*pi);
+S41_TM_angle = mod(S41_TM_angle_all(find(S41_TM_result.wavelength, wavelength_data)),2*pi);
+angle_diff_TM = abs(S41_TM_angle-S31_TM_angle);
+}
+
+### 5. Compare with reference data
+
+change = abs( S31_TE_dB - S31_TE_dB_ref );
+msg = "S31 for TE has been changed by: " + num2str(change);
+pass = change <= loss_tolerance;
+if(!pass) {
+    ? "ERROR - S31 for TE problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+change = abs( S41_TE_dB - S41_TE_dB_ref );
+msg = "S41 for TE has been changed by: " + num2str(change);
+pass = change <= loss_tolerance;
+if(!pass) {
+    ? "ERROR - S41 for TE problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+change = min([abs(angle_diff_TE - pi/2.), abs(angle_diff_TE - 3.*pi/2.)]);
+msg = "phase difference between S31 and S41 TE has been changed by: " + num2str(change);
+pass = change <= angle_tolerance;
+if(!pass) {
+    ? "ERROR - phase difference for TE problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+if(length(mode_data)==2){
+change = abs( S31_TM_dB - S31_TM_dB_ref );
+msg = "S31 for TM is " + num2str(S31_TM_dB) + " and has been changed by " + num2str(change);
+pass = change <= loss_tolerance;
+if(!pass) {
+    ? "ERROR - S31 for TM problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+change = abs( S41_TM_dB - S41_TM_dB_ref );
+msg = "S41 for TM is " + num2str(S41_TM_dB) + " and has been changed by " + num2str(change);
+pass = change <= loss_tolerance;
+if(!pass) {
+    ? "ERROR - S41 for TM problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+change = min([abs(angle_diff_TM - pi/2.), abs(angle_diff_TM - 3.*pi/2.)]);
+msg = "phase difference between S31 and S41 TM has been changed by: " + num2str(change);
+pass = change <= angle_tolerance;
+if(!pass) {
+    ? "ERROR - phase difference for TM problem";
+    error_count = error_count + 1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+}
+
+### 6. Plot the results
+if(create_plots){
+    # 6.1. TE
+    plot(S31_TE_result.wavelength*1e9, 10*log10(abs(S31_TE_all)^2), "wavelength [nm]", "gain [dB]", "gain TE polarization");
+    holdon;
+    plot(S41_TE_result.wavelength*1e9, 10*log10(abs(S41_TE_all)^2));
+    holdoff;
+    legend("S31", "S41");
+
+    plot(S41_TE_result.wavelength*1e9, abs(S41_TE_angle_all-S31_TE_angle_all), "wavelength [nm]", "angle [rad]", "angle_diff TE polarization");
+
+    # 6.2. TM
+    if(length(mode_data)==2){
+    plot(S31_TM_result.wavelength*1e9, 10*log10(abs(S31_TM_all)^2), "wavelength [nm]", "gain [dB]", "gain TM polarization");
+    holdon;
+    plot(S41_TM_result.wavelength*1e9, 10*log10(abs(S41_TM_all)^2));
+    holdoff;
+    legend("S31", "S41");
+
+    plot(S41_TM_result.wavelength*1e9, abs(S41_TM_angle_all-S31_TM_angle_all), "wavelength [nm]", "angle [rad]", "angle_diff TM polarization");
+    }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}

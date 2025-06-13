@@ -1,0 +1,43 @@
+
+######################################################
+
+# Copyright (c) 2003-2020, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+
+######################################################
+
+## This is a top level script file that calls multiple sub-scripts
+clear;
+cd(filedirectory(which(currentscriptname))+'/QA');
+
+# QA description:  This script performs the following tests
+?QA_description = "
+This QA performs the following tests:
+1. group delay(s)
+2. neff, ng, loss
+Conditions:
+* Frequency and time domain simulations
+* All supported modes
+";
+
+### Run inidividual subtests
+# 1. loss, neff and ng test
+feval("waveguide_back_annotation_mode_data_qa.lsf");
+
+# 2. loss and group delay(frequency and time domain) test
+feval("waveguide_back_annotation_group_delay_qa.lsf");
+
+
+### Display the final message in Script prompt
+?endl;
+if(error_count>0){
+    ?"error_count = " + num2str(error_count);
+}
+else{
+    ?"All tests passed.";
+}
+pause(2);

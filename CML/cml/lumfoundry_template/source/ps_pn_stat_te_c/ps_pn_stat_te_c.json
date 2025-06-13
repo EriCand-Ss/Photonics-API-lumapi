@@ -1,0 +1,426 @@
+{
+  "general" : 
+  {
+    "description" : "Foundry pn depletion phase shifter - C band TE",
+    "prefix" : "PSPN",
+    "notes" : 
+    {
+      "_data" : 
+      [
+        {
+          "property" : "wavelength_range",
+          "value" : "C-band (1530 - 1565 nm)"
+        },
+        {
+          "property" : "bias_range",
+          "value" : "[-4 V, 0.5 V]"
+        }
+      ],
+      "_type" : "cell"
+    }
+  },
+  "ports" : 
+  {
+    "opt_1" : 
+    {
+      "name" : "opt_1",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Left",
+      "order" : 1
+    },
+    "opt_2" : 
+    {
+      "name" : "opt_2",
+      "dir" : "Bidirectional",
+      "loc" : 0.5,
+      "pos" : "Right",
+      "order" : 2
+    },
+    "ele_an" : 
+    {
+      "name" : "ele_an",
+      "dir" : "Bidirectional",
+      "loc" : 0.875,
+      "pos" : "Top",
+      "order" : 3
+    },
+    "ele_cat" : 
+    {
+      "name" : "ele_cat",
+      "dir" : "Bidirectional",
+      "loc" : 0.125,
+      "pos" : "Top",
+      "order" : 4
+    }
+  },
+  "parameters" : 
+  {
+    "wg_length": 
+    {
+      "name" : "wg_length",
+      "min":0.0001,
+      "max":0.1,
+      "unit" : "um",
+      "default" : 0.0005,
+      "visible_to_user" : 1,
+      "annotate":0
+    },
+    "temperature":
+    {
+      "default" : "%temperature%"
+    }
+  },
+  "model_data":
+  {
+    "photonic_model" : "phase_shifter_electrical",
+    "mode_data" : 
+    {
+      "_data" : 
+      [
+        {
+          "ID" : 1.0,
+          "name" : "TE"
+        }
+      ],
+      "_type" : "cell"
+    },
+    "waveguide_data":
+    {
+      "wavelength": 1.55e-06,
+      "temperature":300,
+      "waveguide_passive_left":
+      {
+        "length" : 0,
+        "loss" : 300.0,
+        "neff" : 2.3,
+        "ng" :  4.2,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_transition_left":
+      {
+        "length" : 0,
+        "loss" : 0,
+        "neff" : 2.6197516509085919,
+        "ng" :  4.0751544510088369,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_phase_shifter":
+      {
+        "loss" : 270.85756523374152,
+        "neff" : 2.9395033018171839,
+        "ng" : 3.950308902017674,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_transition_right":
+      {
+        "length" : 0,
+        "loss" : 0,
+        "neff" : 2.6197516509085919,
+        "ng" :  3.1251544510088372,
+        "dneff_dT": 0.00018
+      },
+      "waveguide_passive_right":
+      {
+        "length" : 0,
+        "loss" : 300.0,
+        "neff" : 2.3,
+        "ng" :  4.2,
+        "dneff_dT": 0.00018
+      }
+    } ,   
+    "bandwidth_data":
+    {
+      "bandwidth":
+      {
+        "_complex" : false,
+        "_data" : 
+        [ 
+          10560501130.4016,
+          12122608736.39535,
+          13243642497.92667,
+          14224752001.659109,
+          15135020977.006941,
+          15926432467.09536,
+          16657163068.758181,
+          17404079895.362999
+      ],
+        "_size" : [ 8, 1 ],
+        "_type" : "matrix"
+      },
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : 
+        [ 
+          -0.25,
+          -0.75,
+          -1.25,
+          -1.75,
+          -2.25,
+          -2.75,
+          -3.25,
+          -3.75
+        ],
+        "_size" : [ 8, 1 ],
+        "_type" : "matrix"
+      }
+    },
+    "phase_shifter_data":
+    {
+      "voltage":
+      {
+        "_complex" : false,
+        "_data" : [ 0.0, -0.5, -1.0, -1.5, -2.0, -2.5, -3.0, -3.5, -4.0 ],
+        "_size" : [ 9, 1],
+        "_type" : "matrix"
+      },
+      "delta_n":
+      {
+        "_complex" : false,
+        "_data" : 
+        [
+          0.0,
+          2.137027640225497e-05,
+          3.8501837959614697e-05,
+          5.2969661030299882e-05,
+          6.5628579161369771e-05,
+          7.6912986626265223e-05,
+          8.7054904987393655e-05,
+          9.6266441379722067e-05,
+          0.0001047109702003723
+        ],
+        "_size" : [9, 1],
+        "_type" : "matrix"
+      },
+      "delta_k":
+      {
+        "_complex" : false,
+        "_data" :
+        [
+          0.0,
+          -8.3971002969601591e-07,
+          -1.5077814180118929e-06,
+          -2.0741336040019949e-06,
+          -2.566059967894856e-06,
+          -2.9986176315038521e-06,
+          -3.3851369708384898e-06,
+          -3.7349382676190269e-06,
+          -4.0540377270825601e-06
+        ],
+        "_size" : [ 9, 1],
+        "_type" : "matrix"
+      }
+    },
+    "elec_eq_ckt_data":{
+      "Cp" : 1e-13,
+      "Rj" : 0.019,
+      "Rp" : 2.0,
+      "Cj_data":{
+        "voltage":
+        {
+          "_complex" : false,
+          "_data" : 
+          [ 
+            -0.25,
+            -0.75,
+            -1.25,
+            -1.75,
+            -2.25,
+            -2.75,
+            -3.25,
+            -3.75
+          ],
+          "_size" : [ 8, 1 ],
+          "_type" : "matrix"
+        },
+        "cap":
+        {
+          "_complex" : false,
+          "_data" : 
+          [
+            7.9319871744443149e-10,
+            6.9098789991103741e-10,
+            6.3249789123471084e-10,
+            5.8887325074124405e-10,
+            5.5345651419516873e-10,
+            5.2595431961999999e-10,
+            5.028813080371378e-10,
+            4.8129955749265456e-10
+          ],
+          "_size" : [ 8, 1 ],
+          "_type" : "matrix"
+        }
+      }
+    }
+  },
+  "FOMs":
+  {
+    "IL":
+    {
+      "value":0.1355,
+      "tuning":0,
+      "visible_to_user":0,
+      "min":0,
+      "max":1     
+    },
+    "Vpi_Lpi":
+    {
+      "value":0.0296,
+      "ref1":0.0,
+      "ref2":-4.0,
+      "tuning":0,
+      "visible_to_user":0,
+      "max" : 1,
+      "min" : 0
+    }
+  },
+  "QA" : 
+  {
+    "parameters":{
+      "wavelength":1.55e-6,
+      "BW_bias" : -1.5
+    },
+    "low_3dB_bandwidth" : 0.0,
+    "relative_tolerances" : 
+    {
+      "BW" : 0.05,
+      "IL" :  0.001,
+      "Vpi_Lpi" : 0.01,
+      "dneff_dT" : 0.01
+    }
+  },
+  "statistical":
+  {
+    "parameters" : 
+    {
+      "parameter_1" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_height"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.8
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.4, 2.4 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_height",
+        "slope_neff" : 0.006,
+        "slope_ng" : 0.0027
+      },
+      "parameter_2" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_width"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.7
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.1, 2.1 ],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_width",
+        "slope_neff" : 0.007,
+        "slope_ng" : -0.0063
+      },
+      "parameter_3" :
+      {
+        "GLOBAL" : 
+        {
+          "GLOBALGROUP" : "global_delta_ridge_height"
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.85
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ -2.55, 2.55],
+          "_size" : [ 1, 2 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_ridge_height",
+        "slope_neff" : 6.1e-09,
+        "slope_ng" : -0.011
+      },
+      "parameter_4" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.9
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.5, -0.3 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_Vpi_Lpi",
+        "slope_Vpi_Lpi" : 0.002
+      },
+      "parameter_5" :
+      {
+        "GLOBAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 1.0
+        },
+        "LOCAL" : 
+        {
+          "distribution" : "normal",
+          "sigma" : 0.9
+        },
+        "corners" : 
+        {
+          "_complex" : false,
+          "_data" : [ 0.8, -0.5 ],
+          "_size" : [ 2, 1 ],
+          "_type" : "matrix"
+        },
+        "mean" : 0.0,
+        "name" : "delta_IL",
+        "slope_IL" : 0.01
+      }
+    },
+    "QA":{
+      "N_trials" : 50.0,
+      "VA_N_trials" : 5.0,
+      "enable_qa" : 1.0,
+      "reference_data_available" : 1.0,
+      "VA_reference_data_available" : 1.0,
+      "absolute_tolerances" : 
+      {
+        "IL" : 0.001,
+        "Vpi_Lpi" : 1e-05
+      }
+    }
+  }
+}

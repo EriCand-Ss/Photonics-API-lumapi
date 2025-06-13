@@ -1,0 +1,200 @@
+# Copyright (c) 2003-2022, Ansys, Inc. All rights reserved.  
+
+# Unauthorized use, distribution, or duplication is prohibited.  
+# This product is subject to U.S. laws governing export and re-export.  
+
+# For full Legal Notice, see documentation.
+if (exist("source_directory")){
+    if (source_directory!=filedirectory(filedirectory(which(currentscriptname)))){
+        clear;
+        source_directory = filedirectory(filedirectory(which(currentscriptname)));
+        foundry_directory = filedirectory(filedirectory(which(source_directory)));
+        cd(filedirectory(which(currentscriptname)));
+        feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");
+    }
+}else{
+    clear;
+    source_directory = filedirectory(filedirectory(which(currentscriptname)));
+    foundry_directory = filedirectory(filedirectory(which(source_directory)));
+    cd(filedirectory(which(currentscriptname)));
+    feval("/aux_scripts/tunable_ring_switch_init_qa.lsf");      
+}
+err=error_count;
+
+new;
+groupscope("::Root Element"); #return to root
+set("sample rate", sample_rate);
+
+## Test circuit 1a: resonant_wavelength, FSR, IL, Q
+addelement(design_kit_name + model);
+DUT1_name = get("name");
+set("x position", -140);
+set("y position", 110);
+
+addelement("DC Source");
+DC1_name = get("name");
+set("x position", -140);
+set("y position", -185);
+set("amplitude",0);
+
+addelement("Optical Network Analyzer");
+ONA1_name = get("name");
+set("x position", -390);
+set("y position", -115);
+set("analysis type","scattering data");
+set("center frequency",f_c);
+set("frequency range",fspan);
+set("number of points",round( fspan*5e-9 ) );
+set("plot kind", "wavelength");
+set("peak at maximum",false);
+set("peak threshold",100);
+set("peak excursion",0.5);
+set("pit excursion",0.5);
+set("number of input ports",2);
+
+connect(ONA1_name,"output",DUT1_name,ports{opt_1_RELAY}.name);
+connect(ONA1_name,"input 1",DUT1_name,ports{opt_2_RELAY}.name);
+connect(ONA1_name,"input 2",DUT1_name,ports{opt_4_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_th_1_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_th_2_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_th_3_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_th_4_RELAY}.name);  
+connect(DC1_name,"output",DUT1_name,ports{ele_cat_RELAY}.name);
+connect(DC1_name,"output",DUT1_name,ports{ele_an_RELAY}.name);
+
+if(exist("stat_parameters")){
+    selectpartial(prefix);
+    set("perturb_stat_params",0);  # flag to set all stat_prameters to zero for comparison with target values
+}
+run;
+
+## Extract results
+# resonant wavelength
+gain_f = getresult(ONA1_name,"input 1/mode 1/gain");
+T_f = getresult(ONA1_name,"input 1/mode 1/transmission");
+wl = gain_f.wavelength;
+gain_f = gain_f.getattribute("TE gain (dB)");
+
+notch_test = getresult(ONA1_name,"input 1/mode 1/peak/frequency");
+pos = find(notch_test,lambda_c);
+notch_test = notch_test(pos);
+
+# IL
+IL_test = getresult(ONA1_name,"input 1/mode 1/peak/loss");
+IL_test = IL_test.getattribute("TE loss (dB)");
+IL_test = IL_test(pos);
+
+title= model + ' gain spectrum ';
+plot(wl*1e9, gain_f, 'wavelength [nm]', 'gain [dB]', title);
+legend("through port gain");
+holdon; 
+
+# FSR
+FSR_test = getresult(ONA1_name,"input 1/mode 1/peak/free spectral range");
+FSR_test = FSR_test.getattribute("TE free spectral range (m)");
+FSR_test = FSR_test(pos);
+
+# Q
+T = getresult(ONA1_name,"input 1/mode 1/transmission");
+lambda = T.wavelength;
+T = T.getattribute(getattribute(T));
+T = abs(T)^2;
+maxx = T(find(lambda , notch_test));
+T = T(find(lambda , notch_test + FSR_test / 2):find(lambda , notch_test - FSR_test / 2) , 1);
+lambda = lambda(find(lambda , notch_test + FSR_test / 2):find(lambda , notch_test - FSR_test / 2));
+maxx1 = lambda(find(T , maxx + ((max(T) - maxx) / 2)));
+T(find(T , maxx + ((max(T) - maxx) / 2))) = 0;
+maxx2 = lambda(find(T , maxx + ((max(T) - maxx) / 2)));
+Q_test = notch_test / abs(maxx2 - maxx1);
+if (abs(Q_test-Q_ref)/Q_ref > Q_rel_tolerance){
+    Q_test = getresult(ONA1_name,"input 1/mode 1/peak/quality factor");
+    Q_test = Q_test.getattribute("TE quality factor");
+    Q_test = Q_test(pos);
+}
+
+        
+#drop_gain
+gain_d = getresult(ONA1_name,"input 2/mode 1/gain");
+wl = gain_d.wavelength;
+gain_d = gain_d.getattribute("TE gain (dB)");
+plot(wl*1e9, gain_d, 'wavelength [nm]', 'gain [dB]', title);
+legend("through port gain", "drop port gain");
+
+#IL_drop
+IL_drop_test = getresult(ONA1_name,"input 2/mode 1/loss");
+IL_drop_test = IL_drop_test.getattribute("TE loss (dB)");
+notch_pos = find(wl==notch_test);
+IL_drop_test = abs(IL_drop_test(notch_pos));
+
+#ER
+ER_test = abs(max((gain_f)) - IL_test);
+
+holdoff;
+
+## Assert test results
+# Test result 1a: resonant wavelength, FSR, IL, Q
+msg = "resonant wavelength = " + num2str(notch_test*1e9) + "nm, and should be " + num2str(resonant_wavelength_ref*1e9) + "nm";
+pass = abs(notch_test - resonant_wavelength_ref)/resonant_wavelength_ref < resonant_wavelength_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+msg = "FSR = " + num2str(FSR_test*1e9) + "nm, and should be " + num2str(FSR_ref*1e9) + "nm";
+pass = abs(FSR_test-FSR_ref)/FSR_ref < FSR_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+
+msg = "Q = " + num2str(Q_test) + ", and should be " + num2str(Q_ref);
+pass = abs(Q_test-Q_ref)/Q_ref < Q_rel_tolerance;
+if(!pass) {
+    ?msg;
+    error_count = error_count+1;
+}
+assert(msg,pass);
+if(break_at_failure & !pass) { break; }
+
+if(exist('IL')){
+    msg = "IL = " + num2str(IL_test) + ", and should be " + num2str(IL_ref);
+    pass = abs(IL_test-IL_ref)/IL_ref < IL_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+}
+if (exist('ER')){
+
+    msg = "ER= " + num2str(ER_test) + ", and should be " + num2str(ER_ref);
+    pass = abs(ER_test-ER_ref)/ER_ref < ER_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+    
+}
+
+if (exist("IL_drop")){  
+
+    msg = "IL_drop = " + num2str(IL_drop_test) + ", and should be " + num2str(IL_drop_ref);
+    pass = abs(IL_drop_test-IL_drop_ref)/IL_drop_ref < IL_drop_rel_tolerance;
+    if(!pass) {
+        ?msg;
+        error_count = error_count+1;
+    }
+    assert(msg,pass);
+    if(break_at_failure & !pass) { break; }
+}
+if (err==error_count){
+    ?filebasename(currentscriptname)+" test passed.";
+}
