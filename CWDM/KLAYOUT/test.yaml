@@ -1,0 +1,66 @@
+Devices:
+  first:
+    device_id: first
+    device_type: device
+    electricalCoordinates: []
+    opticalCoordinates:
+    - 256.0
+    - -773.0
+    polarization: TE
+    sequences:
+    - test1(wavelength_sweep_ida)
+    wavelength: '1550'
+  second:
+    device_id: second
+    device_type: device
+    electricalCoordinates: []
+    opticalCoordinates:
+    - 436.0
+    - -755.0
+    polarization: TE
+    sequences:
+    - test1(wavelength_sweep_ida)
+    wavelength: '1550'
+  third:
+    device_id: third
+    device_type: device
+    electricalCoordinates: []
+    opticalCoordinates:
+    - 520.0
+    - -753.0
+    polarization: TE
+    sequences:
+    - test1(wavelength_sweep_ida)
+    wavelength: '1550'
+Sequences:
+  test1(wavelength_sweep_ida):
+    Runtime: 8.75
+    results_info:
+      csv: 'True'
+      foldername: ''
+      legend: 'True'
+      mat: 'True'
+      num_plots: '1'
+      pdf: 'True'
+      pkl: 'False'
+      plottitle: WavelengthSweep
+      save_location: ''
+      saveplot: 'True'
+      visual: 'True'
+      xscale: '1'
+      xtitle: Wavelength (nm)
+      yscale: '1'
+      ytitle: Power (dBm)
+    variables:
+      Initialrange: '-20'
+      Laser Output: High Power
+      Mode: CONT
+      Numscans: '1'
+      Power: '1'
+      Power Unit: dBm
+      RangeDec: '20'
+      Start: '1530'
+      Step: '0.1'
+      Stop: '1565'
+      Sweep Speed: auto
+      Upper Limit: '0'
