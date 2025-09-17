@@ -13,11 +13,11 @@ def achar_x_e_y_maximo_em_um_intervalo_quando_tiver_varios_picos(funcao, x, xmin
         return None, None
     
     funcao_intervalo = funcao[mask] #funcao_intervalo eh um vetor modificado de "funcao". basicamente eh "funcao" truncado na "mask"
-    peak = max(funcao_intervalo) #procura o maximo dentro de funcao_intervalo
-    index = np.where(funcao==peak)[0][0] #indice onde o maximo ocorreu na primeira vez.
-    x_maximo = x[index] #x_maximo eh o valor de x para o maximo achado
+    x_intervalo = x[mask] #procura o maximo dentro de funcao_intervalo
+    index = np.argmax(funcao_intervalo)  #indice onde o maximo ocorreu na primeira vez.
+    x_maximo = x_intervalo[index] #x_maximo eh o valor de x para o maximo achado
 
-    y_maximo = funcao[index] #y_maximo eh o valor de y para o maximo achado
+    y_maximo = funcao_intervalo[index] #y_maximo eh o valor de y para o maximo achado
     
     return round(x_maximo,6),round(y_maximo,6) #eh retornado os valores com aproximacao de 6 casas decimais
 
