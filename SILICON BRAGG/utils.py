@@ -18,7 +18,7 @@ def achar_x_e_y_maximo_em_um_intervalo_quando_tiver_varios_picos(funcao, x, xmin
     x_maximo = x_intervalo[index] #x_maximo eh o valor de x para o maximo achado
 
     y_maximo = funcao_intervalo[index] #y_maximo eh o valor de y para o maximo achado
-    
+
     return round(x_maximo,6),round(y_maximo,6) #eh retornado os valores com aproximacao de 6 casas decimais
 
 def analise_comprimento_de_onda_para_sensor(parametro_variavel, Transmissao, comprimento_de_onda, x_min,x_max):
@@ -504,20 +504,20 @@ def bragg_integrado_com_phase_shifter(emeApi,Lambda,W_great,W_small,width,thickn
         emeApi.set("number of periodic groups", 3)
         emeApi.set("start cell group", np.array([1,4,7]))
         emeApi.set("end cell group", np.array([2,5,8]))
-        emeApi.set("periods", np.array([periods,2*periods,periods]))
+        emeApi.set("periods", periods)
 
     elif(Phases == 1):
         
         emeApi.set("number of periodic groups", 2)
         emeApi.set("start cell group", np.array([1,4]))
         emeApi.set("end cell group", np.array([2,5]))
-        emeApi.set("periods", np.array([periods,periods]))
+        emeApi.set("periods", periods)
     elif(Phases == 3):
         
         emeApi.set("number of periodic groups", 4)
         emeApi.set("start cell group", np.array([1,4,7,10]))
         emeApi.set("end cell group", np.array([2,5,8,11]))
-        emeApi.set("periods", np.array([periods,2*periods,2*periods,periods]))
+        emeApi.set("periods", periods)
 
     emeApi.set("wavelength", comprimento_de_onda)
 
