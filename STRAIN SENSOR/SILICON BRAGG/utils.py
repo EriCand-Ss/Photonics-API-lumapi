@@ -129,7 +129,7 @@ def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_l
         return (inter.getresult("PM1","total power")),(inter.getresult("PM2","total power"))
 
 def bragg_integrado_simples(emeApi,Lambda,W_great,W_small,thickness,w_box,t_box,material_Si,material_BOX,wvg_start,wvg_stop,nb,
-                                        Temperatura=300,periods=150, comprimento_de_onda = 1500e-9,mesh_multiplier=5):
+                                        Temperatura=300,periods=150, comprimento_de_onda = 1500e-9,mesh_multiplier=5,condicao= "Metal"):
 
     # Simulacao via EME, que retorna refletância, |S11|, fase de S11, |S21| e fase de S21
     # Lambda - float - eh o comprimento de um periodo de bragg
@@ -195,6 +195,11 @@ def bragg_integrado_simples(emeApi,Lambda,W_great,W_small,thickness,w_box,t_box,
     emeApi.set("start cell group", 1)
     emeApi.set("end cell group", 2)
     emeApi.set("periods", periods)
+
+    emeApi.set("y min bc", condicao)
+    emeApi.set("y max bc", condicao)
+    emeApi.set("z min bc", condicao)
+    emeApi.set("z max bc", condicao)
 
     emeApi.set("wavelength", comprimento_de_onda)
 
