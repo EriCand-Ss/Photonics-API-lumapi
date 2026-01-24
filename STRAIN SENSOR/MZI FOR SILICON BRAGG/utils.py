@@ -584,7 +584,7 @@ def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_l
         inter.addelement("ebeam_y_1550")
         inter.set("name", "Y1")
 
-        inter.addelement("ebeam_dc_te1550")
+        inter.addelement("ebeam_bdc_te1550")
         inter.set("name", "Y2")
         inter.rotateelement("Y2")
         inter.rotateelement("Y2")

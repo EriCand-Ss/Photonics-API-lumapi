@@ -41,7 +41,7 @@ def analise_comprimento_de_onda_para_sensor(parametro_variavel, Transmissao, com
     
     return frequencia_onde_ocorre_maxima_transmissao, Amplitude_onde_ocorre_maxima_transmissao
 
-def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_laser(inter,x_1,defasagem,diretorio_dos_parametros_S):
+def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_laser(inter,x_1,defasagem,diretorio_dos_parametros_S, linewidth_laser, bandwidth_filter):
         # funcao cria ambiente de simulacao no INTERCONNECT composto por dois laser, um combiner, um dispositivo arbitrario (a depender do parametro S),
         #  um splitter, dois filtros, dois fotodectores e dois medidores de potencia. Posteriormente simula e retorna os valores de potencia lidos nos medidores de potencia.
 
@@ -54,12 +54,14 @@ def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_l
         inter.deleteall()
 
         inter.addelement("CW Laser")
-        inter.set("name", "fonte2")
-        inter.set("frequency", 3e8/(x_1+defasagem))
-
-        inter.addelement("CW Laser")
         inter.set("name", "fonte1")
         inter.set("frequency", 3e8/((x_1)))
+        inter.set("linewidth", linewidth_laser)
+
+        inter.addelement("CW Laser")
+        inter.set("name", "fonte2")
+        inter.set("frequency", 3e8/(x_1+defasagem))
+        inter.set("linewidth", linewidth_laser)
 
         inter.addelement("Optical Combiner")
         inter.set("name", "optC1")
@@ -78,10 +80,13 @@ def funcao_que_gera_o_ambiente_de_simulacao_e_calcula_a_potencia_na_saida_de_n_l
         inter.addelement("Rectangular Optical Filter")
         inter.set("name","filter1")
         inter.set("frequency", 3e8/(x_1))
+        inter.set("bandwidth",bandwidth_filter)
 
         inter.addelement("Rectangular Optical Filter")
         inter.set("name","filter2")
         inter.set("frequency", 3e8/((x_1+defasagem)))
+        inter.set("bandwidth",bandwidth_filter)
+
 
         inter.addelement("PIN Photodetector")
         inter.set("name", "photodec1")
